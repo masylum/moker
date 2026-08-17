@@ -43,7 +43,7 @@ Set the production secret before deployment:
 npx wrangler secret put OPENROUTER_API_KEY
 ```
 
-`OPENROUTER_MODEL` defaults to the current agentic flagship, `x-ai/grok-4.20`. There is no OpenRouter model ID named “GPT Grok 4.6”; the model remains a non-secret configuration value, so you can switch it without changing code when that exact model becomes available.
+`OPENROUTER_MODEL` defaults to `x-ai/grok-4.6`, matching the requested OpenRouter model. It remains a non-secret configuration value, so you can switch models without changing code.
 
 ## Architecture
 

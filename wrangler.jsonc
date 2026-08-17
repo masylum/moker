@@ -20,7 +20,7 @@
     { "tag": "v1", "new_sqlite_classes": ["GameSession", "MahjongPlayer"] }
   ],
   "vars": {
-    "OPENROUTER_MODEL": "x-ai/grok-4.20",
+    "OPENROUTER_MODEL": "x-ai/grok-4.6",
     "APP_URL": "https://mahjong-poker-lab.example.workers.dev"
   },
   "observability": {

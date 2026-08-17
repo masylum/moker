@@ -5,7 +5,7 @@ describe("Cloudflare Worker and Durable Object persistence", () => {
   it("serves health through the Worker entrypoint", async () => {
     const response = await SELF.fetch("http://example.com/api/health");
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ ok: true, model: "x-ai/grok-4.20" });
+    expect(await response.json()).toMatchObject({ ok: true, model: "x-ai/grok-4.6" });
   });
 
   it("creates and restores a persistent game session", async () => {
