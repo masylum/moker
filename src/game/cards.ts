@@ -4,108 +4,123 @@ import {
   SUITS,
   WINDS,
   type Card,
+  type CardColor,
   type CardFace,
+  type Dragon,
   type JokerColor,
+  type NumberedRank,
   type Suit,
-} from "./types";
+  type Wind,
+} from "./types"
 
 export function createDeck(): Card[] {
-  const cards: Card[] = [];
+  const cards: Card[] = []
   for (const suit of SUITS) {
     for (let rank = 1; rank <= 9; rank += 1) {
       for (let copy = 1; copy <= 3; copy += 1) {
-        cards.push({ id: `${suit}-${rank}-${copy}`, kind: "numbered", suit, rank: rank as 1 });
+        cards.push({
+          ...numberedFace(suit, rank as NumberedRank),
+          id: `${suit}-${rank}-${copy}`,
+        })
       }
     }
   }
+
   for (const dragon of DRAGONS) {
     for (let copy = 1; copy <= 3; copy += 1) {
-      cards.push({ id: `dragon-${dragon}-${copy}`, kind: "dragon", dragon });
+      cards.push({ ...dragonFace(dragon), id: `dragon-${dragon}-${copy}` })
     }
   }
+
   for (const wind of WINDS) {
     for (let copy = 1; copy <= 3; copy += 1) {
-      cards.push({ id: `wind-${wind}-${copy}`, kind: "wind", wind });
+      cards.push({ ...windFace(wind), id: `wind-${wind}-${copy}` })
     }
   }
+
   for (const color of JOKER_COLORS) {
-    cards.push({ id: `joker-${color}`, kind: "joker", color });
+    cards.push({ ...jokerFace(color), id: `joker-${color}` })
   }
+
   for (let copy = 1; copy <= 4; copy += 1) {
-    cards.push({ id: `blank-${copy}`, kind: "blank" });
+    cards.push({ ...blankFace(), id: `blank-${copy}` })
   }
-  if (cards.length !== 110) throw new Error(`Deck invariant failed: ${cards.length}`);
-  return cards;
+
+  if (cards.length !== 110) {
+    throw new Error(`Deck invariant failed: ${cards.length}`)
+  }
+
+  return cards
 }
 
 export function faceKey(card: CardFace): string {
   switch (card.kind) {
     case "numbered":
-      return `${card.suit}-${card.rank}`;
+      return `${card.suit}-${card.rank}`
     case "dragon":
-      return `dragon-${card.dragon}`;
+      return `dragon-${card.dragon}`
     case "wind":
-      return `wind-${card.wind}`;
+      return `wind-${card.wind}`
     case "joker":
-      return `joker-${card.color}`;
+      return `joker-${card.color}`
     case "blank":
-      return "blank";
+      return "blank"
   }
 }
 
 export function cardLabel(card: CardFace): string {
   switch (card.kind) {
     case "numbered":
-      return `${card.rank} ${capitalize(card.suit)}`;
+      return `${card.rank} ${capitalize(card.suit)}`
     case "dragon":
-      return `${capitalize(card.dragon)} Dragon`;
+      return `${capitalize(card.dragon)} Dragon`
     case "wind":
-      return `${capitalize(card.wind)} Wind`;
+      return `${capitalize(card.wind)} Wind`
     case "joker":
-      return `${capitalize(card.color)} Joker`;
+      return `${capitalize(card.color)} Joker`
     case "blank":
-      return "Blank";
+      return "Blank"
   }
 }
 
 export function jokerCanRepresent(joker: CardFace, target: CardFace): boolean {
-  if (joker.kind !== "joker" || target.kind === "joker" || target.kind === "blank") return false;
-  const color = joker.color;
-  if (target.kind === "numbered") {
-    return (
-      (color === "green" && target.suit === "bamboo") ||
-      (color === "blue" && target.suit === "dots") ||
-      (color === "red" && target.suit === "characters")
-    );
+  if (joker.kind !== "joker" || target.kind === "joker" || target.kind === "blank") {
+    return false
   }
-  if (target.kind === "dragon") {
-    return (
-      (color === "green" && target.dragon === "green") ||
-      (color === "blue" && target.dragon === "white") ||
-      (color === "red" && target.dragon === "red")
-    );
-  }
-  return target.kind === "wind" && color === "black";
+
+  return joker.color === target.color
 }
 
-export function familyOf(card: CardFace): JokerColor | null {
-  if (card.kind === "joker") return card.color;
-  if (card.kind === "numbered") return suitFamily(card.suit);
-  if (card.kind === "dragon") {
-    return card.dragon === "green" ? "green" : card.dragon === "white" ? "blue" : "red";
-  }
-  if (card.kind === "wind") return "black";
-  return null;
+export function numberedFace(suit: Suit, rank: NumberedRank): CardFace {
+  return { kind: "numbered", suit, rank, color: suitColor(suit) }
 }
 
-export function suitFamily(suit: Suit): JokerColor {
-  return suit === "bamboo" ? "green" : suit === "dots" ? "blue" : "red";
+export function dragonFace(dragon: Dragon): CardFace {
+  const color = dragon === "green" ? "green" : dragon === "white" ? "blue" : "red"
+
+  return { kind: "dragon", dragon, color }
+}
+
+export function windFace(wind: Wind): CardFace {
+  return { kind: "wind", wind, color: "black" }
+}
+
+export function jokerFace(color: JokerColor): CardFace {
+  return { kind: "joker", color }
+}
+
+export function blankFace(): CardFace {
+  return { kind: "blank", color: null }
+}
+
+export function suitColor(suit: Suit): CardColor {
+  return suit === "bamboo" ? "green" : suit === "dots" ? "blue" : "red"
 }
 
 export function sameNaturalFace(left: CardFace, right: CardFace): boolean {
-  return left.kind !== "joker" && left.kind !== "blank" && faceKey(left) === faceKey(right);
+  return left.kind !== "joker" && left.kind !== "blank" && faceKey(left) === faceKey(right)
 }
 
 function capitalize(value: string): string {
-  return value[0]!.toUpperCase() + value.slice(1);
+  return value[0]!.toUpperCase() + value.slice(1)
 }

@@ -8,24 +8,22 @@
     "directory": "./dist/client",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*", "/agents/*"]
+    "run_worker_first": ["/api/*", "/agents/*"],
   },
   "durable_objects": {
     "bindings": [
       { "name": "GAME_SESSION", "class_name": "GameSession" },
-      { "name": "MAHJONG_PLAYER", "class_name": "MahjongPlayer" }
-    ]
+      { "name": "MAHJONG_PLAYER", "class_name": "MahjongPlayer" },
+    ],
   },
-  "migrations": [
-    { "tag": "v1", "new_sqlite_classes": ["GameSession", "MahjongPlayer"] }
-  ],
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GameSession", "MahjongPlayer"] }],
   "vars": {
     "OPENROUTER_MODEL": "x-ai/grok-4.6",
-    "APP_URL": "https://mahjong-poker-lab.example.workers.dev"
+    "APP_URL": "https://mahjong-poker-lab.example.workers.dev",
   },
   "observability": {
     "enabled": true,
     "logs": { "enabled": true, "head_sampling_rate": 1 },
-    "traces": { "enabled": true, "head_sampling_rate": 0.05 }
-  }
+    "traces": { "enabled": true, "head_sampling_rate": 0.05 },
+  },
 }

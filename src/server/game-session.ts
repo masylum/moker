@@ -1,131 +1,118 @@
-import { Agent } from "agents";
-import { GameEngine, type PlayerSetup } from "../game/engine";
-import { chooseBlankClaim, chooseHeuristicAction, chooseHeuristicDiscard } from "../game/heuristic";
-import type { BettingAction, DiscardPile, GameConfig, GameEvent, GameState, PublicGameState, SimulationResult } from "../game/types";
+import { Agent } from "agents"
+import { stepHeuristic } from "../game/automation"
+import { GameEngine, type PlayerSetup } from "../game/engine"
+import type {
+  BettingAction,
+  DiscardPile,
+  GameConfig,
+  GameEvent,
+  GameState,
+  PublicGameState,
+  SimulationResult,
+} from "../game/types"
 
 interface SessionState {
-  game: GameState | null;
+  game: GameState | null
 }
 
 interface StoredEventRow {
-  id: number;
-  type: string;
-  actor_id: string | null;
-  payload_json: string;
-  state_json: string;
-  hand_number: number;
-  state_version: number;
-  created_at: string;
+  id: number
+  type: string
+  actor_id: string | null
+  payload_json: string
+  state_json: string
+  hand_number: number
+  state_version: number
+  created_at: string
 }
 
 export class GameSession extends Agent<Env, SessionState> {
-  override initialState: SessionState = { game: null };
+  override initialState: SessionState = { game: null }
 
-  async newGame(players: PlayerSetup[], config: Partial<GameConfig> & Pick<GameConfig, "seed">): Promise<PublicGameState> {
-    this.ensureSchema();
-    this.sql`DELETE FROM game_events`;
-    const engine = GameEngine.create(players, config);
-    this.commit(engine);
-    return engine.publicView(players.find((player) => player.controller === "human")?.id);
+  async newGame(
+    players: PlayerSetup[],
+    config: Partial<GameConfig> & Pick<GameConfig, "seed">,
+  ): Promise<PublicGameState> {
+    this.ensureSchema()
+    this.sql`DELETE FROM game_events`
+    const engine = GameEngine.create(players, config)
+    this.commit(engine)
+    return engine.publicView(players.find((player) => player.controller === "human")?.id)
   }
 
   async getGame(viewerId?: string): Promise<PublicGameState> {
-    return this.engine().publicView(viewerId);
+    return this.engine().publicView(viewerId)
   }
 
   async getInternalState(): Promise<GameState> {
-    return structuredClone(this.requireGame());
+    return structuredClone(this.requireGame())
   }
 
   async applyBettingAction(playerId: string, action: BettingAction): Promise<PublicGameState> {
-    const engine = this.engine();
-    engine.act(playerId, action);
-    this.commit(engine);
-    return engine.publicView(playerId);
+    const engine = this.engine()
+    engine.act(playerId, action)
+    this.commit(engine)
+    return engine.publicView(playerId)
   }
 
-  async applyDiscard(playerId: string, discardCardId: string, discardPile: DiscardPile): Promise<PublicGameState> {
-    const engine = this.engine();
-    engine.discard(playerId, { discardCardId, discardPile });
-    this.commit(engine);
-    return engine.publicView(playerId);
+  async applyDiscard(
+    playerId: string,
+    discardCardId: string,
+    discardPile: DiscardPile,
+  ): Promise<PublicGameState> {
+    const engine = this.engine()
+    engine.discard(playerId, { discardCardId, discardPile })
+    this.commit(engine)
+    return engine.publicView(playerId)
   }
 
   async applyBlankChoice(playerId: string, claim: boolean): Promise<PublicGameState> {
-    const engine = this.engine();
-    if (claim) engine.claimBlank(playerId);
-    else engine.passBlank(playerId);
-    this.commit(engine);
-    return engine.publicView(playerId);
+    const engine = this.engine()
+    if (claim) engine.claimBlank(playerId)
+    else engine.passBlank(playerId)
+    this.commit(engine)
+    return engine.publicView(playerId)
   }
 
   async takeLoan(playerId: string): Promise<PublicGameState> {
-    const engine = this.engine();
-    engine.takeLoan(playerId);
-    this.commit(engine);
-    return engine.publicView(playerId);
+    const engine = this.engine()
+    engine.takeLoan(playerId)
+    this.commit(engine)
+    return engine.publicView(playerId)
   }
 
   async repayLoan(playerId: string): Promise<PublicGameState> {
-    const engine = this.engine();
-    engine.repayLoan(playerId);
-    this.commit(engine);
-    return engine.publicView(playerId);
+    const engine = this.engine()
+    engine.repayLoan(playerId)
+    this.commit(engine)
+    return engine.publicView(playerId)
   }
 
   async nextHand(viewerId?: string): Promise<PublicGameState> {
-    const engine = this.engine();
-    engine.startNextHand();
-    this.commit(engine);
-    return engine.publicView(viewerId);
+    const engine = this.engine()
+    engine.startNextHand()
+    this.commit(engine)
+    return engine.publicView(viewerId)
   }
 
   async stepHeuristic(): Promise<{ state: PublicGameState; rationale: string }> {
-    const engine = this.engine();
-    const state = engine.state;
-    let rationale: string;
-    let viewerId: string | undefined;
-    if (state.phase === "betting") {
-      const playerId = state.actingPlayerId;
-      if (!playerId) throw new Error("No acting player");
-      const decision = chooseHeuristicAction(state, playerId);
-      engine.act(playerId, decision.action);
-      rationale = decision.rationale;
-      viewerId = playerId;
-    } else if (state.phase === "discarding") {
-      const playerId = state.pendingDiscard?.playerId;
-      if (!playerId) throw new Error("No player is discarding");
-      const decision = chooseHeuristicDiscard(state, playerId);
-      engine.discard(playerId, decision);
-      rationale = decision.rationale;
-      viewerId = playerId;
-    } else if (state.phase === "blank-window") {
-      const playerId = state.blankWindow?.eligiblePlayerIds[0];
-      if (!playerId) throw new Error("No player has Blank priority");
-      const decision = chooseBlankClaim(state, playerId);
-      if (decision.claim) engine.claimBlank(playerId);
-      else engine.passBlank(playerId);
-      rationale = decision.rationale;
-      viewerId = playerId;
-    } else if (state.phase === "between-hands") {
-      engine.startNextHand();
-      rationale = "Started the next hand";
-    } else {
-      throw new Error(`Cannot take a heuristic step during ${state.phase}`);
-    }
-    this.commit(engine);
-    const humanId = engine.state.players.find((player) => player.controller === "human")?.id;
-    return { state: engine.publicView(humanId ?? viewerId), rationale };
+    const engine = this.engine()
+    const step = stepHeuristic(engine)
+    this.commit(engine)
+    const humanId = engine.state.players.find((player) => player.controller === "human")?.id
+    return { state: engine.publicView(humanId ?? step.playerId), rationale: step.rationale }
   }
 
   async getEvents(limit = 500): Promise<Array<GameEvent & { state: GameState }>> {
-    this.ensureSchema();
-    const bounded = Math.max(1, Math.min(2_000, Math.floor(limit)));
-    const rows = [...this.sql<StoredEventRow>`
+    this.ensureSchema()
+    const bounded = Math.max(1, Math.min(2_000, Math.floor(limit)))
+    const rows = [
+      ...this.sql<StoredEventRow>`
       SELECT id, type, actor_id, payload_json, state_json, hand_number, state_version, created_at
       FROM game_events ORDER BY id DESC LIMIT ${bounded}
-    `].reverse();
-    const game = this.requireGame();
+    `,
+    ].reverse()
+    const game = this.requireGame()
     return rows.map((row) => ({
       sequence: row.id,
       gameId: game.id,
@@ -136,41 +123,44 @@ export class GameSession extends Agent<Env, SessionState> {
       stateVersion: row.state_version,
       createdAt: row.created_at,
       state: JSON.parse(row.state_json) as GameState,
-    }));
+    }))
   }
 
   async storeSimulation(result: SimulationResult): Promise<void> {
-    this.ensureSchema();
-    this.sql`DELETE FROM game_events`;
-    const snapshot = JSON.stringify(result.state);
+    this.ensureSchema()
+    this.sql`DELETE FROM game_events`
+    const snapshot = JSON.stringify(result.state)
     for (const event of result.events) {
       this.sql`
         INSERT INTO game_events (type, actor_id, payload_json, state_json, hand_number, state_version, created_at)
         VALUES (${event.type}, ${event.actorId ?? null}, ${JSON.stringify(event.payload)}, ${snapshot}, ${event.handNumber}, ${event.stateVersion}, ${event.createdAt})
-      `;
+      `
     }
-    this.setState({ game: structuredClone(result.state) });
+    this.setState({ game: structuredClone(result.state) })
   }
 
   private engine(): GameEngine {
-    return GameEngine.restore(this.requireGame());
+    return GameEngine.restore(this.requireGame())
   }
 
   private requireGame(): GameState {
-    if (!this.state.game) throw new Error("Game session has not been created");
-    return this.state.game;
+    if (!this.state.game) {
+      throw new Error("Game session has not been created")
+    }
+
+    return this.state.game
   }
 
   private commit(engine: GameEngine): void {
-    this.ensureSchema();
-    const snapshot = JSON.stringify(engine.state);
+    this.ensureSchema()
+    const snapshot = JSON.stringify(engine.state)
     for (const event of engine.events) {
       this.sql`
         INSERT INTO game_events (type, actor_id, payload_json, state_json, hand_number, state_version, created_at)
         VALUES (${event.type}, ${event.actorId ?? null}, ${JSON.stringify(event.payload)}, ${snapshot}, ${event.handNumber}, ${event.stateVersion}, ${event.createdAt})
-      `;
+      `
     }
-    this.setState({ game: structuredClone(engine.state) });
+    this.setState({ game: structuredClone(engine.state) })
   }
 
   private ensureSchema(): void {
@@ -185,6 +175,6 @@ export class GameSession extends Agent<Env, SessionState> {
         state_version INTEGER NOT NULL,
         created_at TEXT NOT NULL
       )
-    `;
+    `
   }
 }
