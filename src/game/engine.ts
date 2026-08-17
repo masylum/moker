@@ -1,0 +1,510 @@
+import { createDeck } from "./cards";
+import { SeededRandom, hashSeed } from "./random";
+import { COMMUNITY_REVEALS, LOAN_VALUE, MAX_LOANS, ORBIT_VALUES, createConfig, maxHandsFor, orbitFor } from "./rules";
+import { scoreHand } from "./scoring";
+import type {
+  BettingAction,
+  Card,
+  DiscardPile,
+  GameConfig,
+  GameEvent,
+  GameState,
+  LegalAction,
+  PlayerController,
+  PlayerState,
+  PublicGameState,
+} from "./types";
+
+export interface PlayerSetup {
+  id?: string;
+  name: string;
+  controller: PlayerController;
+}
+
+export class GameEngine {
+  readonly events: GameEvent[];
+  state: GameState;
+  private random: SeededRandom;
+
+  private constructor(state: GameState, events: GameEvent[]) {
+    this.state = state;
+    this.events = events;
+    this.random = new SeededRandom(state.config.seed, state.rngState);
+  }
+
+  static create(players: PlayerSetup[], partial: Partial<GameConfig> & Pick<GameConfig, "seed">): GameEngine {
+    const config = createConfig({ ...partial, playerCount: players.length });
+    const random = new SeededRandom(config.seed);
+    const state: GameState = {
+      id: `game-${hashSeed(config.seed).toString(16)}`,
+      config,
+      rngState: random.state,
+      handNumber: 0,
+      maxHands: maxHandsFor(config.playerCount),
+      dealerIndex: 0,
+      orbit: 1,
+      orbitValue: 5,
+      phase: "between-hands",
+      street: 0,
+      players: players.map((player, index) => ({
+        id: player.id ?? `p${index + 1}`,
+        name: player.name,
+        controller: player.controller,
+        chips: config.startingChips,
+        blueSticks: 1,
+        loans: 0,
+        loansCharged: [],
+        privateCards: [],
+        folded: false,
+        riichi: false,
+        roundCommitted: 0,
+        handCommitted: 0,
+      })),
+      deck: [],
+      community: [],
+      discardA: [],
+      discardB: [],
+      removedCards: [],
+      pot: 0,
+      centerBlueSticks: config.playerCount,
+      currentWager: 0,
+      pendingPlayerIds: [],
+      actingPlayerId: null,
+      pendingDiscard: null,
+      blankWindow: null,
+      handWinners: [],
+      finalScores: null,
+      version: 0,
+    };
+    const engine = new GameEngine(state, []);
+    engine.emit("game-created", { config, players: players.map((player) => player.name) });
+    engine.startNextHand();
+    return engine;
+  }
+
+  static restore(state: GameState, events: GameEvent[] = []): GameEngine {
+    return new GameEngine(structuredClone(state), structuredClone(events));
+  }
+
+  startNextHand(): void {
+    this.assertPhase("between-hands");
+    if (this.state.handNumber >= this.state.maxHands) {
+      this.finishGame();
+      return;
+    }
+    this.state.handNumber += 1;
+    this.state.orbit = orbitFor(this.state.handNumber, this.state.config.playerCount);
+    this.state.orbitValue = ORBIT_VALUES[this.state.orbit - 1]!;
+    this.state.street = 0;
+    this.state.phase = "betting";
+    this.state.pot = 0;
+    this.state.community = [];
+    this.state.discardA = [];
+    this.state.discardB = [];
+    this.state.removedCards = [];
+    this.state.handWinners = [];
+    this.state.blankWindow = null;
+    this.state.pendingDiscard = null;
+    this.state.currentWager = 0;
+    this.state.deck = this.random.shuffle(createDeck());
+
+    for (const player of this.state.players) {
+      player.privateCards = [];
+      player.folded = false;
+      player.riichi = false;
+      player.roundCommitted = 0;
+      player.handCommitted = 0;
+      player.score = undefined;
+      player.loansCharged = player.loansCharged.map((charges) => charges + 1);
+      const charge = this.state.orbitValue * (player.blueSticks + player.loans);
+      this.payToPot(player, charge);
+    }
+
+    for (let cardIndex = 0; cardIndex < 4; cardIndex += 1) {
+      for (let offset = 1; offset <= this.state.players.length; offset += 1) {
+        this.playerAt(this.state.dealerIndex + offset).privateCards.push(this.drawDeck());
+      }
+    }
+    this.state.rngState = this.random.state;
+    this.emit("hand-started", { dealerId: this.playerAt(this.state.dealerIndex).id, orbit: this.state.orbit, charge: this.state.orbitValue });
+    this.openStreet(1);
+  }
+
+  legalActions(playerId: string): LegalAction[] {
+    if (this.state.phase !== "betting" || this.state.actingPlayerId !== playerId || this.state.blankWindow) return [];
+    const player = this.getPlayer(playerId);
+    if (player.folded) return [];
+    const toCall = this.state.currentWager - player.roundCommitted;
+    const actions: LegalAction[] = [{ type: "fold" }];
+    if (toCall === 0) {
+      actions.push({ type: "check" });
+      if (player.chips > 0) actions.push({ type: "bet", minimum: 1, maximum: player.roundCommitted + player.chips, canRiichi: this.canDeclareRiichi(player) });
+    } else if (player.chips >= toCall) {
+      actions.push({ type: "call", callAmount: toCall });
+      if (player.chips > toCall) {
+        actions.push({ type: "raise", minimum: this.state.currentWager + 1, maximum: player.roundCommitted + player.chips, canRiichi: this.canDeclareRiichi(player) });
+      }
+    }
+    return actions;
+  }
+
+  act(playerId: string, action: BettingAction): void {
+    if (this.state.phase !== "betting") throw new Error("Betting action is not available now");
+    if (this.state.blankWindow) throw new Error("Resolve the Blank exchange window first");
+    if (this.state.actingPlayerId !== playerId) throw new Error(`It is not ${playerId}'s turn`);
+    const player = this.getPlayer(playerId);
+    const legal = this.legalActions(playerId).find((entry) => entry.type === action.type);
+    if (!legal) throw new Error(`Illegal ${action.type} action`);
+
+    let aggressive = false;
+    switch (action.type) {
+      case "check":
+        if (!player.riichi) {
+          this.beginDraw(player, action.drawSource);
+          this.emit("betting-action", { action }, playerId);
+          return;
+        }
+        break;
+      case "call":
+        this.payToPot(player, this.state.currentWager - player.roundCommitted, true);
+        if (!player.riichi) {
+          this.beginDraw(player, action.drawSource);
+          this.emit("betting-action", { action }, playerId);
+          return;
+        }
+        break;
+      case "bet":
+      case "raise": {
+        const minimum = legal.minimum ?? 1;
+        const maximum = legal.maximum ?? player.roundCommitted + player.chips;
+        if (!Number.isInteger(action.amount) || action.amount < minimum || action.amount > maximum) {
+          throw new RangeError(`${action.type} must be between ${minimum} and ${maximum}`);
+        }
+        if (action.riichi && !legal.canRiichi) throw new Error("Riichi is not available");
+        this.payToPot(player, action.amount - player.roundCommitted, true);
+        this.state.currentWager = action.amount;
+        this.returnBlueStick(player);
+        if (action.riichi) player.riichi = true;
+        aggressive = true;
+        break;
+      }
+      case "fold":
+        player.folded = true;
+        this.state.removedCards.push(...player.privateCards);
+        player.privateCards = [];
+        this.gainBlueStick(player);
+        break;
+    }
+
+    this.emit("betting-action", { action }, playerId);
+    if (this.activePlayers().length === 1) {
+      this.awardUncontested(this.activePlayers()[0]!);
+      return;
+    }
+    this.completeTurn(playerId, aggressive);
+  }
+
+  discard(playerId: string, decision: { discardCardId: string; discardPile: DiscardPile }): void {
+    const pending = this.state.pendingDiscard;
+    if (this.state.phase !== "discarding" || !pending || pending.playerId !== playerId) {
+      throw new Error("This player is not choosing a discard");
+    }
+    const player = this.getPlayer(playerId);
+    const discardIndex = player.privateCards.findIndex((card) => card.id === decision.discardCardId);
+    if (discardIndex < 0) throw new Error("Discard card is not in the private hand");
+    const target = decision.discardPile === "a" ? this.state.discardA : this.state.discardB;
+    const other = decision.discardPile === "a" ? this.state.discardB : this.state.discardA;
+    if (other.length === 0 && target.length > 0) throw new Error("An empty discard pile must be filled first");
+    const [discarded] = player.privateCards.splice(discardIndex, 1);
+    target.push(discarded!);
+    this.state.pendingDiscard = null;
+    this.state.phase = "betting";
+    this.emit("draw-discard", { source: pending.source, drawnCardId: pending.drawnCardId, discardedCardId: discarded!.id, pile: decision.discardPile }, player.id);
+
+    const discarderIndex = this.state.players.findIndex((candidate) => candidate.id === player.id);
+    const eligible = this.orderedAfter(discarderIndex)
+      .filter((candidate) => !candidate.folded && !candidate.riichi && candidate.privateCards.some((card) => card.kind === "blank"))
+      .map((candidate) => candidate.id);
+    if (eligible.length > 0) {
+      this.state.phase = "blank-window";
+      this.state.blankWindow = {
+        discarderId: player.id,
+        pile: decision.discardPile,
+        cardId: discarded!.id,
+        eligiblePlayerIds: eligible,
+        resumeTurnPlayerId: null,
+      };
+    }
+    this.completeTurn(playerId, false);
+  }
+
+  passBlank(playerId: string): void {
+    const window = this.requireBlankPriority(playerId);
+    window.eligiblePlayerIds.shift();
+    this.emit("blank-passed", { cardId: window.cardId }, playerId);
+    if (window.eligiblePlayerIds.length === 0) this.resumeAfterBlankWindow();
+  }
+
+  claimBlank(playerId: string): void {
+    const window = this.requireBlankPriority(playerId);
+    const player = this.getPlayer(playerId);
+    const blankIndex = player.privateCards.findIndex((card) => card.kind === "blank");
+    if (blankIndex < 0 || player.riichi) throw new Error("Player cannot exchange a Blank");
+    const pile = window.pile === "a" ? this.state.discardA : this.state.discardB;
+    const claimed = pile.at(-1);
+    if (!claimed || claimed.id !== window.cardId) throw new Error("The offered discard is no longer visible");
+    pile.pop();
+    const [blank] = player.privateCards.splice(blankIndex, 1, claimed);
+    this.state.removedCards.push(blank!);
+    this.emit("blank-claimed", { cardId: claimed.id, pile: window.pile }, playerId);
+    this.resumeAfterBlankWindow();
+  }
+
+  takeLoan(playerId: string): void {
+    if (this.state.phase === "finished") throw new Error("The game is over");
+    const player = this.getPlayer(playerId);
+    if (player.loans >= MAX_LOANS) throw new Error("A player may hold at most two Loans");
+    player.loans += 1;
+    player.loansCharged.push(0);
+    player.chips += LOAN_VALUE;
+    this.emit("loan-taken", { amount: LOAN_VALUE, loans: player.loans }, playerId);
+  }
+
+  repayLoan(playerId: string): void {
+    const player = this.getPlayer(playerId);
+    const eligibleIndex = player.loansCharged.findIndex((charges) => charges >= 1);
+    if (eligibleIndex < 0) throw new Error("A Loan must pay interest at least once before repayment");
+    if (player.chips < LOAN_VALUE) throw new Error("Not enough chips to repay a Loan");
+    player.chips -= LOAN_VALUE;
+    player.loans -= 1;
+    player.loansCharged.splice(eligibleIndex, 1);
+    this.emit("loan-repaid", { amount: LOAN_VALUE, loans: player.loans }, playerId);
+  }
+
+  publicView(viewerId?: string): PublicGameState {
+    return {
+      ...structuredClone(this.state),
+      deck: { count: this.state.deck.length },
+      players: this.state.players.map((player) => ({
+        ...structuredClone(player),
+        privateCards: player.id === viewerId || this.state.phase === "showdown" || this.state.phase === "between-hands" || this.state.phase === "finished"
+          ? structuredClone(player.privateCards)
+          : { count: player.privateCards.length },
+      })),
+    };
+  }
+
+  private openStreet(street: 1 | 2 | 3): void {
+    this.state.street = street;
+    const revealCount = COMMUNITY_REVEALS[street - 1]!;
+    for (let index = 0; index < revealCount; index += 1) this.state.community.push(this.drawDeck());
+    this.state.currentWager = 0;
+    for (const player of this.state.players) player.roundCommitted = 0;
+    const active = this.orderedActiveAfter(this.state.dealerIndex);
+    this.state.pendingPlayerIds = active.map((player) => player.id);
+    this.state.actingPlayerId = this.state.pendingPlayerIds[0] ?? null;
+    this.emit("street-opened", { street, revealed: this.state.community.slice(-revealCount).map((card) => card.id) });
+  }
+
+  private completeTurn(playerId: string, aggressive: boolean): void {
+    if (aggressive) {
+      const actorIndex = this.state.players.findIndex((player) => player.id === playerId);
+      this.state.pendingPlayerIds = this.orderedActiveAfter(actorIndex).filter((player) => player.id !== playerId).map((player) => player.id);
+    } else {
+      this.state.pendingPlayerIds = this.state.pendingPlayerIds.filter((id) => id !== playerId && !this.getPlayer(id).folded);
+    }
+    const nextPlayerId = this.state.pendingPlayerIds[0] ?? null;
+    if (this.state.blankWindow) {
+      this.state.blankWindow.resumeTurnPlayerId = nextPlayerId;
+      this.state.actingPlayerId = null;
+      return;
+    }
+    this.continueRound(nextPlayerId);
+  }
+
+  private continueRound(nextPlayerId: string | null): void {
+    if (nextPlayerId) {
+      this.state.actingPlayerId = nextPlayerId;
+      return;
+    }
+    this.state.actingPlayerId = null;
+    if (this.state.street < 3) this.openStreet((this.state.street + 1) as 2 | 3);
+    else this.resolveShowdown();
+  }
+
+  private beginDraw(player: PlayerState, source: "deck" | "discard-a" | "discard-b"): void {
+    if (player.riichi) throw new Error("Riichi locks the private hand");
+    let drawn: Card | undefined;
+    if (source === "deck") drawn = this.state.deck.pop();
+    if (source === "discard-a") drawn = this.state.discardA.pop();
+    if (source === "discard-b") drawn = this.state.discardB.pop();
+    if (!drawn) throw new Error(`Cannot draw from empty ${source}`);
+    player.privateCards.push(drawn);
+    this.state.pendingDiscard = { playerId: player.id, drawnCardId: drawn.id, source };
+    this.state.phase = "discarding";
+    this.state.actingPlayerId = player.id;
+    this.emit("card-drawn", { source, cardId: drawn.id }, player.id);
+  }
+
+  private resumeAfterBlankWindow(): void {
+    const resume = this.state.blankWindow?.resumeTurnPlayerId ?? null;
+    this.state.blankWindow = null;
+    this.state.phase = "betting";
+    this.continueRound(resume);
+  }
+
+  private resolveShowdown(): void {
+    this.state.phase = "showdown";
+    const contenders = this.activePlayers();
+    for (const player of contenders) player.score = scoreHand([...player.privateCards, ...this.state.community], this.state.config.activeSpecialHands);
+    const highScore = Math.max(...contenders.map((player) => player.score?.total ?? 0));
+    const winners = contenders.filter((player) => player.score?.total === highScore);
+    this.state.handWinners = winners.map((player) => player.id);
+    this.splitPot(winners);
+    for (const winner of winners) if (winner.riichi) this.resolveRiichiWin(winner, contenders);
+    this.emit("showdown", {
+      winners: this.state.handWinners,
+      scores: Object.fromEntries(contenders.map((player) => [player.id, player.score?.total ?? 0])),
+    });
+    this.endHand();
+  }
+
+  private awardUncontested(winner: PlayerState): void {
+    winner.chips += this.state.pot;
+    this.state.handWinners = [winner.id];
+    this.emit("uncontested-win", { winnerId: winner.id, pot: this.state.pot });
+    this.state.pot = 0;
+    this.endHand();
+  }
+
+  private endHand(): void {
+    this.state.phase = "between-hands";
+    this.state.actingPlayerId = null;
+    this.state.pendingPlayerIds = [];
+    this.state.dealerIndex = (this.state.dealerIndex + 1) % this.state.players.length;
+    if (this.state.handNumber >= this.state.maxHands) this.finishGame();
+  }
+
+  private finishGame(): void {
+    if (this.state.phase === "finished") return;
+    for (const player of this.state.players) {
+      const charge = 15 * (player.blueSticks + player.loans);
+      player.chips -= charge;
+    }
+    this.state.finalScores = Object.fromEntries(this.state.players.map((player) => [player.id, player.chips - LOAN_VALUE * player.loans]));
+    this.state.phase = "finished";
+    this.emit("game-finished", { finalScores: this.state.finalScores });
+  }
+
+  private splitPot(winners: PlayerState[]): void {
+    const share = Math.floor(this.state.pot / winners.length);
+    let remainder = this.state.pot - share * winners.length;
+    const ordered = this.orderedAfter(this.state.dealerIndex).filter((player) => winners.includes(player));
+    for (const winner of winners) winner.chips += share;
+    for (const winner of ordered) {
+      if (remainder <= 0) break;
+      winner.chips += 1;
+      remainder -= 1;
+    }
+    this.state.pot = 0;
+  }
+
+  private resolveRiichiWin(winner: PlayerState, contenders: PlayerState[]): void {
+    this.state.centerBlueSticks += winner.blueSticks;
+    winner.blueSticks = 0;
+    const winnerIndex = this.state.players.findIndex((player) => player.id === winner.id);
+    for (const opponent of this.orderedAfter(winnerIndex)) {
+      if (opponent.id === winner.id || !contenders.includes(opponent) || this.state.centerBlueSticks === 0) continue;
+      opponent.blueSticks += 1;
+      this.state.centerBlueSticks -= 1;
+    }
+  }
+
+  private returnBlueStick(player: PlayerState): void {
+    if (player.blueSticks > 0) {
+      player.blueSticks -= 1;
+      this.state.centerBlueSticks += 1;
+    }
+  }
+
+  private gainBlueStick(player: PlayerState): void {
+    if (this.state.centerBlueSticks > 0) {
+      this.state.centerBlueSticks -= 1;
+      player.blueSticks += 1;
+      return;
+    }
+    const playerIndex = this.state.players.findIndex((candidate) => candidate.id === player.id);
+    const donor = this.orderedAfter(playerIndex).find((candidate) => candidate.id !== player.id && candidate.blueSticks > 0);
+    if (donor) {
+      donor.blueSticks -= 1;
+      player.blueSticks += 1;
+    }
+  }
+
+  private payToPot(player: PlayerState, amount: number, round = false): void {
+    if (!Number.isInteger(amount) || amount < 0) throw new RangeError("Chip payment must be a non-negative integer");
+    if (player.chips < amount) throw new Error(`${player.name} needs a Loan before paying ${amount}`);
+    player.chips -= amount;
+    player.handCommitted += amount;
+    if (round) player.roundCommitted += amount;
+    this.state.pot += amount;
+  }
+
+  private canDeclareRiichi(player: PlayerState): boolean {
+    return !player.riichi && this.state.street < 3 && player.privateCards.length === 4;
+  }
+
+  private requireBlankPriority(playerId: string) {
+    const window = this.state.blankWindow;
+    if (this.state.phase !== "blank-window" || !window) throw new Error("There is no Blank exchange window");
+    if (window.eligiblePlayerIds[0] !== playerId) throw new Error("Another player has Blank priority");
+    return window;
+  }
+
+  private activePlayers(): PlayerState[] {
+    return this.state.players.filter((player) => !player.folded);
+  }
+
+  private orderedActiveAfter(index: number): PlayerState[] {
+    return this.orderedAfter(index).filter((player) => !player.folded);
+  }
+
+  private orderedAfter(index: number): PlayerState[] {
+    return Array.from({ length: this.state.players.length }, (_, offset) => this.playerAt(index + offset + 1));
+  }
+
+  private playerAt(index: number): PlayerState {
+    return this.state.players[((index % this.state.players.length) + this.state.players.length) % this.state.players.length]!;
+  }
+
+  private getPlayer(playerId: string): PlayerState {
+    const player = this.state.players.find((candidate) => candidate.id === playerId);
+    if (!player) throw new Error(`Unknown player ${playerId}`);
+    return player;
+  }
+
+  private drawDeck(): Card {
+    const card = this.state.deck.pop();
+    if (!card) throw new Error("The deck is empty");
+    return card;
+  }
+
+  private emit<T>(type: string, payload: T, actorId?: string): void {
+    this.state.rngState = this.random.state;
+    this.state.version += 1;
+    this.events.push({
+      sequence: this.events.length + 1,
+      gameId: this.state.id,
+      handNumber: this.state.handNumber,
+      type,
+      actorId,
+      payload,
+      stateVersion: this.state.version,
+      createdAt: new Date(this.events.length).toISOString(),
+    });
+  }
+
+  private assertPhase(phase: GameState["phase"]): void {
+    if (this.state.phase !== phase) throw new Error(`Expected ${phase}, got ${this.state.phase}`);
+  }
+}
