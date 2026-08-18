@@ -129,7 +129,7 @@ async function playBettingTurn(game: Stud7Engine): Promise<void> {
   const action = legal[selected]!
 
   if (action.type === "check" || action.type === "call") {
-    const draw = player.riichi ? { drawSource: "deck" as const } : await chooseDraw(game)
+    const draw = await chooseDraw(game)
     game.act("p1", { type: action.type, ...draw })
 
     return
@@ -177,7 +177,7 @@ async function chooseDraw(game: Stud7Engine): Promise<DrawChoice> {
 
   const player = game.state.players.find((candidate) => candidate.id === "p1")!
 
-  for (const owned of player.cards.filter(({ card }) => card.kind === "blank")) {
+  for (const owned of player.cards.filter(({ card }) => !player.riichi && card.kind === "blank")) {
     for (const [pile, lane] of [
       ["a", game.state.discardA],
       ["b", game.state.discardB],

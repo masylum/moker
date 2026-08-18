@@ -13,7 +13,13 @@ import type {
 
 export type StudCardVisibility = "public" | "private"
 export type StudStreet = 0 | 1 | 2 | 3 | 4 | 5
+type StudRiichiDrawMode = "skip" | "discard-drawn"
 type StudPhase = "between-hands" | "discarding" | "betting" | "showdown" | "finished"
+
+export interface Stud7Config extends GameConfig {
+  foldBlueSticks: 1 | 2
+  riichiDrawMode: StudRiichiDrawMode
+}
 
 export interface StudCard {
   card: Card
@@ -75,7 +81,7 @@ export interface StudHandResult {
 export interface StudGameState {
   id: string
   variant: "stud7"
-  config: GameConfig
+  config: Stud7Config
   rngState: number
   handNumber: number
   maxHands: number

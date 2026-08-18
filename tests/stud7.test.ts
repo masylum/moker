@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { blankFace } from "../src/game/cards"
+import { analyzeStud7Balance } from "../src/stud7/balance"
 import { Stud7Engine } from "../src/stud7/engine"
 import { chooseStud7Action } from "../src/stud7/heuristic"
 import { simulateStud7 } from "../src/stud7/simulation"
@@ -171,6 +172,53 @@ describe("Stud7 prototype", () => {
     )
   })
 
+  it("awards two blue sticks for folding under the default Stud7 rules", () => {
+    const engine = Stud7Engine.create(players, { seed: "stud7-fold-sticks" })
+    const actor = engine.state.actingPlayerId!
+    const player = engine.state.players.find((candidate) => candidate.id === actor)!
+    const totalBefore = totalBlueSticks(engine)
+    const playerBefore = player.blueSticks
+    engine.act(actor, { type: "fold" })
+
+    expect(player.blueSticks).toBe(playerBefore + 2)
+    expect(totalBlueSticks(engine)).toBe(totalBefore)
+  })
+
+  it("draws after Riichi but forces the drawn card to be discarded", () => {
+    const engine = Stud7Engine.create(players, { seed: "stud7-locked-riichi" })
+    const riichiPlayerId = engine.state.actingPlayerId!
+    engine.act(riichiPlayerId, { type: "bet", amount: 5, riichi: true })
+    finishCallingRound(engine)
+    expect(engine.state.street).toBe(2)
+    expect(engine.state.actingPlayerId).toBe(riichiPlayerId)
+    const player = engine.state.players.find(({ id }) => id === riichiPlayerId)!
+    const lockedCardIds = player.cards.map(({ card }) => card.id)
+    engine.act(riichiPlayerId, { type: "check", drawSource: "deck" })
+    const drawnId = engine.state.pendingDiscard!.drawnCard.id
+
+    expect(() =>
+      engine.discard(riichiPlayerId, { discardCardId: lockedCardIds[0]!, discardPile: "a" }),
+    ).toThrow(/must discard the drawn card/)
+
+    engine.discard(riichiPlayerId, { discardCardId: drawnId, discardPile: "a" })
+    expect(player.cards.map(({ card }) => card.id)).toEqual(lockedCardIds)
+  })
+
+  it("can reproduce the original Riichi skip behavior for balance comparisons", () => {
+    const engine = Stud7Engine.create(players, {
+      seed: "stud7-baseline-riichi",
+      foldBlueSticks: 1,
+      riichiDrawMode: "skip",
+    })
+    const actor = engine.state.actingPlayerId!
+    const player = engine.state.players.find(({ id }) => id === actor)!
+    player.riichi = true
+    engine.act(actor, { type: "check", drawSource: "deck" })
+
+    expect(engine.state.phase).toBe("betting")
+    expect(engine.state.pendingDiscard).toBeNull()
+  })
+
   it("produces legal deterministic heuristic decisions", () => {
     const engine = Stud7Engine.create(players, { seed: "stud7-heuristic", heuristicSamples: 2 })
     const actor = engine.state.actingPlayerId!
@@ -210,6 +258,28 @@ describe("Stud7 prototype", () => {
       second.events.map((event) => [event.type, event.actorId, event.payload]),
     )
   })
+
+  it("collects deterministic balance statistics without retaining decisions", () => {
+    const result = analyzeStud7Balance({
+      games: 1,
+      profile: "test-baseline",
+      seed: "stud7-balance-test",
+      seedPrefix: "stud7-balance-test",
+      playerCount: 2,
+      heuristicSamples: 1,
+      fastMode: true,
+      foldBlueSticks: 1,
+      riichiDrawMode: "skip",
+    })
+
+    expect(result.gamesCompleted).toBe(1)
+    expect(result.hands).toBe(12)
+    expect(result.initialPots.count).toBe(12)
+    expect(
+      Object.values(result.actions).reduce((total, count) => total + count, 0),
+    ).toBeGreaterThan(0)
+    expect(result.tiles.blank).toMatchObject({ label: "Blank" })
+  })
 })
 
 function finishCheckingRound(engine: Stud7Engine): void {
@@ -222,6 +292,30 @@ function finishCheckingRound(engine: Stud7Engine): void {
     const discardPile = engine.state.discardA.length === 0 ? "a" : "b"
     engine.discard(actor, { discardCardId: drawnId, discardPile })
   }
+}
+
+function finishCallingRound(engine: Stud7Engine): void {
+  const street = engine.state.street
+
+  while (engine.state.phase === "betting" && engine.state.street === street) {
+    const actor = engine.state.actingPlayerId!
+    const player = engine.state.players.find(({ id }) => id === actor)!
+    const type = engine.state.currentWager === player.roundCommitted ? "check" : "call"
+    engine.act(actor, { type, drawSource: "deck" })
+
+    if (engine.state.phase === "discarding") {
+      const drawnId = engine.state.pendingDiscard!.drawnCard.id
+      const discardPile = engine.state.discardA.length === 0 ? "a" : "b"
+      engine.discard(actor, { discardCardId: drawnId, discardPile })
+    }
+  }
+}
+
+function totalBlueSticks(engine: Stud7Engine): number {
+  return (
+    engine.state.centerBlueSticks +
+    engine.state.players.reduce((total, player) => total + player.blueSticks, 0)
+  )
 }
 
 function expectCardCounts(

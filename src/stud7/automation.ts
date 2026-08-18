@@ -11,7 +11,10 @@ export interface StudAutomatedStep {
   drawDiscard?: StudDrawDiscardRecord
 }
 
-export function stepStud7Heuristic(engine: Stud7Engine): StudAutomatedStep {
+export function stepStud7Heuristic(
+  engine: Stud7Engine,
+  options: { fastMode?: boolean } = {},
+): StudAutomatedStep {
   const state = engine.state
 
   if (state.phase === "betting") {
@@ -21,11 +24,21 @@ export function stepStud7Heuristic(engine: Stud7Engine): StudAutomatedStep {
       throw new Error("No acting Stud7 player")
     }
 
-    const decision = chooseStud7Action(state, playerId)
+    const decision = chooseStud7Action(
+      state,
+      playerId,
+      state.config.heuristicSamples,
+      options.fastMode,
+    )
     engine.act(playerId, decision.action)
 
     if (engine.state.phase === "discarding" && engine.state.pendingDiscard?.playerId === playerId) {
-      const discard = chooseStud7Discard(engine.state, playerId)
+      const discard = chooseStud7Discard(
+        engine.state,
+        playerId,
+        engine.state.config.heuristicSamples,
+        options.fastMode,
+      )
       engine.discard(playerId, discard)
 
       return {
@@ -47,7 +60,12 @@ export function stepStud7Heuristic(engine: Stud7Engine): StudAutomatedStep {
       throw new Error("No Stud7 player is discarding")
     }
 
-    const discard = chooseStud7Discard(state, playerId)
+    const discard = chooseStud7Discard(
+      state,
+      playerId,
+      state.config.heuristicSamples,
+      options.fastMode,
+    )
     engine.discard(playerId, discard)
 
     return {

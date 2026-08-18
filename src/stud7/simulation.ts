@@ -1,14 +1,19 @@
 import { Stud7Engine, type StudPlayerSetup } from "./engine"
 import { stepStud7Heuristic } from "./automation"
-import type { GameConfig, StudHeuristicDecision, StudSimulationResult } from "./types"
+import type { Stud7Config, StudHeuristicDecision, StudSimulationResult } from "./types"
 
-export interface StudSimulationOptions extends Partial<GameConfig> {
+export interface StudSimulationOptions extends Partial<Stud7Config> {
   seed: string
   playerCount?: number
   players?: StudPlayerSetup[]
+  collectDecisions?: boolean
+  fastMode?: boolean
 }
 
-export function simulateStud7(options: StudSimulationOptions): StudSimulationResult {
+export function playStud7(options: StudSimulationOptions): {
+  engine: Stud7Engine
+  decisions: StudHeuristicDecision[]
+} {
   const playerCount = options.players?.length ?? options.playerCount ?? 4
   const players =
     options.players ??
@@ -21,6 +26,8 @@ export function simulateStud7(options: StudSimulationOptions): StudSimulationRes
     seed: options.seed,
     heuristicSamples: options.heuristicSamples ?? 6,
     startingChips: options.startingChips,
+    foldBlueSticks: options.foldBlueSticks,
+    riichiDrawMode: options.riichiDrawMode,
   })
   const decisions: StudHeuristicDecision[] = []
   let safety = 0
@@ -32,12 +39,18 @@ export function simulateStud7(options: StudSimulationOptions): StudSimulationRes
       throw new Error("Stud7 simulation exceeded the action safety limit")
     }
 
-    const step = stepStud7Heuristic(engine)
+    const step = stepStud7Heuristic(engine, { fastMode: options.fastMode })
 
-    if (step.decision) {
+    if (options.collectDecisions !== false && step.decision) {
       decisions.push(step.decision)
     }
   }
+
+  return { engine, decisions }
+}
+
+export function simulateStud7(options: StudSimulationOptions): StudSimulationResult {
+  const { engine, decisions } = playStud7(options)
 
   return {
     seed: options.seed,

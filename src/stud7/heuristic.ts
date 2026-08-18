@@ -31,6 +31,7 @@ export function chooseStud7Action(
   state: StudGameState,
   playerId: string,
   samples = state.config.heuristicSamples,
+  fastMode = false,
 ): StudHeuristicDecision {
   if (state.phase !== "betting" || state.actingPlayerId !== playerId) {
     throw new Error("Stud7 heuristic player is not acting")
@@ -40,7 +41,12 @@ export function chooseStud7Action(
   const random = new SeededRandom(
     `${state.config.seed}:stud7:h${state.handNumber}:s${state.street}:v${state.version}:${playerId}`,
   )
-  const drawPlan = chooseDrawPlan(state, player, random.fork("draw"), samples)
+  const drawPlan =
+    player.riichi && state.config.riichiDrawMode === "discard-drawn"
+      ? { source: "deck" as const, value: currentRank(player.cards) }
+      : fastMode
+        ? { source: "deck" as const, value: currentRank(player.cards) }
+        : chooseDrawPlan(state, player, random.fork("draw"), samples)
   const math = analyzeStud7Math(state, playerId, samples)
   const toCall = state.currentWager - player.roundCommitted
   const evaluations: StudDecisionEvaluation[] = []
@@ -71,7 +77,7 @@ export function chooseStud7Action(
     action: { type: "fold" },
     showdownEquity: 0,
     expectedRank: 0,
-    utility: -player.blueSticks * nextChargesValue(state) * 0.03,
+    utility: -(player.blueSticks + state.config.foldBlueSticks) * nextChargesValue(state) * 0.03,
   })
 
   if (toCall === 0) {
@@ -142,6 +148,7 @@ export function chooseStud7Discard(
   state: StudGameState,
   playerId: string,
   samples = state.config.heuristicSamples,
+  fastMode = false,
 ): StudDiscardChoice {
   const pending = state.pendingDiscard
 
@@ -151,6 +158,49 @@ export function chooseStud7Discard(
 
   const player = getPlayer(state, playerId)
   const random = new SeededRandom(`${state.config.seed}:stud7:discard:${state.version}:${playerId}`)
+
+  if (player.riichi && state.config.riichiDrawMode === "discard-drawn") {
+    return {
+      discardCardId: pending.drawnCard.id,
+      discardPile: chooseDiscardPile(state, pending.drawnCard),
+      expectedRank: currentRank(player.cards),
+      rationale: "Riichi hand remains locked by discarding the draw",
+    }
+  }
+
+  if (fastMode) {
+    const candidates = [...player.cards.map(({ card }) => card.id), pending.drawnCard.id].map(
+      (discardCardId) => {
+        const resulting = manufacturedCards(
+          player.cards,
+          pending.drawnCard,
+          pending.source,
+          discardCardId,
+        )
+
+        return { discardCardId, expectedRank: currentRank(resulting), tieBreaker: random.next() }
+      },
+    )
+    candidates.sort(
+      (left, right) =>
+        right.expectedRank - left.expectedRank ||
+        right.tieBreaker - left.tieBreaker ||
+        left.discardCardId.localeCompare(right.discardCardId),
+    )
+    const best = candidates[0]!
+    const discarded =
+      best.discardCardId === pending.drawnCard.id
+        ? pending.drawnCard
+        : player.cards.find(({ card }) => card.id === best.discardCardId)!.card
+
+    return {
+      discardCardId: best.discardCardId,
+      discardPile: chooseDiscardPile(state, discarded),
+      expectedRank: best.expectedRank,
+      rationale: `Fast balance evaluation keeps rank ${best.expectedRank}`,
+    }
+  }
+
   const candidates = [...player.cards.map(({ card }) => card.id), pending.drawnCard.id].map(
     (discardCardId) => {
       const resulting = manufacturedCards(

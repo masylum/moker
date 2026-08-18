@@ -33,7 +33,9 @@ Fishing may therefore leave a player with more than four public cards and fewer 
 
 A deck draw remains visible only to its acting player until the discard is chosen. A Fished card is already public and is visible immediately. Public views omit the private draw/discard history, deck order, folded cards, and opponents' hole-card identities.
 
-Riichi may accompany a Bet or Raise on streets 1 through 4, but not street 5. It stops voluntary Draw & Discard actions; cards scheduled for later streets are still dealt normally.
+Riichi may accompany a Bet or Raise on streets 1 through 4, but not street 5. It locks the cards currently owned by the player. Check and Call still perform Draw & Discard, but the newly drawn card must be discarded, leaving the locked hand unchanged. Cards scheduled for later streets are still dealt normally.
+
+A Fold gains two blue sticks under the current Stud7 rules. The engine retains named experiment profiles for the former one-stick Fold and skipped Riichi draw behavior so balance runs remain reproducible.
 
 ## Running independently
 

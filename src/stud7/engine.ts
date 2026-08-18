@@ -14,9 +14,9 @@ import { STUD7_FINAL_STREET, STUD7_STREET_DEALS, createStud7Config } from "./rul
 import type {
   BettingAction,
   BlankExchange,
-  GameConfig,
   LegalAction,
   PublicStudGameState,
+  Stud7Config,
   StudCardVisibility,
   StudGameState,
   StudPlayerState,
@@ -42,7 +42,7 @@ export class Stud7Engine {
 
   static create(
     players: StudPlayerSetup[],
-    partial: Partial<GameConfig> & Pick<GameConfig, "seed">,
+    partial: Partial<Stud7Config> & Pick<Stud7Config, "seed">,
   ): Stud7Engine {
     const config = createStud7Config({ ...partial, playerCount: players.length })
     const random = new SeededRandom(config.seed)
@@ -140,6 +140,7 @@ export class Stud7Engine {
       dealerId: this.playerAt(this.state.dealerIndex).id,
       orbit: this.state.orbit,
       charge: this.state.orbitValue,
+      initialPot: this.state.pot,
     })
     this.openStreet(1)
   }
@@ -207,15 +208,19 @@ export class Stud7Engine {
 
     switch (action.type) {
       case "check":
-        if (!player.riichi) {
-          if (action.blankExchange) {
-            this.exchangeBlank(player, action.blankExchange)
-            this.emit("betting-action", { action }, playerId)
-            this.completeTurn(playerId, false)
-
-            return
+        if (action.blankExchange) {
+          if (player.riichi) {
+            throw new Error("A locked Riichi hand cannot exchange a Blank")
           }
 
+          this.exchangeBlank(player, action.blankExchange)
+          this.emit("betting-action", { action }, playerId)
+          this.completeTurn(playerId, false)
+
+          return
+        }
+
+        if (!player.riichi || this.state.config.riichiDrawMode === "discard-drawn") {
           this.beginDraw(player, action.drawSource)
           this.emit("betting-action", { action }, playerId)
 
@@ -225,15 +230,19 @@ export class Stud7Engine {
       case "call":
         this.payToPot(player, this.state.currentWager - player.roundCommitted, true)
 
-        if (!player.riichi) {
-          if (action.blankExchange) {
-            this.exchangeBlank(player, action.blankExchange)
-            this.emit("betting-action", { action }, playerId)
-            this.completeTurn(playerId, false)
-
-            return
+        if (action.blankExchange) {
+          if (player.riichi) {
+            throw new Error("A locked Riichi hand cannot exchange a Blank")
           }
 
+          this.exchangeBlank(player, action.blankExchange)
+          this.emit("betting-action", { action }, playerId)
+          this.completeTurn(playerId, false)
+
+          return
+        }
+
+        if (!player.riichi || this.state.config.riichiDrawMode === "discard-drawn") {
           this.beginDraw(player, action.drawSource)
           this.emit("betting-action", { action }, playerId)
 
@@ -276,7 +285,10 @@ export class Stud7Engine {
       case "fold":
         player.folded = true
         this.state.removedCards.push(...player.cards.map(({ card }) => card))
-        this.gainBlueStick(player)
+
+        for (let stick = 0; stick < this.state.config.foldBlueSticks; stick += 1) {
+          this.gainBlueStick(player)
+        }
         break
     }
 
@@ -301,6 +313,10 @@ export class Stud7Engine {
     const player = this.getPlayer(playerId)
     const ownedIndex = player.cards.findIndex(({ card }) => card.id === decision.discardCardId)
     const discardingDrawn = pending.drawnCard.id === decision.discardCardId
+
+    if (player.riichi && this.state.config.riichiDrawMode === "discard-drawn" && !discardingDrawn) {
+      throw new Error("A locked Riichi hand must discard the drawn card")
+    }
 
     if (ownedIndex < 0 && !discardingDrawn) {
       throw new Error("Discard card is not in the manufactured hand")

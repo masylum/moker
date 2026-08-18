@@ -43,6 +43,7 @@ npm run play -- --seed jade-table --players 4 --samples 48
 npm run play -- --seed jade-table --debug  # reveal all hands, equity, odds, edge, and EV
 npm run play -- --auto --seed demo  # visible non-interactive heuristic game
 npm run simulate:stud7 -- 10 stud7-balance 4  # count, seed prefix, rollout samples
+npm run analyze:stud7 -- 100 stud7-health 1 baseline  # fast, mergeable balance cohort
 npm run play:stud7 -- --seed stud-table --players 4 --samples 32
 npm run play:stud7 -- --debug  # show every hole card and Stud7 equity calculation
 npm run play:stud7 -- --auto --seed stud-demo
