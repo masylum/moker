@@ -218,23 +218,53 @@ function renderTable(game: GameEngine): void {
   stdout.write(`Discard A  ${state.discardA.map(tile).join(" ") || "—"}\n`)
   stdout.write(`Discard B  ${state.discardB.map(tile).join(" ") || "—"}\n`)
 
-  for (const player of state.players) {
-    const cards =
-      player.id === human.id || debug ? ` · ${player.privateCards.map(tile).join(" ")}` : ""
-    const math = debug ? analyzePokerMath(state, player.id, Math.min(32, samples)) : null
-    const analysis = math
-      ? ` · equity ${percent(math.showdownEquity)} · odds ${percent(math.potOdds)} · EV ${signed(math.callExpectedValue)} · best ${math.currentBest.label} (${math.currentBest.rank}) · next ${math.nextClosest ? `${math.nextClosest.label} ${math.nextClosest.missing} away` : "top"}`
-      : ""
-    const draw = debug
-      ? state.drawDiscardHistory.filter((record) => record.playerId === player.id).at(-1)
-      : null
-    const drawNote = draw
-      ? ` · ${draw.source === "blank-exchange" ? "swapped for" : "drew"} ${tile(draw.drawnCard)}, left ${tile(draw.discardedCard)} in ${draw.discardPile.toUpperCase()}`
-      : ""
-    stdout.write(
-      `${player.name.padEnd(10)} ${player.chips} chips · bet ${player.roundCommitted} (total ${player.handCommitted}) · ${player.blueSticks} blue · ${player.loans} loans${cards}${analysis}${drawNote}${player.folded ? " · folded" : ""}${player.riichi ? " · RIICHI" : ""}\n`,
-    )
+  const headers = ["Player", "Chips", "Bet", "Total", "Blue", "Loans", "Hand"]
+
+  if (debug) {
+    headers.push("Equity", "Odds", "EV", "Best", "Next", "Draw")
   }
+
+  headers.push("Status")
+  const rows = state.players.map((player) => {
+    const visible = player.id === human.id || debug
+    const row = [
+      player.name,
+      String(player.chips),
+      String(player.roundCommitted),
+      String(player.handCommitted),
+      String(player.blueSticks),
+      String(player.loans),
+      visible ? player.privateCards.map(tile).join(" ") : "hidden",
+    ]
+
+    if (debug) {
+      const math = analyzePokerMath(state, player.id, Math.min(32, samples))
+      const draw = state.drawDiscardHistory.filter((record) => record.playerId === player.id).at(-1)
+      row.push(
+        percent(math.showdownEquity),
+        percent(math.potOdds),
+        signed(math.callExpectedValue),
+        `${math.currentBest.label} (${math.currentBest.rank})`,
+        math.nextClosest ? `${math.nextClosest.label} ${math.nextClosest.missing} away` : "top",
+        draw
+          ? `${tile(draw.drawnCard)} → ${tile(draw.discardedCard)} ${draw.discardPile.toUpperCase()}`
+          : "—",
+      )
+    }
+
+    row.push(
+      [
+        player.id === state.actingPlayerId ? "acting" : "",
+        player.folded ? "folded" : "",
+        player.riichi ? "RIICHI" : "",
+      ]
+        .filter(Boolean)
+        .join(", ") || "—",
+    )
+
+    return row
+  })
+  renderTextTable(headers, rows)
 
   const result = state.handResults.at(-1)
 
@@ -333,6 +363,43 @@ function percent(value: number): string {
 
 function signed(value: number): string {
   return `${value >= 0 ? "+" : ""}${value.toFixed(1)}`
+}
+
+function renderTextTable(headers: readonly string[], rows: readonly string[][]): void {
+  const numericHeaders = new Set(["Chips", "Bet", "Total", "Blue", "Loans", "Equity", "Odds", "EV"])
+  const widths = headers.map((header, column) =>
+    Math.max(visibleWidth(header), ...rows.map((row) => visibleWidth(row[column] ?? ""))),
+  )
+  const renderRow = (row: readonly string[]) =>
+    row
+      .map((cell, column) =>
+        padVisible(cell, widths[column]!, numericHeaders.has(headers[column]!)),
+      )
+      .join(" │ ")
+
+  stdout.write(`${renderRow(headers)}\n`)
+  stdout.write(`${widths.map((width) => "─".repeat(width)).join("─┼─")}\n`)
+
+  for (const row of rows) {
+    stdout.write(`${renderRow(row)}\n`)
+  }
+}
+
+function padVisible(value: string, width: number, alignRight: boolean): string {
+  const padding = " ".repeat(Math.max(0, width - visibleWidth(value)))
+
+  return alignRight ? padding + value : value + padding
+}
+
+function visibleWidth(value: string): number {
+  const escape = String.fromCharCode(27)
+  const plain = value.replace(new RegExp(`${escape}\\[[0-9;]*m`, "g"), "")
+
+  return [...plain].reduce((width, character) => {
+    const codePoint = character.codePointAt(0) ?? 0
+
+    return width + (codePoint >= 0x1f000 && codePoint <= 0x1faff ? 2 : 1)
+  }, 0)
 }
 
 function argument(name: string): string | undefined {
