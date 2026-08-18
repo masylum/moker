@@ -407,11 +407,7 @@ function visibleWidth(value: string): number {
   const escape = String.fromCharCode(27)
   const plain = value.replace(new RegExp(`${escape}\\[[0-9;]*m`, "g"), "")
 
-  return [...plain].reduce((width, character) => {
-    const codePoint = character.codePointAt(0) ?? 0
-
-    return width + (codePoint >= 0x1f000 && codePoint <= 0x1faff ? 2 : 1)
-  }, 0)
+  return [...plain].length
 }
 
 function argument(name: string): string | undefined {
