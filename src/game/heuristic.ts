@@ -84,7 +84,7 @@ export function chooseHeuristicAction(
       expectedChipDelta,
       utility,
       samples,
-      rationale: `${Math.round(math.showdownEquity * 100)}% showdown equity; ${formatPercent(math.potOdds)} pot odds; call EV ${formatSigned(math.callExpectedValue)}; ${math.improveRate.toFixed(0)}% improve; current best is ${math.currentBest.label} (rank ${math.currentBest.rank}); next is ${formatNext(math.nextClosest)}`,
+      rationale: `${Math.round(math.showdownEquity * 100)}% showdown equity; ${formatPercent(math.potOdds)} pot odds; call EV ${formatSigned(math.callExpectedValue)}; ${math.improveRate.toFixed(0)}% improve`,
     }
   }
 
@@ -230,16 +230,11 @@ export function chooseHeuristicDiscard(
   )
   const best = evaluations[0]!
   const pile = chooseDiscardPile(state, best.card)
-  const progress = summarizeHandProgress(
-    [...player.privateCards.filter((card) => card.id !== best.card.id), ...state.community],
-    state.config.activeSpecialHands,
-  )
-
   return {
     discardCardId: best.card.id,
     discardPile: pile,
     expectedScore: best.expectedScore,
-    rationale: `Discarding ${best.card.id} leaves an expected final ladder rank of ${best.expectedScore.toFixed(1)} across ${samples} rollouts; current best is ${progress.currentBest.label} and next is ${formatNext(progress.nextClosest)}`,
+    rationale: `Expected final ladder rank ${best.expectedScore.toFixed(1)} across ${samples} rollouts`,
   }
 }
 
@@ -490,8 +485,4 @@ function formatPercent(value: number): string {
 
 function formatSigned(value: number): string {
   return `${value >= 0 ? "+" : ""}${value.toFixed(1)}`
-}
-
-function formatNext(next: PokerMathAnalysis["nextClosest"]): string {
-  return next ? `${next.label} (${next.missing} away, rank ${next.rank})` : "the top active Hand"
 }

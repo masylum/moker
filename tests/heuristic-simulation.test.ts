@@ -111,7 +111,7 @@ describe("heuristic player and simulations", () => {
 
     const step = stepHeuristic(engine)
 
-    expect(step.rationale).toMatch(/Drew/)
+    expect(step.drawDiscard).toMatchObject({ playerId: "p2" })
     expect(engine.state.phase).not.toBe("discarding")
     expect(engine.state.drawDiscardHistory).toHaveLength(1)
   })

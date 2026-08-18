@@ -1,12 +1,15 @@
 import { GameEngine } from "./engine"
 import { chooseHeuristicAction, chooseHeuristicDiscard } from "./heuristic"
 import { MAX_LOANS, ORBIT_VALUES } from "./rules"
-import type { HeuristicDecision } from "./types"
+import type { DiscardChoice } from "./heuristic"
+import type { DrawDiscardRecord, HeuristicDecision } from "./types"
 
 export interface AutomatedStep {
   rationale: string
   playerId?: string
   decision?: HeuristicDecision
+  discard?: DiscardChoice
+  drawDiscard?: DrawDiscardRecord
 }
 
 export function stepHeuristic(engine: GameEngine): AutomatedStep {
@@ -23,14 +26,16 @@ export function stepHeuristic(engine: GameEngine): AutomatedStep {
     engine.act(playerId, decision.action)
 
     if (engine.state.phase === "discarding" && engine.state.pendingDiscard?.playerId === playerId) {
-      const drawnCardId = engine.state.pendingDiscard.drawnCardId
       const discard = chooseHeuristicDiscard(engine.state, playerId)
       engine.discard(playerId, discard)
+      const drawDiscard = engine.state.drawDiscardHistory.at(-1)!
 
       return {
-        rationale: `${decision.rationale} Drew ${drawnCardId}; ${discard.rationale}.`,
+        rationale: `${decision.rationale} ${discard.rationale}.`,
         playerId,
         decision,
+        discard,
+        drawDiscard,
       }
     }
 
@@ -46,8 +51,9 @@ export function stepHeuristic(engine: GameEngine): AutomatedStep {
 
     const decision = chooseHeuristicDiscard(state, playerId)
     engine.discard(playerId, decision)
+    const drawDiscard = engine.state.drawDiscardHistory.at(-1)!
 
-    return { rationale: decision.rationale, playerId }
+    return { rationale: decision.rationale, playerId, discard: decision, drawDiscard }
   }
 
   if (state.phase === "between-hands") {

@@ -1,7 +1,7 @@
 import { createInterface } from "node:readline/promises"
 import { stdin, stdout } from "node:process"
 import { coloredTile as tile } from "../src/cli/tiles"
-import { stepHeuristic } from "../src/game/automation"
+import { stepHeuristic, type AutomatedStep } from "../src/game/automation"
 import { cardLabel, compareCards } from "../src/game/cards"
 import { GameEngine, type PlayerSetup } from "../src/game/engine"
 import { analyzePokerMath } from "../src/game/heuristic"
@@ -54,7 +54,7 @@ try {
     } else {
       const actor = currentPlayerName(engine)
       const step = stepHeuristic(engine)
-      stdout.write(`\n${actor}: ${step.rationale}\n`)
+      stdout.write(`\n${actor}: ${formatAutomatedStep(step)}\n`)
     }
   }
 
@@ -363,6 +363,18 @@ function percent(value: number): string {
 
 function signed(value: number): string {
   return `${value >= 0 ? "+" : ""}${value.toFixed(1)}`
+}
+
+function formatAutomatedStep(step: AutomatedStep): string {
+  const action = step.decision?.rationale ?? step.rationale
+
+  if (!step.drawDiscard || !step.discard) {
+    return action
+  }
+
+  const draw = step.drawDiscard
+
+  return `${action} Drew ${tile(draw.drawnCard)}; discarded ${tile(draw.discardedCard)} to ${draw.discardPile.toUpperCase()}. Expected final rank ${step.discard.expectedScore.toFixed(1)} (${step.decision?.evaluations[0]?.samples ?? samples} rollouts).`
 }
 
 function renderTextTable(headers: readonly string[], rows: readonly string[][]): void {
