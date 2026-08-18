@@ -285,7 +285,8 @@ function renderHandResult(result: HandResult): void {
   stdout.write(`Board      ${[...result.community].sort(compareCards).map(tile).join(" ")}\n`)
 
   for (const player of result.players) {
-    const combination = player.score.combinations[0]?.label ?? "High Card"
+    const scored = player.score.combinations[0]
+    const combination = scored?.description ?? scored?.label ?? "High Card"
     stdout.write(
       `${player.name.padEnd(10)} ${player.cards.map(tile).join(" ")} · rank ${player.score.total} (${combination}) · committed ${player.committed} · payout ${player.payout}${player.folded ? " · folded" : ""}\n`,
     )

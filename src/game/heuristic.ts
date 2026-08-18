@@ -1,8 +1,7 @@
 import { createDeck } from "./cards"
 import { summarizeHandProgress } from "./hand-progress"
-import { evaluateSpecialHands } from "./patterns"
 import { SeededRandom } from "./random"
-import { CHIP_UNIT, ORBIT_VALUES, toChipUnit } from "./rules"
+import { CHIP_UNIT, ORBIT_VALUES, PRIVATE_CARD_COUNT, toChipUnit } from "./rules"
 import { compareHandScores, scoreHand } from "./scoring"
 import type {
   BettingAction,
@@ -179,10 +178,7 @@ export function analyzePokerMath(
     `${state.config.seed}:math:h${state.handNumber}:s${state.street}:v${state.version}:${playerId}`,
   )
   const future = analyzePrivateFuture(state, playerId, player.privateCards, random, samples)
-  const progress = summarizeHandProgress(
-    [...player.privateCards, ...state.community],
-    state.config.activeSpecialHands,
-  )
+  const progress = summarizeHandProgress([...player.privateCards, ...state.community])
   const toCall = Math.max(0, state.currentWager - player.roundCommitted)
   const potAfterCall = state.pot + toCall
   const potOdds = toCall === 0 ? 0 : toCall / potAfterCall
@@ -200,7 +196,6 @@ export function analyzePokerMath(
     callExpectedValue: future.showdownEquity * potAfterCall - toCall,
     expectedScore: future.expectedScore,
     improveRate: future.improveRate,
-    closestSpecial: future.closestSpecial,
     currentBest: progress.currentBest,
     nextClosest: progress.nextClosest,
   }
@@ -292,10 +287,10 @@ function chooseDrawPlan(
   )[0]!
 }
 
-function bestImmediatePrivateScore(fiveCards: Card[], state: GameState): number {
+function bestImmediatePrivateScore(candidateCards: Card[], state: GameState): number {
   let best = 0
-  for (let discardIndex = 0; discardIndex < fiveCards.length; discardIndex += 1) {
-    const privateCards = fiveCards.filter((_, index) => index !== discardIndex)
+  for (let discardIndex = 0; discardIndex < candidateCards.length; discardIndex += 1) {
+    const privateCards = candidateCards.filter((_, index) => index !== discardIndex)
     best = Math.max(best, currentStrength(privateCards, state))
   }
   return best
@@ -308,7 +303,7 @@ function analyzePrivateFuture(
   random: SeededRandom,
   samples: number,
 ) {
-  const neededCommunity = 8 - state.community.length
+  const neededCommunity = 5 - state.community.length
   const unknown = unknownCards(state, privateCards)
   const current = currentStrength(privateCards, state)
   let total = 0
@@ -323,7 +318,7 @@ function analyzePrivateFuture(
     const shuffled = random.shuffle(unknown)
     const completion = shuffled.slice(0, neededCommunity)
     const completed = [...privateCards, ...state.community, ...completion]
-    const score = scoreHand(completed, state.config.activeSpecialHands)
+    const score = scoreHand(completed)
     total += score.total
 
     if (score.total > current) {
@@ -331,13 +326,10 @@ function analyzePrivateFuture(
     }
 
     const opponentScores = opponents.map((_, index) => {
-      const start = neededCommunity + index * 4
-      const cards = shuffled.slice(start, start + 4)
+      const start = neededCommunity + index * PRIVATE_CARD_COUNT
+      const cards = shuffled.slice(start, start + PRIVATE_CARD_COUNT)
 
-      return scoreHand(
-        [...cards, ...state.community, ...completion],
-        state.config.activeSpecialHands,
-      )
+      return scoreHand([...cards, ...state.community, ...completion])
     })
     const bestScore = [score, ...opponentScores].sort((left, right) =>
       compareHandScores(right, left),
@@ -351,24 +343,11 @@ function analyzePrivateFuture(
             .length)
     }
   }
-  const closest = evaluateSpecialHands(
-    [...privateCards, ...state.community],
-    state.config.activeSpecialHands,
-  ).sort((left, right) => left.missing - right.missing || right.score - left.score)[0]
-
   return {
     expectedScore: total / trials,
     improveRate: (improvements / trials) * 100,
     showdownEquity: equity / trials,
     opponents: opponents.length,
-    closestSpecial: closest
-      ? {
-          label: closest.label,
-          missing: closest.missing,
-          size: closest.size,
-          score: closest.score,
-        }
-      : null,
   }
 }
 
@@ -383,10 +362,8 @@ function unknownCards(state: GameState, privateCards: Card[]): Card[] {
 
 function currentStrength(privateCards: Card[], state: GameState): number {
   const cards = [...privateCards, ...state.community]
-  const score = scoreHand(cards, state.config.activeSpecialHands).total
-  const next = summarizeHandProgress(cards, state.config.activeSpecialHands).nextClosest
 
-  return score + (next ? ((next.size - next.missing) / next.size) * next.rank * 0.01 : 0)
+  return scoreHand(cards).total
 }
 
 function chooseDiscardPile(state: GameState, discarded: Card): DiscardPile {
@@ -442,7 +419,7 @@ function shouldDeclareRiichi(
   winRate: number,
 ): boolean {
   return (
-    state.street < 3 &&
+    state.street < 4 &&
     !player.riichi &&
     player.blueSticks > 0 &&
     expectedScore >= 6 &&

@@ -6,6 +6,7 @@ import {
   LOAN_VALUE,
   MAX_LOANS,
   ORBIT_VALUES,
+  PRIVATE_CARD_COUNT,
   createConfig,
   maxHandsFor,
   orbitFor,
@@ -139,7 +140,7 @@ export class GameEngine {
       this.payToPot(player, charge)
     }
 
-    for (let cardIndex = 0; cardIndex < 4; cardIndex += 1) {
+    for (let cardIndex = 0; cardIndex < PRIVATE_CARD_COUNT; cardIndex += 1) {
       for (let offset = 1; offset <= this.state.players.length; offset += 1) {
         this.playerAt(this.state.dealerIndex + offset).privateCards.push(this.drawDeck())
       }
@@ -397,7 +398,7 @@ export class GameEngine {
     }
   }
 
-  private openStreet(street: 1 | 2 | 3): void {
+  private openStreet(street: 1 | 2 | 3 | 4): void {
     this.state.street = street
     const revealCount = COMMUNITY_REVEALS[street - 1]!
 
@@ -417,7 +418,8 @@ export class GameEngine {
     this.state.actingPlayerId = this.state.pendingPlayerIds[0] ?? null
     this.emit("street-opened", {
       street,
-      revealed: this.state.community.slice(-revealCount).map((card) => card.id),
+      revealed:
+        revealCount === 0 ? [] : this.state.community.slice(-revealCount).map((card) => card.id),
     })
   }
 
@@ -442,8 +444,8 @@ export class GameEngine {
     }
     this.state.actingPlayerId = null
 
-    if (this.state.street < 3) {
-      this.openStreet((this.state.street + 1) as 2 | 3)
+    if (this.state.street < 4) {
+      this.openStreet((this.state.street + 1) as 2 | 3 | 4)
     } else {
       this.resolveShowdown()
     }
@@ -525,10 +527,7 @@ export class GameEngine {
     const contenders = this.activePlayers()
 
     for (const player of contenders) {
-      player.score = scoreHand(
-        [...player.privateCards, ...this.state.community],
-        this.state.config.activeSpecialHands,
-      )
+      player.score = scoreHand([...player.privateCards, ...this.state.community])
     }
 
     const bestScore = contenders
@@ -632,12 +631,7 @@ export class GameEngine {
         folded: player.folded,
         riichi: player.riichi,
         cards: structuredClone(player.privateCards),
-        score:
-          player.score ??
-          scoreHand(
-            [...player.privateCards, ...this.state.community],
-            this.state.config.activeSpecialHands,
-          ),
+        score: player.score ?? scoreHand([...player.privateCards, ...this.state.community]),
         committed: player.handCommitted,
         payout: payouts[player.id] ?? 0,
       })),
@@ -695,7 +689,9 @@ export class GameEngine {
   }
 
   private canDeclareRiichi(player: PlayerState): boolean {
-    return !player.riichi && this.state.street < 3 && player.privateCards.length === 4
+    return (
+      !player.riichi && this.state.street < 4 && player.privateCards.length === PRIVATE_CARD_COUNT
+    )
   }
 
   private activePlayers(): PlayerState[] {

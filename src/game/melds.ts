@@ -1,4 +1,4 @@
-import { faceKey, jokerCanRepresent } from "./cards"
+import { cardLabel, dragonFace, faceKey, jokerCanRepresent, numberedFace, windFace } from "./cards"
 import { HAND_RANKS } from "./rules"
 import {
   DRAGONS,
@@ -6,145 +6,364 @@ import {
   WINDS,
   type Card,
   type CardFace,
-  type NumberedRank,
+  type CombinationKind,
   type ScoredCombination,
+  type Suit,
 } from "./types"
 
-export interface MeldCandidate extends ScoredCombination {
+export interface HandCandidate extends ScoredCombination {
   mask: number
+  tieBreak: number[]
 }
 
-export function generateMeldCandidates(cards: readonly Card[]): MeldCandidate[] {
-  const candidates: MeldCandidate[] = []
+interface ChowIdentity {
+  suit: Suit
+  start: number
+}
 
-  forEachSubset(cards.length, 2, (indexes, mask) => {
-    const subset = indexes.map((index) => cards[index]!)
+const dragonTargets = DRAGONS.map(dragonFace)
+const windTargets = WINDS.map(windFace)
 
-    if (isNaturalPair(subset)) {
-      candidates.push(createCandidate("eye", HAND_RANKS.eye, subset, mask, "Eye"))
-    }
-  })
+export function generateHandCandidates(cards: readonly Card[]): HandCandidate[] {
+  const candidates: HandCandidate[] = []
 
-  forEachSubset(cards.length, 3, (indexes, mask) => {
-    const subset = indexes.map((index) => cards[index]!)
+  for (const size of [2, 3, 4, 5]) {
+    forEachSubset(cards.length, size, (indexes, mask) => {
+      const subset = indexes.map((index) => cards[index]!)
 
-    if (matchesAnyChow(subset)) {
-      candidates.push(createCandidate("chow", HAND_RANKS.chow, subset, mask, "Chow"))
-    }
+      if (size === 2) {
+        addEye(subset, mask, candidates)
+      }
 
-    if (matchesAnyIdentical(subset)) {
-      candidates.push(createCandidate("pung", HAND_RANKS.pung, subset, mask, "Pung"))
-    }
+      if (size === 3) {
+        addChow(subset, mask, candidates)
+        addIdentical("pung", "Pung", subset, mask, candidates)
 
-    const dragons = DRAGONS.map((dragon) => ({
-      kind: "dragon" as const,
-      dragon,
-      color:
-        dragon === "green"
-          ? ("green" as const)
-          : dragon === "white"
-            ? ("blue" as const)
-            : ("red" as const),
-    }))
+        if (matchesTargets(subset, dragonTargets)) {
+          candidates.push(
+            candidate(
+              "three-dragons",
+              "Three Dragons",
+              subset,
+              mask,
+              [10, 10, 10],
+              "Three Dragons",
+            ),
+          )
+        }
+      }
 
-    if (matchesTargets(subset, dragons)) {
-      candidates.push(
-        createCandidate(
-          "three-dragons",
-          HAND_RANKS["three-dragons"],
-          subset,
-          mask,
-          "Three Dragons",
-        ),
-      )
-    }
-  })
+      if (size === 4) {
+        addTwoEyes(subset, mask, candidates)
+        addFourWinds(subset, mask, candidates)
+        addKong(subset, mask, candidates)
+        addCrosswinds(subset, mask, candidates)
+      }
 
-  forEachSubset(cards.length, 4, (indexes, mask) => {
-    const subset = indexes.map((index) => cards[index]!)
-    const winds = WINDS.map((wind) => ({ kind: "wind" as const, wind, color: "black" as const }))
-
-    if (matchesTargets(subset, winds)) {
-      candidates.push(
-        createCandidate("four-winds", HAND_RANKS["four-winds"], subset, mask, "Four Winds"),
-      )
-    }
-
-    if (matchesAnyIdentical(subset) && subset.some((card) => card.kind === "joker")) {
-      candidates.push(createCandidate("kong", HAND_RANKS.kong, subset, mask, "Kong"))
-    }
-  })
+      if (size === 5) {
+        addPureSuit(subset, mask, candidates)
+        addCompoundHands(subset, mask, candidates)
+      }
+    })
+  }
 
   return deduplicate(candidates)
 }
 
-export function jokersParticipate(cards: readonly Card[]): boolean {
-  const jokerMask = cards.reduce(
-    (mask, card, index) => mask | (card.kind === "joker" ? 1 << index : 0),
-    0,
-  )
+function addEye(cards: Card[], mask: number, candidates: HandCandidate[]): void {
+  const face = naturalPairFace(cards)
 
-  if (jokerMask === 0) {
-    return true
+  if (!face) {
+    return
   }
 
-  const candidates = generateMeldCandidates(cards).filter((meld) => (meld.mask & jokerMask) !== 0)
-
-  const visit = (index: number, usedMask: number, coveredMask: number): boolean => {
-    if ((coveredMask & jokerMask) === jokerMask) {
-      return true
-    }
-
-    for (let cursor = index; cursor < candidates.length; cursor += 1) {
-      const next = candidates[cursor]!
-
-      if (
-        (usedMask & next.mask) === 0 &&
-        visit(cursor + 1, usedMask | next.mask, coveredMask | (next.mask & jokerMask))
-      ) {
-        return true
-      }
-    }
-
-    return false
-  }
-
-  return visit(0, 0, 0)
+  const value = faceValue(face)
+  candidates.push(candidate("eye", "Eye", cards, mask, [value, value], `Eye · ${cardLabel(face)}`))
 }
 
-function matchesAnyChow(cards: readonly Card[]): boolean {
-  return SUITS.some((suit) =>
-    Array.from({ length: 7 }, (_, index) => index + 1).some((start) =>
-      matchesTargets(cards, [
-        numberedTarget(suit, start),
-        numberedTarget(suit, start + 1),
-        numberedTarget(suit, start + 2),
-      ]),
+function addChow(cards: Card[], mask: number, candidates: HandCandidate[]): void {
+  const chow = chowIdentity(cards)
+
+  if (!chow) {
+    return
+  }
+
+  candidates.push(
+    candidate(
+      "chow",
+      "Chow",
+      cards,
+      mask,
+      chowTieBreak(chow),
+      `Chow · ${chow.start}-${chow.start + 1}-${chow.start + 2} ${capitalize(chow.suit)}`,
     ),
   )
 }
 
-function matchesAnyIdentical(cards: readonly Card[]): boolean {
-  const natural = cards.find((card) => card.kind !== "joker" && card.kind !== "blank")
+function addIdentical(
+  kind: "pung",
+  label: string,
+  cards: Card[],
+  mask: number,
+  candidates: HandCandidate[],
+): void {
+  const face = identicalFace(cards)
 
-  if (!natural) {
-    return false
+  if (!face) {
+    return
   }
 
-  const target = stripId(natural)
-
-  return matchesTargets(
-    cards,
-    Array.from({ length: cards.length }, () => target),
+  const value = faceValue(face)
+  candidates.push(
+    candidate(
+      kind,
+      label,
+      cards,
+      mask,
+      Array.from({ length: cards.length }, () => value),
+      `${label} · ${cardLabel(face)}`,
+    ),
   )
 }
 
-function isNaturalPair(cards: readonly Card[]): boolean {
-  return (
-    cards.length === 2 &&
-    cards.every((card) => card.kind !== "joker" && card.kind !== "blank") &&
-    faceKey(cards[0]!) === faceKey(cards[1]!)
+function addTwoEyes(cards: Card[], mask: number, candidates: HandCandidate[]): void {
+  const faces = naturalPairFaces(cards)
+
+  if (faces.length !== 2 || faceKey(faces[0]!) === faceKey(faces[1]!)) {
+    return
+  }
+
+  faces.sort((left, right) => faceValue(right) - faceValue(left))
+  const values = faces.flatMap((face) => [faceValue(face), faceValue(face)])
+  candidates.push(
+    candidate(
+      "two-eyes",
+      "Two Eyes",
+      cards,
+      mask,
+      values,
+      `Two Eyes · ${faces.map(cardLabel).join(" + ")}`,
+    ),
   )
+}
+
+function addFourWinds(cards: Card[], mask: number, candidates: HandCandidate[]): void {
+  if (!matchesTargets(cards, windTargets)) {
+    return
+  }
+
+  candidates.push(
+    candidate("four-winds", "Four Winds", cards, mask, [11, 11, 11, 11], "Four Winds"),
+  )
+}
+
+function addKong(cards: Card[], mask: number, candidates: HandCandidate[]): void {
+  if (!cards.some((card) => card.kind === "joker")) {
+    return
+  }
+
+  const face = identicalFace(cards)
+
+  if (!face) {
+    return
+  }
+
+  const value = faceValue(face)
+  candidates.push(
+    candidate(
+      "kong",
+      "Kong",
+      cards,
+      mask,
+      [value, value, value, value],
+      `Kong · ${cardLabel(face)}`,
+    ),
+  )
+}
+
+function addCrosswinds(cards: Card[], mask: number, candidates: HandCandidate[]): void {
+  if (cards.some((card) => card.kind !== "wind")) {
+    return
+  }
+
+  const counts = new Map(cards.map((card) => [faceKey(card), 0]))
+
+  for (const card of cards) {
+    counts.set(faceKey(card), (counts.get(faceKey(card)) ?? 0) + 1)
+  }
+
+  const pair =
+    counts.get("wind-east") === 2 && counts.get("wind-west") === 2
+      ? "East + West"
+      : counts.get("wind-north") === 2 && counts.get("wind-south") === 2
+        ? "North + South"
+        : null
+
+  if (!pair) {
+    return
+  }
+
+  candidates.push(
+    candidate("crosswinds", "Crosswinds", cards, mask, [11, 11, 11, 11], `Crosswinds · ${pair}`),
+  )
+}
+
+function addPureSuit(cards: Card[], mask: number, candidates: HandCandidate[]): void {
+  const suit = SUITS.find((candidateSuit) =>
+    cards.every(
+      (card) =>
+        (card.kind === "numbered" && card.suit === candidateSuit) ||
+        (card.kind === "joker" && jokerCanRepresent(card, numberedFace(candidateSuit, 9))),
+    ),
+  )
+
+  if (!suit) {
+    return
+  }
+
+  const values = cards
+    .map((card) => (card.kind === "numbered" ? card.rank : 9))
+    .sort((left, right) => right - left)
+  candidates.push(
+    candidate(
+      "pure-suit",
+      "Pure Suit",
+      cards,
+      mask,
+      values,
+      `Pure Suit · ${capitalize(suit)} ${values.join("-")}`,
+    ),
+  )
+}
+
+function addCompoundHands(cards: Card[], mask: number, candidates: HandCandidate[]): void {
+  forEachSubset(cards.length, 3, (mainIndexes) => {
+    const main = mainIndexes.map((index) => cards[index]!)
+    const mainSet = new Set(mainIndexes)
+    const secondary = cards.filter((_, index) => !mainSet.has(index))
+    const eye = naturalPairFace(secondary)
+    const chow = chowIdentity(main)
+    const pung = identicalFace(main)
+
+    if (chow && eye) {
+      const values = [...chowTieBreak(chow), faceValue(eye), faceValue(eye)]
+      candidates.push(
+        candidate(
+          "chow-eye",
+          "Chow + Eye",
+          [...main, ...secondary],
+          mask,
+          values,
+          `Chow + Eye · ${chow.start}-${chow.start + 1}-${chow.start + 2} ${capitalize(chow.suit)} + ${cardLabel(eye)}`,
+        ),
+      )
+
+      const dragon = matchingDragon(chow.suit)
+
+      if (faceKey(eye) === faceKey(dragon)) {
+        candidates.push(
+          candidate(
+            "dragon-dancer",
+            "Dragon Dancer",
+            [...main, ...secondary],
+            mask,
+            values,
+            `Dragon Dancer · ${chow.start}-${chow.start + 1}-${chow.start + 2} ${capitalize(chow.suit)} + ${cardLabel(eye)}`,
+          ),
+        )
+      }
+    }
+
+    if (pung && eye && faceKey(pung) !== faceKey(eye)) {
+      const pungValue = faceValue(pung)
+      const eyeValue = faceValue(eye)
+      candidates.push(
+        candidate(
+          "pung-eye",
+          "Pung + Eye",
+          [...main, ...secondary],
+          mask,
+          [pungValue, pungValue, pungValue, eyeValue, eyeValue],
+          `Pung + Eye · ${cardLabel(pung)} + ${cardLabel(eye)}`,
+        ),
+      )
+    }
+
+    if (matchesTargets(main, dragonTargets) && eye) {
+      const eyeValue = faceValue(eye)
+      candidates.push(
+        candidate(
+          "three-dragons-eye",
+          "Three Dragons + Eye",
+          [...main, ...secondary],
+          mask,
+          [10, 10, 10, eyeValue, eyeValue],
+          `Three Dragons + Eye · ${cardLabel(eye)}`,
+        ),
+      )
+    }
+  })
+}
+
+function naturalPairFace(cards: readonly Card[]): CardFace | null {
+  if (
+    cards.length !== 2 ||
+    cards.some((card) => card.kind === "joker" || card.kind === "blank") ||
+    faceKey(cards[0]!) !== faceKey(cards[1]!)
+  ) {
+    return null
+  }
+
+  return stripId(cards[0]!)
+}
+
+function naturalPairFaces(cards: readonly Card[]): CardFace[] {
+  if (cards.some((card) => card.kind === "joker" || card.kind === "blank")) {
+    return []
+  }
+
+  const byFace = new Map<string, Card[]>()
+
+  for (const card of cards) {
+    const group = byFace.get(faceKey(card)) ?? []
+    group.push(card)
+    byFace.set(faceKey(card), group)
+  }
+
+  return [...byFace.values()]
+    .filter((group) => group.length === 2)
+    .map((group) => stripId(group[0]!))
+}
+
+function chowIdentity(cards: readonly Card[]): ChowIdentity | null {
+  for (const suit of SUITS) {
+    for (let start = 7; start >= 1; start -= 1) {
+      const targets = [
+        numberedFace(suit, start as 1 | 2 | 3 | 4 | 5 | 6 | 7),
+        numberedFace(suit, (start + 1) as 2 | 3 | 4 | 5 | 6 | 7 | 8),
+        numberedFace(suit, (start + 2) as 3 | 4 | 5 | 6 | 7 | 8 | 9),
+      ]
+
+      if (matchesTargets(cards, targets)) {
+        return { suit, start }
+      }
+    }
+  }
+
+  return null
+}
+
+function identicalFace(cards: readonly Card[]): CardFace | null {
+  const natural = cards.find((card) => card.kind !== "joker" && card.kind !== "blank")
+
+  if (!natural) {
+    return null
+  }
+
+  const target = stripId(natural)
+  const targets = Array.from({ length: cards.length }, () => target)
+
+  return matchesTargets(cards, targets) ? target : null
 }
 
 function matchesTargets(cards: readonly Card[], targets: readonly CardFace[]): boolean {
@@ -152,62 +371,41 @@ function matchesTargets(cards: readonly Card[], targets: readonly CardFace[]): b
     return false
   }
 
-  const usedTargets = new Set<number>()
-  const jokers: Card[] = []
+  const available = [...targets]
 
-  for (const card of cards) {
-    if (card.kind === "joker") {
-      jokers.push(card)
-      continue
-    }
+  for (const card of cards.filter((value) => value.kind !== "joker")) {
+    const index = available.findIndex((target) => faceKey(target) === faceKey(card))
 
-    const targetIndex = targets.findIndex(
-      (target, index) => !usedTargets.has(index) && faceKey(target) === faceKey(card),
-    )
-
-    if (targetIndex < 0) {
+    if (index < 0) {
       return false
     }
 
-    usedTargets.add(targetIndex)
+    available.splice(index, 1)
   }
 
-  return assignJokers(jokers, targets, usedTargets, 0)
-}
+  for (const joker of cards.filter((value) => value.kind === "joker")) {
+    const index = available.findIndex((target) => jokerCanRepresent(joker, target))
 
-function assignJokers(
-  jokers: readonly Card[],
-  targets: readonly CardFace[],
-  usedTargets: Set<number>,
-  jokerIndex: number,
-): boolean {
-  if (jokerIndex === jokers.length) {
-    return usedTargets.size === targets.length
-  }
-
-  const joker = jokers[jokerIndex]!
-
-  for (let targetIndex = 0; targetIndex < targets.length; targetIndex += 1) {
-    if (usedTargets.has(targetIndex) || !jokerCanRepresent(joker, targets[targetIndex]!)) {
-      continue
+    if (index < 0) {
+      return false
     }
 
-    usedTargets.add(targetIndex)
-
-    if (assignJokers(jokers, targets, usedTargets, jokerIndex + 1)) {
-      return true
-    }
-
-    usedTargets.delete(targetIndex)
+    available.splice(index, 1)
   }
 
-  return false
+  return available.length === 0
 }
 
-function numberedTarget(suit: (typeof SUITS)[number], rank: number): CardFace {
-  const color = suit === "bamboo" ? "green" : suit === "dots" ? "blue" : "red"
+function matchingDragon(suit: Suit): CardFace {
+  return dragonFace(suit === "bamboo" ? "green" : suit === "dots" ? "white" : "red")
+}
 
-  return { kind: "numbered", suit, rank: rank as NumberedRank, color }
+function chowTieBreak(chow: ChowIdentity): number[] {
+  return [chow.start + 2, chow.start + 1, chow.start]
+}
+
+function faceValue(face: CardFace): number {
+  return face.kind === "numbered" ? face.rank : face.kind === "dragon" ? 10 : 11
 }
 
 function stripId(card: Card): CardFace {
@@ -216,14 +414,23 @@ function stripId(card: Card): CardFace {
   return face
 }
 
-function createCandidate(
-  kind: MeldCandidate["kind"],
-  score: number,
+function candidate(
+  kind: CombinationKind,
+  label: string,
   cards: readonly Card[],
   mask: number,
-  label: string,
-): MeldCandidate {
-  return { kind, score, cardIds: cards.map((card) => card.id), mask, label }
+  tieBreak: number[],
+  description: string,
+): HandCandidate {
+  return {
+    kind,
+    label,
+    score: HAND_RANKS[kind],
+    cardIds: cards.map((card) => card.id),
+    description,
+    mask,
+    tieBreak,
+  }
 }
 
 function forEachSubset(
@@ -253,18 +460,33 @@ function forEachSubset(
   choose(0)
 }
 
-function deduplicate(candidates: readonly MeldCandidate[]): MeldCandidate[] {
-  const seen = new Set<string>()
+function deduplicate(candidates: readonly HandCandidate[]): HandCandidate[] {
+  const byKey = new Map<string, HandCandidate>()
 
-  return candidates.filter((meld) => {
-    const key = `${meld.kind}:${meld.mask}`
+  for (const hand of candidates) {
+    const key = `${hand.kind}:${hand.mask}`
+    const current = byKey.get(key)
 
-    if (seen.has(key)) {
-      return false
+    if (!current || compareTieBreak(hand.tieBreak, current.tieBreak) > 0) {
+      byKey.set(key, hand)
     }
+  }
 
-    seen.add(key)
+  return [...byKey.values()]
+}
 
-    return true
-  })
+function compareTieBreak(left: readonly number[], right: readonly number[]): number {
+  for (let index = 0; index < Math.max(left.length, right.length); index += 1) {
+    const difference = (left[index] ?? 0) - (right[index] ?? 0)
+
+    if (difference !== 0) {
+      return difference
+    }
+  }
+
+  return 0
+}
+
+function capitalize(value: string): string {
+  return value[0]!.toUpperCase() + value.slice(1)
 }

@@ -1,7 +1,6 @@
 import { routeAgentRequest } from "agents"
 import { z } from "zod"
 import { simulateGame } from "./game/simulation"
-import { SPECIAL_HANDS } from "./game/types"
 import { GameSession } from "./server/game-session"
 import { MahjongPlayer, type AgentOperation } from "./server/mahjong-player"
 
@@ -16,7 +15,6 @@ const CreateGameSchema = z.object({
   sessionId: z.string().min(1).max(120).optional(),
   seed: z.string().min(1).max(200),
   players: z.array(PlayerSchema).min(2).max(6),
-  activeSpecialHands: z.array(z.enum(SPECIAL_HANDS)).optional(),
   heuristicSamples: z.int().min(1).max(256).optional(),
 })
 const ActionSchema = z.discriminatedUnion("kind", [
@@ -74,7 +72,6 @@ const SimulationSchema = z.object({
   seedPrefix: z.string().min(1).max(120),
   playerCount: z.int().min(2).max(6).default(4),
   heuristicSamples: z.int().min(1).max(64).default(8),
-  activeSpecialHands: z.array(z.enum(SPECIAL_HANDS)).optional(),
 })
 
 export default {
@@ -124,7 +121,6 @@ async function handleApi(request: Request, env: Env, url: URL): Promise<Response
     const game = env.GAME_SESSION.getByName(sessionId)
     const state = await game.newGame(input.players, {
       seed: input.seed,
-      activeSpecialHands: input.activeSpecialHands,
       heuristicSamples: input.heuristicSamples,
     })
     return Response.json({ sessionId, state }, { status: 201 })
@@ -138,7 +134,6 @@ async function handleApi(request: Request, env: Env, url: URL): Promise<Response
         seed,
         playerCount: input.playerCount,
         heuristicSamples: input.heuristicSamples,
-        activeSpecialHands: input.activeSpecialHands,
       })
       const sessionId = `simulation-${input.seedPrefix}-${index}`
       await env.GAME_SESSION.getByName(sessionId).storeSimulation(result)

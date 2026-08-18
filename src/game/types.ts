@@ -21,32 +21,20 @@ export type Card = CardFace & { id: string }
 export type CardSource = "deck" | "discard-a" | "discard-b"
 export type DiscardPile = "a" | "b"
 
-export const SPECIAL_HANDS = [
-  "sisters",
-  "terminals-honors",
-  "eight-blessings",
-  "four-treasures",
-  "four-eyes",
-  "staircase",
-  "twin-gates",
-  "mirror-chows",
-  "crossing-winds",
-  "brothers",
-  "rainbow-eyes",
-  "dragon-dance",
-  "raging-winds",
-  "four-winds-at-peace",
-] as const
-export type SpecialHandId = (typeof SPECIAL_HANDS)[number]
-
 export type CombinationKind =
   | "eye"
   | "chow"
+  | "pure-suit"
+  | "two-eyes"
+  | "chow-eye"
   | "pung"
   | "three-dragons"
+  | "pung-eye"
+  | "three-dragons-eye"
   | "four-winds"
+  | "dragon-dancer"
   | "kong"
-  | SpecialHandId
+  | "crosswinds"
 
 export type HandKind = "high-card" | CombinationKind
 
@@ -55,6 +43,7 @@ export interface ScoredCombination {
   score: number
   cardIds: string[]
   label: string
+  description: string
 }
 
 export interface HandScore {
@@ -104,7 +93,7 @@ export interface PlayerState {
   score?: HandScore
 }
 
-export type Street = 0 | 1 | 2 | 3
+export type Street = 0 | 1 | 2 | 3 | 4
 export type GamePhase = "between-hands" | "discarding" | "betting" | "showdown" | "finished"
 
 export interface PendingDiscard {
@@ -131,7 +120,6 @@ export interface DrawDiscardRecord {
 export interface GameConfig {
   playerCount: number
   seed: string
-  activeSpecialHands: SpecialHandId[]
   startingChips: number
   heuristicSamples: number
 }
@@ -204,13 +192,6 @@ export interface HeuristicDecision {
   rationale: string
 }
 
-export interface ClosestSpecialHand {
-  label: string
-  missing: number
-  size: number
-  score: number
-}
-
 export interface HandProgressSummary {
   kind: HandKind
   label: string
@@ -233,7 +214,6 @@ export interface PokerMathAnalysis {
   callExpectedValue: number
   expectedScore: number
   improveRate: number
-  closestSpecial: ClosestSpecialHand | null
   currentBest: HandProgressSummary
   nextClosest: HandProgressSummary | null
 }
@@ -274,12 +254,3 @@ export interface DebugGameView {
   actingDecision: HeuristicDecision | null
   recentDrawDiscards: DrawDiscardRecord[]
 }
-
-export const DEFAULT_SPECIAL_HANDS: SpecialHandId[] = [
-  "sisters",
-  "terminals-honors",
-  "eight-blessings",
-  "four-treasures",
-  "four-eyes",
-  "staircase",
-]

@@ -4,8 +4,8 @@ A deterministic TypeScript implementation of Mahjong Poker for rules testing, ba
 
 ## What is included
 
-- A framework-independent game library in `src/game` with the 110-card deck, legal transitions, `rand-seed` determinism, ranked single-Hand showdowns, all basic Hands, and a declarative catalog for all 14 Special Hand Cards.
-- A statistical player that estimates multiway showdown equity, pot odds, call EV, draw sources, discards, legal wagers, Riichi, buried-discard Blank exchanges, and distance from every active Hand using the scoring matchers themselves. Aggression is equity-gated before blue-stick strategy is considered.
+- A framework-independent game library in `src/game` with the 110-card deck, four Texas Hold'em-style streets, `rand-seed` determinism, and the fixed 14-rank five-card Hand ladder.
+- A statistical player that estimates multiway showdown equity, pot odds, call EV, draw sources, discards, legal wagers, Riichi, buried-discard Blank exchanges, and distance from every Hand. Aggression is equity-gated before blue-stick strategy is considered.
 - Replayable simulations whose events, decisions, state, and seed can be inspected later.
 - One Cloudflare Durable Object per game session, with SQLite event snapshots and synchronized current state.
 - A Cloudflare Think agent using OpenRouter tools to inspect legal information, compare the heuristic baseline, commit a validated move, and persist model-exposed reasoning/tool/usage artifacts plus a concise strategic summary.
@@ -64,4 +64,4 @@ colored terminal client                     Cloudflare Worker API
                                              └─ MahjongPlayer / Think / Grok
 ```
 
-The terminal and server use the same `GameEngine`, scoring catalog, heuristic, and automated-step functions; only transport and presentation differ. See `docs/architecture.md` for module and persistence ownership, and `docs/implementation-notes.md` for deterministic rulings.
+The terminal and server use the same `GameEngine`, scoring ladder, heuristic, and automated-step functions; only transport and presentation differ. See `docs/architecture.md` for module and persistence ownership, and `docs/implementation-notes.md` for deterministic rulings.

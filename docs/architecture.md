@@ -6,12 +6,11 @@ The library is split by responsibility so rules do not leak into unrelated modul
 
 - `types.ts` contains serializable domain shapes and discriminated unions. Every `CardFace` carries its Mahjong color; Blanks use `null`.
 - `cards.ts` owns deck construction, face factories, labels, identity, and Joker substitution.
-- `rules.ts` owns lifecycle and economy constants plus game configuration validation. It contains no pattern matching or scoring algorithms.
-- `patterns.ts` is the declarative Special Hand Card catalog. Its compact notation (`123B`, `!EE`, `8x Even`) compiles into the same matcher used for both exact scoring and “tiles away” analysis. A leading `!` means natural-only.
-- `melds.ts` recognizes basic Eyes, Chows, Pungs, Three Dragons, Four Winds, and Kongs.
-- `hand-progress.ts` measures the current best Hand and distance to every stronger basic or active Special Hand through the same matchers used at showdown.
-- `scoring.ts` chooses the highest single active Hand on the fixed ladder and resolves its defining-card tie break. It never adds several Hands or requires a fixed card count.
-- `rulebook.ts` renders canonical rules and the pattern catalog for non-code consumers, including the LLM player.
+- `rules.ts` owns lifecycle and economy constants, the fixed ladder ranks, and game configuration validation. It contains no card-matching algorithms.
+- `melds.ts` recognizes every completed Hand in the fixed ladder, including compound five-card Hands, Joker restrictions, descriptions, and defining-card tie vectors.
+- `hand-progress.ts` declares the corresponding Hand requirements and measures the current best Hand and distance to every stronger Hand. It uses the scorer to identify the current completed Hand, so the table cannot report a different winner.
+- `scoring.ts` tests completed candidates from the highest fixed rank down and resolves defining-card tie breaks. It never adds several Hands or requires a fixed private/community split.
+- `rulebook.ts` renders the complete canonical rules and ladder for non-code consumers, including the LLM player.
 - `heuristic.ts` performs seeded multiway rollouts and exposes the shared showdown-equity, pot-odds, expected-value, and pattern-distance analysis used by decisions and debug clients. It does not contain a second list of special-hand conditions.
 - `automation.ts` applies one heuristic transition. Simulations, the terminal client, and `GameSession` all call it.
 - `engine.ts` owns legal state transitions and invariants.
@@ -22,7 +21,7 @@ The library is split by responsibility so rules do not leak into unrelated modul
 
 `MahjongPlayer` does not store the rules or game state in its SQL tables. Before deciding, it receives:
 
-1. The canonical rulebook generated from `rulebook.ts` and the active pattern catalog.
+1. The complete canonical rulebook and fixed ladder generated from `rulebook.ts`.
 2. A player-visible position from `GameEngine.publicView()`.
 3. Current/next Hand and full pattern progress from the shared matchers.
 4. A deterministic heuristic baseline.

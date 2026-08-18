@@ -324,7 +324,7 @@ export function App() {
             <section class="table-shell">
               <div class={`felt ${debugEnabled() ? "debug-felt" : ""}`}>
                 <div class="community">
-                  <p>Community · {game.community.length} / 8</p>
+                  <p>Community · {game.community.length} / 5</p>
                   <div class="tiles">
                     <For each={sortedCommunity()}>{(card) => <Tile card={card} />}</For>
                   </div>
@@ -378,7 +378,7 @@ export function App() {
               <div class="hand-heading">
                 <div>
                   <p class="eyebrow">Your private hand</p>
-                  <h2>{human()?.riichi ? "Locked in Riichi" : "Four tiles, many futures"}</h2>
+                  <h2>{human()?.riichi ? "Locked in Riichi" : "Three tiles, many futures"}</h2>
                 </div>
                 <div class="wallet">
                   <span>{human()?.chips} chips</span>
@@ -744,7 +744,7 @@ function Seat(props: {
                         <b>
                           {analysis().nextClosest
                             ? `${analysis().nextClosest!.label}, ${analysis().nextClosest!.missing} away`
-                            : "top of active ladder"}
+                            : "top of ladder"}
                         </b>
                       </span>
                     </div>
@@ -859,7 +859,9 @@ function privateCards(player?: PublicPlayerState): Card[] {
 }
 
 function scoreLabel(score: HandResult["players"][number]["score"]): string {
-  return score.combinations.length > 0 ? score.combinations[0]!.label : "High Card"
+  const combination = score.combinations[0]
+
+  return combination?.description ?? combination?.label ?? "High Card"
 }
 
 function formatAction(action: BettingAction): string {

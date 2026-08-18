@@ -98,7 +98,7 @@ export class MahjongPlayer extends Think<Env> {
   override getSystemPrompt(): string {
     return [
       "You are an expert Mahjong Poker player.",
-      "Maximize final chips and the highest single Hand on the active ladder, accounting for pot equity, future blue-stick charges, loan penalties, live discards, Riichi, and information hidden from you.",
+      "Maximize final chips and the highest single Hand on the fixed ladder, accounting for pot equity, future blue-stick charges, loan penalties, live discards, Riichi, and information hidden from you.",
       "Never infer opponents' private cards. Inspect the canonical rules, position, pattern progress, and statistical baseline with tools, then call commit_decision exactly once.",
       "The reasoning_summary must be a concise, auditable strategic explanation, not hidden chain-of-thought.",
       agentRulebook(),
@@ -128,10 +128,9 @@ export class MahjongPlayer extends Think<Env> {
   override getTools() {
     return {
       inspect_rules: tool({
-        description:
-          "Read the canonical engine rules and active declarative special-hand patterns.",
+        description: "Read the canonical engine rules and complete fixed Hand ladder.",
         inputSchema: z.object({}),
-        execute: async () => agentRulebook(this.turnContext().state.config.activeSpecialHands),
+        execute: async () => agentRulebook(),
       }),
       inspect_position: tool({
         description: "Inspect the legal, player-visible game position for this turn.",
@@ -156,7 +155,7 @@ export class MahjongPlayer extends Think<Env> {
       }),
       inspect_pattern_progress: tool({
         description:
-          "Measure the visible hand's current best Hand and distance from every stronger active Hand using the exact scoring matchers.",
+          "Measure the visible hand's current best Hand and distance from every stronger Hand using the scoring definitions.",
         inputSchema: z.object({}),
         execute: async () => {
           const { state, playerId } = this.turnContext()
@@ -169,8 +168,8 @@ export class MahjongPlayer extends Think<Env> {
           const cards = [...player.privateCards, ...state.community]
 
           return {
-            ...summarizeHandProgress(cards, state.config.activeSpecialHands),
-            hands: analyzeHandProgress(cards, state.config.activeSpecialHands),
+            ...summarizeHandProgress(cards),
+            hands: analyzeHandProgress(cards),
           }
         },
       }),

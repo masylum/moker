@@ -20,7 +20,6 @@ export function simulateGame(options: SimulationOptions): SimulationResult {
   const engine = GameEngine.create(players, {
     seed: options.seed,
     heuristicSamples: options.heuristicSamples ?? 12,
-    activeSpecialHands: options.activeSpecialHands,
     startingChips: options.startingChips,
   })
   const decisions: HeuristicDecision[] = []

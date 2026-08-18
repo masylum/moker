@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { GameEngine } from "../src/game/engine"
 import { blankFace, numberedFace } from "../src/game/cards"
+import { agentRulebook } from "../src/game/rulebook"
 
 const players = [
   { id: "p1", name: "A", controller: "human" as const },
@@ -10,11 +11,21 @@ const players = [
 ]
 
 describe("game lifecycle", () => {
+  it("gives the LLM the complete revised street and ladder rules", () => {
+    const rules = agentRulebook()
+
+    expect(rules).toContain("four betting streets")
+    expect(rules).toContain("Street 1 reveals no community cards")
+    expect(rules).toContain("14 Crosswinds")
+    expect(rules).toContain("never the final street")
+  })
+
   it("deals, charges, reveals, and preserves blue-stick conservation", () => {
     const engine = GameEngine.create(players, { seed: "setup" })
     expect(engine.state.handNumber).toBe(1)
-    expect(engine.state.community).toHaveLength(4)
-    expect(engine.state.players.every((player) => player.privateCards.length === 4)).toBe(true)
+    expect(engine.state.street).toBe(1)
+    expect(engine.state.community).toHaveLength(0)
+    expect(engine.state.players.every((player) => player.privateCards.length === 3)).toBe(true)
     expect(engine.state.players.every((player) => player.chips === 505)).toBe(true)
     expect(engine.state.pot).toBe(20)
     expect(totalBlue(engine)).toBe(8)
@@ -25,10 +36,10 @@ describe("game lifecycle", () => {
     const actor = engine.state.actingPlayerId!
     engine.act(actor, { type: "check", drawSource: "deck" })
     expect(engine.state.phase).toBe("discarding")
-    expect(engine.state.players.find((player) => player.id === actor)?.privateCards).toHaveLength(5)
+    expect(engine.state.players.find((player) => player.id === actor)?.privateCards).toHaveLength(4)
     const discard = engine.state.players.find((player) => player.id === actor)!.privateCards[0]!
     engine.discard(actor, { discardCardId: discard.id, discardPile: "a" })
-    expect(engine.state.players.find((player) => player.id === actor)?.privateCards).toHaveLength(4)
+    expect(engine.state.players.find((player) => player.id === actor)?.privateCards).toHaveLength(3)
     expect(engine.state.discardA.at(-1)?.id).toBe(discard.id)
   })
 
@@ -69,13 +80,37 @@ describe("game lifecycle", () => {
     })
   })
 
-  it("allows Riichi only with a first/second-street bet or raise and locks the hand", () => {
+  it("allows Riichi with an early-street bet and locks the three-card hand", () => {
     const engine = GameEngine.create(players, { seed: "riichi" })
     const actor = engine.state.actingPlayerId!
     engine.act(actor, { type: "bet", amount: 5, riichi: true })
     const player = engine.state.players.find((candidate) => candidate.id === actor)!
     expect(player.riichi).toBe(true)
-    expect(player.privateCards).toHaveLength(4)
+    expect(player.privateCards).toHaveLength(3)
+  })
+
+  it("reveals 3-1-1 community cards and forbids Riichi on the final street", () => {
+    const engine = GameEngine.create(players, { seed: "streets" })
+
+    finishCheckingRound(engine)
+    expect(engine.state.street).toBe(2)
+    expect(engine.state.community).toHaveLength(3)
+
+    finishCheckingRound(engine)
+    expect(engine.state.street).toBe(3)
+    expect(engine.state.community).toHaveLength(4)
+
+    finishCheckingRound(engine)
+    expect(engine.state.street).toBe(4)
+    expect(engine.state.community).toHaveLength(5)
+
+    const actor = engine.state.actingPlayerId!
+    expect(engine.legalActions(actor).find((action) => action.type === "bet")).toMatchObject({
+      canRiichi: false,
+    })
+    expect(() => engine.act(actor, { type: "bet", amount: 5, riichi: true })).toThrow(
+      /Riichi is not available/,
+    )
   })
 
   it("enforces Loan cap, interest, and repayment", () => {
@@ -107,7 +142,7 @@ describe("game lifecycle", () => {
       blankExchange: { blankCardId: "forced-blank", pile: "a", cardIndex: 1 },
     })
 
-    expect(player.privateCards).toHaveLength(4)
+    expect(player.privateCards).toHaveLength(3)
     expect(player.privateCards.some((card) => card.id === "buried")).toBe(true)
     expect(engine.state.discardA.map((card) => card.id)).toEqual([
       "lane-1",
@@ -132,7 +167,7 @@ describe("game lifecycle", () => {
     expect(engine.state.handWinners).toHaveLength(1)
     expect(engine.state.handResults).toHaveLength(1)
     expect(engine.state.handResults[0]).toMatchObject({ reason: "uncontested", pot: 20 })
-    expect(engine.state.handResults[0]?.players.every((player) => player.cards.length === 4)).toBe(
+    expect(engine.state.handResults[0]?.players.every((player) => player.cards.length === 3)).toBe(
       true,
     )
     expect(
@@ -147,4 +182,16 @@ function totalBlue(engine: GameEngine) {
     engine.state.centerBlueSticks +
     engine.state.players.reduce((sum, player) => sum + player.blueSticks, 0)
   )
+}
+
+function finishCheckingRound(engine: GameEngine): void {
+  const street = engine.state.street
+
+  while (engine.state.phase === "betting" && engine.state.street === street) {
+    const actor = engine.state.actingPlayerId!
+    engine.act(actor, { type: "check", drawSource: "deck" })
+    const discard = engine.state.players.find((player) => player.id === actor)!.privateCards[0]!
+    const discardPile = engine.state.discardA.length === 0 ? "a" : "b"
+    engine.discard(actor, { discardCardId: discard.id, discardPile })
+  }
 }

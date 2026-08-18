@@ -22,7 +22,7 @@ describe("heuristic player and simulations", () => {
     const playerId = engine.state.actingPlayerId!
     const decision = chooseHeuristicAction(engine.state, playerId, 64)
 
-    expect(analyzePokerMath(engine.state, playerId, 64).showdownEquity).toBeLessThan(0.2)
+    expect(analyzePokerMath(engine.state, playerId, 64).showdownEquity).toBeLessThan(0.38)
     expect(decision.action.type).toBe("check")
     expect(decision.evaluations.some((evaluation) => evaluation.action.type === "bet")).toBe(false)
   })
@@ -39,9 +39,14 @@ describe("heuristic player and simulations", () => {
     )
     engine.state.actingPlayerId = "p4"
     engine.state.pendingPlayerIds = ["p4"]
+    engine.state.players.find((player) => player.id === "p4")!.privateCards = [
+      { kind: "numbered", suit: "characters", rank: 9, color: "red", id: "characters-9-1" },
+      { kind: "numbered", suit: "characters", rank: 9, color: "red", id: "characters-9-2" },
+      { kind: "numbered", suit: "characters", rank: 9, color: "red", id: "characters-9-3" },
+    ]
     const decision = chooseHeuristicAction(engine.state, "p4", 64)
 
-    expect(analyzePokerMath(engine.state, "p4", 64).showdownEquity).toBeGreaterThan(0.5)
+    expect(analyzePokerMath(engine.state, "p4", 64).showdownEquity).toBeGreaterThan(0.38)
     expect(decision.action.type).toBe("bet")
   })
 

@@ -43,7 +43,7 @@ describe("Cloudflare Worker and Durable Object persistence", () => {
       analyses: unknown[]
     }>()
     expect(debug.status).toBe(200)
-    expect(debugBody.state.players.every((player) => player.privateCards.length === 4)).toBe(true)
+    expect(debugBody.state.players.every((player) => player.privateCards.length === 3)).toBe(true)
     expect(debugBody.analyses).toHaveLength(2)
   })
 })

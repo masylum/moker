@@ -1,28 +1,80 @@
-import { createDeck, faceKey, jokerCanRepresent, numberedFace } from "./cards"
-import { evaluateSpecialHands } from "./patterns"
+import { createDeck, dragonFace, faceKey, jokerCanRepresent, numberedFace, windFace } from "./cards"
 import { HAND_RANKS } from "./rules"
+import { scoreHand } from "./scoring"
 import {
   DRAGONS,
   SUITS,
   WINDS,
   type Card,
   type CardFace,
-  type HandKind,
+  type CombinationKind,
   type HandProgressSummary,
-  type SpecialHandId,
+  type Suit,
 } from "./types"
 
-interface BasicDefinition {
-  kind: Exclude<HandKind, "high-card" | SpecialHandId>
-  label: string
-  targets: CardFace[][]
+interface Requirement {
+  face: CardFace
   naturalOnly: boolean
 }
 
-export function analyzeHandProgress(
-  cards: readonly Card[],
-  activeSpecialHands: readonly SpecialHandId[],
-): HandProgressSummary[] {
+interface HandDefinition {
+  kind: CombinationKind
+  label: string
+  size: number
+  alternatives?: Requirement[][]
+}
+
+const naturalFaces = uniqueNaturalFaces()
+const chowAlternatives = SUITS.flatMap((suit) =>
+  Array.from({ length: 7 }, (_, index) => chowRequirements(suit, index + 1)),
+)
+const definitions: HandDefinition[] = [
+  exactDefinition(
+    "eye",
+    "Eye",
+    2,
+    naturalFaces.map((face) => repeat(face, 2, true)),
+  ),
+  exactDefinition("chow", "Chow", 3, chowAlternatives),
+  { kind: "pure-suit", label: "Pure Suit", size: 5 },
+  exactDefinition("two-eyes", "Two Eyes", 4, twoEyeAlternatives()),
+  exactDefinition("chow-eye", "Chow + Eye", 5, compoundAlternatives(chowAlternatives, true)),
+  exactDefinition(
+    "pung",
+    "Pung",
+    3,
+    naturalFaces.map((face) => repeat(face, 3, false)),
+  ),
+  exactDefinition("three-dragons", "Three Dragons", 3, [
+    DRAGONS.map((dragon) => requirement(dragonFace(dragon), false)),
+  ]),
+  exactDefinition("pung-eye", "Pung + Eye", 5, pungEyeAlternatives()),
+  exactDefinition(
+    "three-dragons-eye",
+    "Three Dragons + Eye",
+    5,
+    naturalFaces.map((face) => [
+      ...DRAGONS.map((dragon) => requirement(dragonFace(dragon), false)),
+      ...repeat(face, 2, true),
+    ]),
+  ),
+  exactDefinition("four-winds", "Four Winds", 4, [
+    WINDS.map((wind) => requirement(windFace(wind), false)),
+  ]),
+  exactDefinition("dragon-dancer", "Dragon Dancer", 5, dragonDancerAlternatives()),
+  exactDefinition(
+    "kong",
+    "Kong",
+    4,
+    naturalFaces.map((face) => repeat(face, 4, false)),
+  ),
+  exactDefinition("crosswinds", "Crosswinds", 4, [
+    [...repeat(windFace("east"), 2, true), ...repeat(windFace("west"), 2, true)],
+    [...repeat(windFace("north"), 2, true), ...repeat(windFace("south"), 2, true)],
+  ]),
+]
+
+export function analyzeHandProgress(cards: readonly Card[]): HandProgressSummary[] {
   const highCard = cards
     .filter((card) => card.kind !== "blank" && card.kind !== "joker")
     .sort((left, right) => cardValue(right) - cardValue(left) || left.id.localeCompare(right.id))[0]
@@ -37,46 +89,32 @@ export function analyzeHandProgress(
     },
   ]
 
-  for (const definition of basicDefinitions()) {
-    const matches = definition.targets.map((targets) =>
-      bestTargetMatch(cards, targets, definition.naturalOnly),
-    )
-    matches.sort(
-      (left, right) =>
-        right.cardIds.length - left.cardIds.length ||
-        right.values.join(":").localeCompare(left.values.join(":")),
-    )
-    const best = matches[0]!
+  for (const definition of definitions) {
+    const match =
+      definition.kind === "pure-suit"
+        ? bestPureSuitMatch(cards)
+        : bestAlternativeMatch(cards, definition.alternatives!)
     evaluations.push({
       kind: definition.kind,
       label: definition.label,
       rank: HAND_RANKS[definition.kind],
-      size: definition.targets[0]!.length,
-      missing: definition.targets[0]!.length - best.cardIds.length,
-      matchedCardIds: best.cardIds,
+      size: definition.size,
+      missing: definition.size - match.length,
+      matchedCardIds: match,
     })
   }
-
-  evaluations.push(
-    ...evaluateSpecialHands(cards, activeSpecialHands).map((evaluation) => ({
-      kind: evaluation.id,
-      label: evaluation.label,
-      rank: evaluation.score,
-      size: evaluation.size,
-      missing: evaluation.missing,
-      matchedCardIds: evaluation.matchedCardIds,
-    })),
-  )
 
   return evaluations.sort((left, right) => right.rank - left.rank)
 }
 
-export function summarizeHandProgress(
-  cards: readonly Card[],
-  activeSpecialHands: readonly SpecialHandId[],
-): { currentBest: HandProgressSummary; nextClosest: HandProgressSummary | null } {
-  const evaluations = analyzeHandProgress(cards, activeSpecialHands)
-  const currentBest = evaluations.find((evaluation) => evaluation.missing === 0)!
+export function summarizeHandProgress(cards: readonly Card[]): {
+  currentBest: HandProgressSummary
+  nextClosest: HandProgressSummary | null
+} {
+  const evaluations = analyzeHandProgress(cards)
+  const score = scoreHand(cards)
+  const kind = score.combinations[0]?.kind ?? "high-card"
+  const currentBest = evaluations.find((evaluation) => evaluation.kind === kind)!
   const nextClosest =
     evaluations
       .filter((evaluation) => evaluation.rank > currentBest.rank && evaluation.missing > 0)
@@ -88,68 +126,136 @@ export function summarizeHandProgress(
   return { currentBest, nextClosest }
 }
 
-function basicDefinitions(): BasicDefinition[] {
-  const faces = uniqueNaturalFaces()
+function exactDefinition(
+  kind: CombinationKind,
+  label: string,
+  size: number,
+  alternatives: Requirement[][],
+): HandDefinition {
+  return { kind, label, size, alternatives }
+}
 
+function requirement(face: CardFace, naturalOnly: boolean): Requirement {
+  return { face, naturalOnly }
+}
+
+function repeat(face: CardFace, count: number, naturalOnly: boolean): Requirement[] {
+  return Array.from({ length: count }, () => requirement(face, naturalOnly))
+}
+
+function chowRequirements(suit: Suit, start: number): Requirement[] {
   return [
-    {
-      kind: "eye",
-      label: "Eye",
-      targets: faces.map((face) => [face, face]),
-      naturalOnly: true,
-    },
-    {
-      kind: "chow",
-      label: "Chow",
-      targets: SUITS.flatMap((suit) =>
-        Array.from({ length: 7 }, (_, index) => {
-          const start = index + 1
-
-          return [
-            numberedFace(suit, start as 1 | 2 | 3 | 4 | 5 | 6 | 7),
-            numberedFace(suit, (start + 1) as 2 | 3 | 4 | 5 | 6 | 7 | 8),
-            numberedFace(suit, (start + 2) as 3 | 4 | 5 | 6 | 7 | 8 | 9),
-          ]
-        }),
-      ),
-      naturalOnly: false,
-    },
-    {
-      kind: "pung",
-      label: "Pung",
-      targets: faces.map((face) => [face, face, face]),
-      naturalOnly: false,
-    },
-    {
-      kind: "three-dragons",
-      label: "Three Dragons",
-      targets: [
-        DRAGONS.map((dragon) => ({
-          kind: "dragon" as const,
-          dragon,
-          color:
-            dragon === "green"
-              ? ("green" as const)
-              : dragon === "white"
-                ? ("blue" as const)
-                : ("red" as const),
-        })),
-      ],
-      naturalOnly: false,
-    },
-    {
-      kind: "kong",
-      label: "Kong",
-      targets: faces.map((face) => [face, face, face, face]),
-      naturalOnly: false,
-    },
-    {
-      kind: "four-winds",
-      label: "Four Winds",
-      targets: [WINDS.map((wind) => ({ kind: "wind" as const, wind, color: "black" as const }))],
-      naturalOnly: false,
-    },
+    requirement(numberedFace(suit, start as 1 | 2 | 3 | 4 | 5 | 6 | 7), false),
+    requirement(numberedFace(suit, (start + 1) as 2 | 3 | 4 | 5 | 6 | 7 | 8), false),
+    requirement(numberedFace(suit, (start + 2) as 3 | 4 | 5 | 6 | 7 | 8 | 9), false),
   ]
+}
+
+function twoEyeAlternatives(): Requirement[][] {
+  return naturalFaces.flatMap((left, leftIndex) =>
+    naturalFaces
+      .slice(leftIndex + 1)
+      .map((right) => [...repeat(left, 2, true), ...repeat(right, 2, true)]),
+  )
+}
+
+function compoundAlternatives(
+  mainAlternatives: readonly Requirement[][],
+  allowSameFace: boolean,
+): Requirement[][] {
+  return mainAlternatives.flatMap((main) =>
+    naturalFaces
+      .filter(
+        (face) => allowSameFace || !main.some((target) => faceKey(target.face) === faceKey(face)),
+      )
+      .map((face) => [...main, ...repeat(face, 2, true)]),
+  )
+}
+
+function pungEyeAlternatives(): Requirement[][] {
+  return naturalFaces.flatMap((pung) =>
+    naturalFaces
+      .filter((eye) => faceKey(eye) !== faceKey(pung))
+      .map((eye) => [...repeat(pung, 3, false), ...repeat(eye, 2, true)]),
+  )
+}
+
+function dragonDancerAlternatives(): Requirement[][] {
+  return SUITS.flatMap((suit) => {
+    const dragon = dragonFace(suit === "bamboo" ? "green" : suit === "dots" ? "white" : "red")
+
+    return Array.from({ length: 7 }, (_, index) => [
+      ...chowRequirements(suit, index + 1),
+      ...repeat(dragon, 2, true),
+    ])
+  })
+}
+
+function bestAlternativeMatch(
+  cards: readonly Card[],
+  alternatives: readonly Requirement[][],
+): string[] {
+  let best: string[] = []
+
+  for (const targets of alternatives) {
+    const matched = bestTargetMatch(cards, targets)
+
+    if (matched.length > best.length) {
+      best = matched
+    }
+  }
+
+  return best
+}
+
+function bestTargetMatch(cards: readonly Card[], targets: readonly Requirement[]): string[] {
+  const available = targets.map((target, index) => ({ ...target, index }))
+  const matched: string[] = []
+  const naturalCards = cards.filter((card) => card.kind !== "blank" && card.kind !== "joker")
+
+  for (const card of naturalCards) {
+    const matching = available
+      .filter((target) => faceKey(card) === faceKey(target.face))
+      .sort((left, right) => Number(right.naturalOnly) - Number(left.naturalOnly))[0]
+
+    if (!matching) {
+      continue
+    }
+
+    available.splice(
+      available.findIndex((target) => target.index === matching.index),
+      1,
+    )
+    matched.push(card.id)
+  }
+
+  for (const joker of cards.filter((card) => card.kind === "joker")) {
+    const targetIndex = available.findIndex(
+      (target) => !target.naturalOnly && jokerCanRepresent(joker, target.face),
+    )
+
+    if (targetIndex < 0) {
+      continue
+    }
+
+    available.splice(targetIndex, 1)
+    matched.push(joker.id)
+  }
+
+  return matched
+}
+
+function bestPureSuitMatch(cards: readonly Card[]): string[] {
+  return SUITS.map((suit) =>
+    cards
+      .filter(
+        (card) =>
+          (card.kind === "numbered" && card.suit === suit) ||
+          (card.kind === "joker" && jokerCanRepresent(card, numberedFace(suit, 9))),
+      )
+      .slice(0, 5)
+      .map((card) => card.id),
+  ).sort((left, right) => right.length - left.length)[0]!
 }
 
 function uniqueNaturalFaces(): CardFace[] {
@@ -167,73 +273,6 @@ function uniqueNaturalFaces(): CardFace[] {
   return [...byFace.values()]
 }
 
-function bestTargetMatch(
-  cards: readonly Card[],
-  targets: readonly CardFace[],
-  naturalOnly: boolean,
-): { cardIds: string[]; values: number[] } {
-  let best = { cardIds: [] as string[], values: [] as number[] }
-
-  const visit = (
-    cardIndex: number,
-    usedTargets: Set<number>,
-    cardIds: string[],
-    values: number[],
-  ) => {
-    if (cardIndex === cards.length) {
-      if (cardIds.length > best.cardIds.length) {
-        best = { cardIds: [...cardIds], values: [...values].sort((left, right) => right - left) }
-      }
-
-      return
-    }
-
-    visit(cardIndex + 1, usedTargets, cardIds, values)
-    const card = cards[cardIndex]!
-
-    for (let targetIndex = 0; targetIndex < targets.length; targetIndex += 1) {
-      if (usedTargets.has(targetIndex)) {
-        continue
-      }
-
-      const target = targets[targetIndex]!
-      const matches =
-        card.kind !== "blank" &&
-        (card.kind === "joker"
-          ? !naturalOnly && jokerCanRepresent(card, target)
-          : faceKey(card) === faceKey(target))
-
-      if (!matches) {
-        continue
-      }
-
-      usedTargets.add(targetIndex)
-      cardIds.push(card.id)
-      values.push(cardValue(target))
-      visit(cardIndex + 1, usedTargets, cardIds, values)
-      values.pop()
-      cardIds.pop()
-      usedTargets.delete(targetIndex)
-    }
-  }
-
-  visit(0, new Set(), [], [])
-
-  return best
-}
-
 function cardValue(card: CardFace | Card): number {
-  if (card.kind === "numbered") {
-    return card.rank
-  }
-
-  if (card.kind === "dragon") {
-    return 10
-  }
-
-  if (card.kind === "wind") {
-    return 11
-  }
-
-  return 0
+  return card.kind === "numbered" ? card.rank : card.kind === "dragon" ? 10 : 11
 }
