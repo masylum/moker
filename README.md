@@ -12,6 +12,7 @@ A deterministic TypeScript implementation of Mahjong Poker for rules testing, ba
 - A responsive SolidJS SPA and a colored Unicode terminal client for human play against heuristic players, with complete hand-result reveals and an opt-in compact table view combining each seat's hidden hand, current/next Hand, draw, and poker math.
 - Oxlint, Oxfmt, and Knip checks, with no-semicolon formatting and unused-code detection.
 - Node unit tests plus Workers-runtime integration tests.
+- An isolated Stud7 prototype in `src/stud7`, with its own engine, heuristic, simulation, tests, and terminal client. It does not change the main Hold'em-style engine.
 
 ## Local setup
 
@@ -41,6 +42,10 @@ npm run simulate -- 10 balance-seed
 npm run play -- --seed jade-table --players 4 --samples 48
 npm run play -- --seed jade-table --debug  # reveal all hands, equity, odds, edge, and EV
 npm run play -- --auto --seed demo  # visible non-interactive heuristic game
+npm run simulate:stud7 -- 10 stud7-balance 4  # count, seed prefix, rollout samples
+npm run play:stud7 -- --seed stud-table --players 4 --samples 32
+npm run play:stud7 -- --debug  # show every hole card and Stud7 equity calculation
+npm run play:stud7 -- --auto --seed stud-demo
 npm run deploy:dry
 npm run deploy
 ```
@@ -65,3 +70,5 @@ colored terminal client                     Cloudflare Worker API
 ```
 
 The terminal and server use the same `GameEngine`, scoring ladder, heuristic, and automated-step functions; only transport and presentation differ. See `docs/architecture.md` for module and persistence ownership, and `docs/implementation-notes.md` for deterministic rulings.
+
+The Stud7 prototype currently runs independently through its library and CLI rather than the Worker/SPA. See `docs/stud7-prototype.md` for its dealing and visibility rules.

@@ -31,3 +31,7 @@ Cloudflare Think already uses the Agent's local SQLite-backed storage for durabl
 ## Clients
 
 The SolidJS client talks to the Worker API, whose `GameSession` applies engine methods. Its opt-in debug endpoint reveals current private hands but not the future deck order, and calculates each seat's view independently from information available to that player. Hands, chip commitments, current/next Hands, and poker math are rendered together at each seat. The terminal client runs the same library locally and exposes the equivalent compact view through `--debug`. Both clients render state and collect choices; neither implements scoring or legal transitions.
+
+## Stud7 prototype
+
+`src/stud7` is a parallel variant boundary. It has separate state types, engine transitions, visibility-aware heuristic, automation, and simulation. `scripts/play-stud7.ts` is its independent client. It imports shared deck, RNG, economy, and scoring primitives from `src/game`, but the main `GameEngine`, Worker routes, Durable Objects, LLM agent, and SolidJS client do not import Stud7 code.
