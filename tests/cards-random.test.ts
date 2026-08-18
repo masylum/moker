@@ -37,8 +37,10 @@ describe("deck and seeded randomness", () => {
 
   it("renders colored Unicode Mahjong tiles for the terminal client", () => {
     const bambooOne = createDeck().find((card) => card.id === "bamboo-1-1")!
+    const blank = createDeck().find((card) => card.id === "blank-1")!
 
     expect(tileGlyph(bambooOne)).toBe("🀐")
     expect(coloredTile(bambooOne)).toContain("\u001B[32m🀐\u001B[0m")
+    expect(tileGlyph(blank)).toBe("🀫")
   })
 })

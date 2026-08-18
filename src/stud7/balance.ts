@@ -258,7 +258,7 @@ function addCompletedGame(
     raw[hand.reason === "showdown" ? "showdowns" : "uncontested"] += 1
     const winner = hand.players.find((player) => hand.winnerIds.includes(player.playerId))
 
-    if (winner) {
+    if (winner && hand.reason === "showdown") {
       raw.winningRankPoints += winner.score.total
       const label = winner.score.combinations[0]?.label ?? "High Card"
       const key = `${winner.score.total}:${label}`

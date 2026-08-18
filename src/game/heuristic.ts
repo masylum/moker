@@ -113,7 +113,12 @@ export function chooseHeuristicAction(
 
     if (math.showdownEquity >= aggressionThreshold) {
       for (const amount of sensibleWagers(state, player, CHIP_UNIT)) {
-        const riichi = shouldDeclareRiichi(state, player, math.expectedScore, math.showdownEquity)
+        const riichi = shouldDeclareRiichi(
+          state,
+          player,
+          math.currentBest.rank,
+          math.showdownEquity,
+        )
         evaluations.push(
           makeEvaluation(
             { type: "bet", amount, ...(riichi ? { riichi: true } : {}) },
@@ -138,7 +143,12 @@ export function chooseHeuristicAction(
 
     if (math.showdownEquity >= aggressionThreshold) {
       for (const amount of sensibleWagers(state, player, state.currentWager + state.minimumRaise)) {
-        const riichi = shouldDeclareRiichi(state, player, math.expectedScore, math.showdownEquity)
+        const riichi = shouldDeclareRiichi(
+          state,
+          player,
+          math.currentBest.rank,
+          math.showdownEquity,
+        )
         evaluations.push(
           makeEvaluation(
             { type: "raise", amount, ...(riichi ? { riichi: true } : {}) },
@@ -254,7 +264,7 @@ function chooseDrawPlan(
     const count = source === "deck" ? Math.max(1, samples) : 1
     for (let index = 0; index < count; index += 1) {
       const drawn = visible ?? random.pick(unknown)
-      total += bestImmediatePrivateScore([...player.privateCards, drawn], state)
+      total += bestImmediatePrivatePotential([...player.privateCards, drawn], state)
     }
     return total / count
   }
@@ -273,7 +283,7 @@ function chooseDrawPlan(
         plans.push({
           source: "deck",
           blankExchange: { blankCardId: blank.id, pile, cardIndex },
-          value: currentStrength(replaced, state),
+          value: privatePotential(replaced, state),
         })
       })
     }
@@ -282,18 +292,25 @@ function chooseDrawPlan(
   return plans.sort(
     (left, right) =>
       right.value - left.value ||
-      Number(Boolean(left.blankExchange)) - Number(Boolean(right.blankExchange)) ||
+      Number(Boolean(right.blankExchange)) - Number(Boolean(left.blankExchange)) ||
       left.source.localeCompare(right.source),
   )[0]!
 }
 
-function bestImmediatePrivateScore(candidateCards: Card[], state: GameState): number {
+function bestImmediatePrivatePotential(candidateCards: Card[], state: GameState): number {
   let best = 0
   for (let discardIndex = 0; discardIndex < candidateCards.length; discardIndex += 1) {
     const privateCards = candidateCards.filter((_, index) => index !== discardIndex)
-    best = Math.max(best, currentStrength(privateCards, state))
+    best = Math.max(best, privatePotential(privateCards, state))
   }
   return best
+}
+
+function privatePotential(privateCards: Card[], state: GameState): number {
+  const progress = summarizeHandProgress([...privateCards, ...state.community])
+  const next = progress.nextClosest
+
+  return progress.currentBest.rank * 100 + (next ? (10 - next.missing) * 2 + next.rank / 100 : 0)
 }
 
 function analyzePrivateFuture(
@@ -415,15 +432,15 @@ function sensibleWagers(state: GameState, player: PlayerState, minimum: number):
 function shouldDeclareRiichi(
   state: GameState,
   player: PlayerState,
-  expectedScore: number,
+  currentScore: number,
   winRate: number,
 ): boolean {
   return (
     state.street < 4 &&
     !player.riichi &&
     player.blueSticks > 0 &&
-    expectedScore >= 6 &&
-    winRate >= 0.42
+    currentScore >= 3 &&
+    winRate >= 0.4
   )
 }
 

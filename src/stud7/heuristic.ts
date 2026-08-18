@@ -44,7 +44,7 @@ export function chooseStud7Action(
   const drawPlan =
     player.riichi && state.config.riichiDrawMode === "discard-drawn"
       ? { source: "deck" as const, value: currentRank(player.cards) }
-      : fastMode
+      : fastMode && !player.cards.some(({ card }) => card.kind === "blank")
         ? { source: "deck" as const, value: currentRank(player.cards) }
         : chooseDrawPlan(state, player, random.fork("draw"), samples)
   const math = analyzeStud7Math(state, playerId, samples)
@@ -318,7 +318,7 @@ function chooseDrawPlan(
   return plans.sort(
     (left, right) =>
       right.value - left.value ||
-      Number(Boolean(left.blankExchange)) - Number(Boolean(right.blankExchange)) ||
+      Number(Boolean(right.blankExchange)) - Number(Boolean(left.blankExchange)) ||
       left.source.localeCompare(right.source),
   )[0]!
 }

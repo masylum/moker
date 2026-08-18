@@ -48,6 +48,33 @@ describe("heuristic player and simulations", () => {
 
     expect(analyzePokerMath(engine.state, "p4", 64).showdownEquity).toBeGreaterThan(0.38)
     expect(decision.action.type).toBe("bet")
+    expect(decision.action).toMatchObject({ riichi: true })
+  })
+
+  it("uses a Blank exchange when a buried tile improves the made Hand", () => {
+    const engine = GameEngine.create(
+      [
+        { id: "p1", name: "A", controller: "heuristic" },
+        { id: "p2", name: "B", controller: "heuristic" },
+      ],
+      { seed: "blank-plan", heuristicSamples: 2 },
+    )
+    const playerId = engine.state.actingPlayerId!
+    const player = engine.state.players.find(({ id }) => id === playerId)!
+    player.privateCards = [
+      { kind: "numbered", suit: "bamboo", rank: 5, color: "green", id: "bamboo-5-1" },
+      { kind: "numbered", suit: "bamboo", rank: 5, color: "green", id: "bamboo-5-2" },
+      { kind: "blank", color: null, id: "blank-1" },
+    ]
+    engine.state.discardA = [
+      { kind: "numbered", suit: "bamboo", rank: 5, color: "green", id: "bamboo-5-3" },
+    ]
+    const decision = chooseHeuristicAction(engine.state, playerId, 2)
+    const check = decision.evaluations.find(({ action }) => action.type === "check")
+
+    expect(check?.action).toMatchObject({
+      blankExchange: { blankCardId: "blank-1", pile: "a", cardIndex: 0 },
+    })
   })
 
   it("reports pot odds from the same math used by the heuristic", () => {

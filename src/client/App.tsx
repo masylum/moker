@@ -836,7 +836,7 @@ function Tile(props: { card: Card; compact?: boolean }) {
           ? `${props.card.wind[0]!.toUpperCase()}W`
           : props.card.kind === "joker"
             ? "★"
-            : "□"
+            : "🀫"
   return (
     <div
       class={`tile ${props.card.kind} color-${props.card.color ?? "none"} ${props.compact ? "compact" : ""}`}

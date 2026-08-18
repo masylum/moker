@@ -1,5 +1,7 @@
 # Stud7 blue-stick and Riichi balance report
 
+> **Audit correction:** The bulk runner used a deck-only shortcut during fast Draw & Discard, so its Blank/Joker/tile-conditioned rates did not measure normal AI play. The winning-Hand table also included uncontested, often incomplete Hands rather than showdowns only. Those historical sections are retained below for reproducibility but are withdrawn as balance evidence. The analyzer now allows Blank planning in fast mode and counts the winning-Hand distribution only at showdown.
+
 ## Experiment
 
 This report compares three Stud7 rules profiles:
@@ -51,7 +53,7 @@ The incomplete games are a real economy failure, not infrastructure loss: a play
 
 The simulation does not show Raises occurring more often than Folds: baseline has roughly three Folds for every Raise. It does confirm that Raises are about ten times as common as Riichi declarations. Fold +2 is a stronger future-cost penalty, so it reduces folding by about three percentage points and increases calling. It does not make Riichi more attractive.
 
-## Winning Hand distribution
+## Historical all-result Hand distribution (withdrawn)
 
 | Rank and Hand          | Baseline | Fold +2 | Locked draw |
 | ---------------------- | -------: | ------: | ----------: |
@@ -70,9 +72,9 @@ The simulation does not show Raises occurring more often than Folds: baseline ha
 | 13 Kong                |    0.03% |   0.04% |       0.06% |
 | 14 Crosswinds          |    0.03% |   0.01% |       0.01% |
 
-High Card dominates because more than 92% of hands end without a showdown. Fold +2 produces more Calls and showdowns, so winning Hands move slightly higher on the ladder.
+These figures describe the cards held when all results were recorded, including early uncontested wins. They do not describe completed showdown Hands.
 
-## Win rate by retained tile face
+## Historical retained-tile rates (withdrawn)
 
 The number in parentheses is the seat-hand sample for that profile.
 
@@ -116,14 +118,14 @@ The number in parentheses is the seat-hand sample for that profile.
 | ★ Blue Joker   | 35.03% (1,733) | 37.91% (1,849) | 38.47% (1,861) |
 | ★ Green Joker  | 34.98% (1,738) | 35.07% (1,839) | 35.69% (1,835) |
 | ★ Red Joker    | 33.18% (1,688) | 35.15% (1,775) | 35.80% (1,760) |
-| □ Blank        | 17.85% (6,079) | 17.10% (6,276) | 17.33% (6,239) |
+| 🀫 Blank        | 17.85% (6,079) | 17.10% (6,276) | 17.33% (6,239) |
 
 ## Interpretation
 
 - **Keep the locked-draw Riichi behavior.** Relative to Fold +2 with skipped draws, its opening pots, loans, action mix, Riichi win rate, and Hand distribution are almost unchanged. It preserves turn cadence and public discard information without changing the declared cards.
 - **Fold +2 does not solve Riichi scarcity.** It lowers the Fold rate because accepting two future liabilities is worse, but Riichi remains below 1% of actions. If more Riichi is the goal, its declaration threshold or reward needs direct adjustment.
 - **The economy needs an insolvency rule.** Between 2.8% and 3.6% of games failed when two Loans could no longer cover a mandatory charge. Define elimination, an all-in charge, a capped charge, or additional emergency credit before relying on long balance runs.
-- **Joker colors are not equivalent.** In the selected profile, Blue/Green/Red Jokers win 38.47%/35.69%/35.80%; Black Joker wins only 18.51%, just 1.18 points above the 17.33% Blank and far below the roughly 25% four-player seat baseline.
-- **The game is mostly decided before showdown.** Only 7.20% of selected-profile hands reach showdown and 60.79% of recorded winning Hands are High Card. More Calls or lower aggression would expose more of the five-card ladder.
+- **Tile-conditioned conclusions are withdrawn.** The fast runner did not let the AI use Blank exchange, so the historical Joker, Blank, and individual tile rates above are not comparable to normal play.
+- **The game is mostly decided before showdown.** Only 7.20% of selected-profile hands reach showdown. Hand-rank health must be calculated from that showdown subset rather than from early uncontested results.
 
 The 90-game full-rollout sensitivity cohort retained the same main direction: Fold +2 increased opening pots and Loans, Raises remained far more common than Riichi, and the locked-draw rule did not cause a mechanical failure. Its sample is too small for tile-level conclusions.
