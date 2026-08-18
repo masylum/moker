@@ -3,9 +3,11 @@ import { SeededRandom } from "./random"
 import {
   COMMUNITY_REVEALS,
   CHIP_UNIT,
+  FLOWER_FOLD_BONUS,
   LOAN_VALUE,
   MAX_LOANS,
   ORBIT_VALUES,
+  OPENING_PRIVATE_CARD_COUNT,
   PRIVATE_CARD_COUNT,
   createConfig,
   maxHandsFor,
@@ -20,6 +22,7 @@ import type {
   GameConfig,
   GameEvent,
   GameState,
+  HandResult,
   LegalAction,
   PlayerController,
   PlayerState,
@@ -42,6 +45,9 @@ export class GameEngine {
     this.state.minimumRaise ??= CHIP_UNIT
     this.state.handResults ??= []
     this.state.drawDiscardHistory ??= []
+    this.state.seedDiscardHistory ??= []
+    this.state.boardResetCount ??= 0
+    this.state.scrappedCommunity ??= []
     this.events = events
     this.random = new SeededRandom(state.config.seed, state.rngState)
   }
@@ -82,6 +88,7 @@ export class GameEngine {
       discardA: [],
       discardB: [],
       removedCards: [],
+      scrappedCommunity: [],
       pot: 0,
       centerBlueSticks: config.playerCount,
       currentWager: 0,
@@ -90,6 +97,8 @@ export class GameEngine {
       actingPlayerId: null,
       pendingDiscard: null,
       drawDiscardHistory: [],
+      seedDiscardHistory: [],
+      boardResetCount: 0,
       handWinners: [],
       handResults: [],
       finalScores: null,
@@ -121,7 +130,10 @@ export class GameEngine {
     this.state.discardA = []
     this.state.discardB = []
     this.state.removedCards = []
+    this.state.scrappedCommunity = []
     this.state.drawDiscardHistory = []
+    this.state.seedDiscardHistory = []
+    this.state.boardResetCount = 0
     this.state.handWinners = []
     this.state.pendingDiscard = null
     this.state.currentWager = 0
@@ -140,7 +152,7 @@ export class GameEngine {
       this.payToPot(player, charge)
     }
 
-    for (let cardIndex = 0; cardIndex < PRIVATE_CARD_COUNT; cardIndex += 1) {
+    for (let cardIndex = 0; cardIndex < OPENING_PRIVATE_CARD_COUNT; cardIndex += 1) {
       for (let offset = 1; offset <= this.state.players.length; offset += 1) {
         this.playerAt(this.state.dealerIndex + offset).privateCards.push(this.drawDeck())
       }
@@ -151,6 +163,55 @@ export class GameEngine {
       orbit: this.state.orbit,
       charge: this.state.orbitValue,
     })
+    this.beginSeedDiscards()
+  }
+
+  seedDiscard(
+    playerId: string,
+    decision: { discardCardId: string; discardPile: DiscardPile },
+  ): void {
+    if (this.state.phase !== "seeding" || this.state.actingPlayerId !== playerId) {
+      throw new Error("This player is not seeding a discard lane")
+    }
+
+    const player = this.getPlayer(playerId)
+    const cardIndex = player.privateCards.findIndex((card) => card.id === decision.discardCardId)
+
+    if (cardIndex < 0) {
+      throw new Error("Seed discard card is not in the private hand")
+    }
+
+    const target = decision.discardPile === "a" ? this.state.discardA : this.state.discardB
+    const other = decision.discardPile === "a" ? this.state.discardB : this.state.discardA
+
+    if (other.length === 0 && target.length > 0) {
+      throw new Error("An empty discard pile must be filled first")
+    }
+
+    const [discarded] = player.privateCards.splice(cardIndex, 1)
+    const discardIndex = target.length
+    target.push(discarded!)
+    this.state.seedDiscardHistory.push({
+      playerId,
+      discardedCard: structuredClone(discarded!),
+      discardPile: decision.discardPile,
+      discardIndex,
+    })
+    this.state.pendingPlayerIds = this.state.pendingPlayerIds.filter((id) => id !== playerId)
+    this.emit(
+      "seed-discard",
+      { discardedCardId: discarded!.id, pile: decision.discardPile },
+      playerId,
+    )
+    const nextPlayerId = this.state.pendingPlayerIds[0]
+
+    if (nextPlayerId) {
+      this.state.actingPlayerId = nextPlayerId
+
+      return
+    }
+
+    this.state.actingPlayerId = null
     this.openStreet(1)
   }
 
@@ -398,13 +459,62 @@ export class GameEngine {
     }
   }
 
+  private beginSeedDiscards(): void {
+    this.state.phase = "seeding"
+    const ordered = this.orderedAfter(this.state.dealerIndex)
+    this.state.pendingPlayerIds = ordered.map((player) => player.id)
+    this.state.actingPlayerId = this.state.pendingPlayerIds[0] ?? null
+    this.emit("seed-discard-started", {
+      playerIds: this.state.pendingPlayerIds,
+      privateCardCount: OPENING_PRIVATE_CARD_COUNT,
+    })
+  }
+
   private openStreet(street: 1 | 2 | 3 | 4): void {
     this.state.street = street
     const revealCount = COMMUNITY_REVEALS[street - 1]!
+    const revealed = Array.from({ length: revealCount }, () => this.drawDeck())
 
-    for (let index = 0; index < revealCount; index += 1) {
-      this.state.community.push(this.drawDeck())
+    if (street !== 1 && revealed.some((card) => card.kind === "flower")) {
+      this.resetCommunityBoard(revealed, street)
+
+      return
     }
+
+    this.state.community.push(...revealed)
+    this.beginBettingRound(street, revealCount === 0 ? [] : revealed.map((card) => card.id))
+  }
+
+  private resetCommunityBoard(revealed: Card[], fromStreet: 2 | 3 | 4): void {
+    const scrapped = [...this.state.community, ...revealed]
+    this.state.removedCards.push(...scrapped)
+    this.state.scrappedCommunity.push(...scrapped)
+    this.state.community = []
+    this.state.boardResetCount += 1
+    this.emit("flower-board-reset", {
+      fromStreet,
+      flowerIds: revealed.filter((card) => card.kind === "flower").map((card) => card.id),
+      scrappedCardIds: scrapped.map((card) => card.id),
+      reset: this.state.boardResetCount,
+    })
+    const replacementFlop = Array.from({ length: 3 }, () => this.drawDeck())
+
+    if (replacementFlop.some((card) => card.kind === "flower")) {
+      this.resetCommunityBoard(replacementFlop, 2)
+
+      return
+    }
+
+    this.state.community.push(...replacementFlop)
+    this.beginBettingRound(
+      2,
+      replacementFlop.map((card) => card.id),
+    )
+  }
+
+  private beginBettingRound(street: 1 | 2 | 3 | 4, revealed: string[]): void {
+    this.state.street = street
+    this.state.phase = "betting"
 
     this.state.currentWager = 0
     this.state.minimumRaise = CHIP_UNIT
@@ -418,8 +528,8 @@ export class GameEngine {
     this.state.actingPlayerId = this.state.pendingPlayerIds[0] ?? null
     this.emit("street-opened", {
       street,
-      revealed:
-        revealCount === 0 ? [] : this.state.community.slice(-revealCount).map((card) => card.id),
+      revealed,
+      boardResetCount: this.state.boardResetCount,
     })
   }
 
@@ -530,10 +640,19 @@ export class GameEngine {
       player.score = scoreHand([...player.privateCards, ...this.state.community])
     }
 
-    const bestScore = contenders
+    const eligible = contenders.filter((player) => !this.hasSingleFlower(player))
+    if (eligible.length === 0) {
+      this.emit("all-players-flower-disqualified", {
+        playerIds: contenders.map((player) => player.id),
+      })
+    }
+
+    const bestScore = eligible
       .map((player) => player.score!)
-      .sort((left, right) => compareHandScores(right, left))[0]!
-    const winners = contenders.filter((player) => compareHandScores(player.score!, bestScore) === 0)
+      .sort((left, right) => compareHandScores(right, left))[0]
+    const winners = bestScore
+      ? eligible.filter((player) => compareHandScores(player.score!, bestScore) === 0)
+      : contenders
     this.state.handWinners = winners.map((player) => player.id)
     const pot = this.state.pot
     const payouts = this.splitPot(winners)
@@ -546,19 +665,23 @@ export class GameEngine {
 
     this.emit("showdown", {
       winners: this.state.handWinners,
+      flowerDisqualified: contenders
+        .filter((player) => this.hasSingleFlower(player))
+        .map((player) => player.id),
       scores: Object.fromEntries(contenders.map((player) => [player.id, player.score?.total ?? 0])),
     })
-    this.recordHandResult("showdown", pot, payouts)
+    this.recordHandResult("showdown", pot, payouts, null)
     this.endHand()
   }
 
   private awardUncontested(winner: PlayerState): void {
     const pot = this.state.pot
     winner.chips += pot
+    const flowerBonus = this.hasSingleFlower(winner) ? this.payFlowerFoldBonus(winner) : null
     this.state.handWinners = [winner.id]
-    this.emit("uncontested-win", { winnerId: winner.id, pot })
+    this.emit("uncontested-win", { winnerId: winner.id, pot, flowerBonus })
     this.state.pot = 0
-    this.recordHandResult("uncontested", pot, { [winner.id]: pot })
+    this.recordHandResult("uncontested", pot, { [winner.id]: pot }, flowerBonus)
     this.endHand()
   }
 
@@ -618,6 +741,7 @@ export class GameEngine {
     reason: "showdown" | "uncontested",
     pot: number,
     payouts: Record<string, number>,
+    flowerBonus: HandResult["flowerBonus"],
   ): void {
     this.state.handResults.push({
       handNumber: this.state.handNumber,
@@ -625,17 +749,47 @@ export class GameEngine {
       community: structuredClone(this.state.community),
       winnerIds: [...this.state.handWinners],
       reason,
+      flowerBonus,
+      boardResets: this.state.boardResetCount,
       players: this.state.players.map((player) => ({
         playerId: player.id,
         name: player.name,
         folded: player.folded,
         riichi: player.riichi,
+        flowerDisqualified: reason === "showdown" && this.hasSingleFlower(player),
         cards: structuredClone(player.privateCards),
         score: player.score ?? scoreHand([...player.privateCards, ...this.state.community]),
         committed: player.handCommitted,
         payout: payouts[player.id] ?? 0,
       })),
     })
+  }
+
+  private hasSingleFlower(player: PlayerState): boolean {
+    return player.privateCards.filter((card) => card.kind === "flower").length === 1
+  }
+
+  private payFlowerFoldBonus(winner: PlayerState): HandResult["flowerBonus"] {
+    let total = 0
+
+    for (const opponent of this.state.players) {
+      if (opponent.id === winner.id) {
+        continue
+      }
+
+      opponent.chips -= FLOWER_FOLD_BONUS
+      winner.chips += FLOWER_FOLD_BONUS
+      total += FLOWER_FOLD_BONUS
+    }
+
+    const bonus = {
+      winnerId: winner.id,
+      perOpponent: FLOWER_FOLD_BONUS,
+      total,
+    }
+    this.emit("flower-fold-bonus", bonus, winner.id)
+
+    return bonus
   }
 
   private resolveRiichiWin(winner: PlayerState, contenders: PlayerState[]): void {

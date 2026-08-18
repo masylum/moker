@@ -5,6 +5,7 @@ import {
   analyzePokerMath,
   chooseHeuristicAction,
   chooseHeuristicDiscard,
+  chooseHeuristicSeedDiscard,
 } from "../src/game/heuristic"
 import { simulateGame } from "../src/game/simulation"
 
@@ -19,6 +20,7 @@ describe("heuristic player and simulations", () => {
       ],
       { seed: "jade-table", heuristicSamples: 64 },
     )
+    finishSeeding(engine)
     const playerId = engine.state.actingPlayerId!
     const decision = chooseHeuristicAction(engine.state, playerId, 64)
 
@@ -37,6 +39,7 @@ describe("heuristic player and simulations", () => {
       ],
       { seed: "jade-table", heuristicSamples: 64 },
     )
+    finishSeeding(engine)
     engine.state.actingPlayerId = "p4"
     engine.state.pendingPlayerIds = ["p4"]
     engine.state.players.find((player) => player.id === "p4")!.privateCards = [
@@ -59,6 +62,7 @@ describe("heuristic player and simulations", () => {
       ],
       { seed: "blank-plan", heuristicSamples: 2 },
     )
+    finishSeeding(engine)
     const playerId = engine.state.actingPlayerId!
     const player = engine.state.players.find(({ id }) => id === playerId)!
     player.privateCards = [
@@ -85,6 +89,7 @@ describe("heuristic player and simulations", () => {
       ],
       { seed: "pot-odds", heuristicSamples: 8 },
     )
+    finishSeeding(engine)
     engine.act(engine.state.actingPlayerId!, { type: "bet", amount: 5 })
     const playerId = engine.state.actingPlayerId!
     const analysis = analyzePokerMath(engine.state, playerId, 8)
@@ -105,6 +110,7 @@ describe("heuristic player and simulations", () => {
       ],
       { seed: "heuristic", heuristicSamples: 2 },
     )
+    finishSeeding(engine)
     const decision = chooseHeuristicAction(engine.state, engine.state.actingPlayerId!, 2)
     expect(decision.evaluations.length).toBeGreaterThan(1)
     expect(
@@ -120,6 +126,7 @@ describe("heuristic player and simulations", () => {
       ],
       { seed: "discard", heuristicSamples: 2 },
     )
+    finishSeeding(engine)
     const playerId = engine.state.actingPlayerId!
     engine.act(playerId, { type: "check", drawSource: "deck" })
     const choice = chooseHeuristicDiscard(engine.state, playerId, 2)
@@ -138,14 +145,38 @@ describe("heuristic player and simulations", () => {
         { id: "p3", name: "Bot 3", controller: "heuristic" },
         { id: "p4", name: "Bot 4", controller: "heuristic" },
       ],
-      { seed: "jade-table", heuristicSamples: 2 },
+      { seed: "one-step-2", heuristicSamples: 2 },
     )
+
+    while (engine.state.phase === "seeding") {
+      stepHeuristic(engine)
+    }
 
     const step = stepHeuristic(engine)
 
     expect(step.drawDiscard).toMatchObject({ playerId: "p2" })
     expect(engine.state.phase).not.toBe("discarding")
     expect(engine.state.drawDiscardHistory).toHaveLength(1)
+  })
+
+  it("seeds a lone Flower instead of carrying its showdown penalty", () => {
+    const engine = GameEngine.create(
+      [
+        { id: "p1", name: "A", controller: "heuristic" },
+        { id: "p2", name: "B", controller: "heuristic" },
+      ],
+      { seed: "flower-seed", heuristicSamples: 2 },
+    )
+    const playerId = engine.state.actingPlayerId!
+    const player = engine.state.players.find(({ id }) => id === playerId)!
+    player.privateCards = [
+      { kind: "flower", flower: "plum", color: "black", id: "flower-plum" },
+      { kind: "numbered", suit: "bamboo", rank: 3, color: "green", id: "bamboo-3-1" },
+      { kind: "numbered", suit: "bamboo", rank: 4, color: "green", id: "bamboo-4-1" },
+      { kind: "numbered", suit: "bamboo", rank: 5, color: "green", id: "bamboo-5-1" },
+    ]
+
+    expect(chooseHeuristicSeedDiscard(engine.state, playerId, 2).discardCardId).toBe("flower-plum")
   })
 
   it("replays an entire game deterministically", { timeout: 60_000 }, () => {
@@ -158,3 +189,12 @@ describe("heuristic player and simulations", () => {
     )
   })
 })
+
+function finishSeeding(engine: GameEngine): void {
+  while (engine.state.phase === "seeding") {
+    const actor = engine.state.actingPlayerId!
+    const card = engine.state.players.find((player) => player.id === actor)!.privateCards[0]!
+    const discardPile = engine.state.discardA.length === 0 ? "a" : "b"
+    engine.seedDiscard(actor, { discardCardId: card.id, discardPile })
+  }
+}

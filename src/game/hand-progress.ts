@@ -1,8 +1,17 @@
-import { createDeck, dragonFace, faceKey, jokerCanRepresent, numberedFace, windFace } from "./cards"
+import {
+  createDeck,
+  dragonFace,
+  faceKey,
+  flowerFace,
+  jokerCanRepresent,
+  numberedFace,
+  windFace,
+} from "./cards"
 import { HAND_RANKS } from "./rules"
 import { scoreHand } from "./scoring"
 import {
   DRAGONS,
+  FLOWERS,
   SUITS,
   WINDS,
   type Card,
@@ -72,11 +81,13 @@ const definitions: HandDefinition[] = [
     [...repeat(windFace("east"), 2, true), ...repeat(windFace("west"), 2, true)],
     [...repeat(windFace("north"), 2, true), ...repeat(windFace("south"), 2, true)],
   ]),
+  exactDefinition("bouquet", "Bouquet", 2, distinctFlowerAlternatives(2)),
+  exactDefinition("imperial-garden", "Imperial Garden", 3, distinctFlowerAlternatives(3)),
 ]
 
 export function analyzeHandProgress(cards: readonly Card[]): HandProgressSummary[] {
   const highCard = cards
-    .filter((card) => card.kind !== "blank" && card.kind !== "joker")
+    .filter((card) => card.kind !== "blank" && card.kind !== "joker" && card.kind !== "flower")
     .sort((left, right) => cardValue(right) - cardValue(left) || left.id.localeCompare(right.id))[0]
   const evaluations: HandProgressSummary[] = [
     {
@@ -191,6 +202,29 @@ function dragonDancerAlternatives(): Requirement[][] {
   })
 }
 
+function distinctFlowerAlternatives(count: 2 | 3): Requirement[][] {
+  const alternatives: Requirement[][] = []
+  const choose = (start: number, selected: number[]): void => {
+    if (selected.length === count) {
+      alternatives.push(
+        selected.map((index) => requirement(flowerFace(FLOWERS[index]!), count === 2)),
+      )
+
+      return
+    }
+
+    for (let index = start; index <= FLOWERS.length - (count - selected.length); index += 1) {
+      selected.push(index)
+      choose(index + 1, selected)
+      selected.pop()
+    }
+  }
+
+  choose(0, [])
+
+  return alternatives
+}
+
 function bestAlternativeMatch(
   cards: readonly Card[],
   alternatives: readonly Requirement[][],
@@ -262,7 +296,7 @@ function uniqueNaturalFaces(): CardFace[] {
   const byFace = new Map<string, CardFace>()
 
   for (const card of createDeck()) {
-    if (card.kind === "blank" || card.kind === "joker") {
+    if (card.kind === "blank" || card.kind === "joker" || card.kind === "flower") {
       continue
     }
 
@@ -274,5 +308,13 @@ function uniqueNaturalFaces(): CardFace[] {
 }
 
 function cardValue(card: CardFace | Card): number {
-  return card.kind === "numbered" ? card.rank : card.kind === "dragon" ? 10 : 11
+  return card.kind === "numbered"
+    ? card.rank
+    : card.kind === "dragon"
+      ? 10
+      : card.kind === "wind"
+        ? 11
+        : card.kind === "flower"
+          ? 12 + FLOWERS.indexOf(card.flower)
+          : 0
 }

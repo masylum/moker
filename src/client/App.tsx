@@ -12,6 +12,7 @@ import type {
   PublicGameState,
   PublicPlayerState,
 } from "../game/types"
+import { FLOWERS } from "../game/types"
 import {
   bettingAction,
   botStep,
@@ -378,7 +379,13 @@ export function App() {
               <div class="hand-heading">
                 <div>
                   <p class="eyebrow">Your private hand</p>
-                  <h2>{human()?.riichi ? "Locked in Riichi" : "Three tiles, many futures"}</h2>
+                  <h2>
+                    {game.phase === "seeding"
+                      ? "Choose one tile to seed the discards"
+                      : human()?.riichi
+                        ? "Locked in Riichi"
+                        : "Three tiles, many futures"}
+                  </h2>
                 </div>
                 <div class="wallet">
                   <span>{human()?.chips} chips</span>
@@ -391,6 +398,54 @@ export function App() {
               </div>
 
               <div class="controls">
+                <Show when={isHumanTurn() && game.phase === "seeding"}>
+                  <p class="instruction">
+                    Discard one of your four private tiles face up. You will play the hand with the
+                    remaining three.
+                  </p>
+                  <For each={privateCards(human())}>
+                    {(card) => (
+                      <div class="discard-choice">
+                        <Tile card={card} compact />
+                        <button
+                          disabled={
+                            busy() || (game.discardA.length > 0 && game.discardB.length === 0)
+                          }
+                          onClick={() =>
+                            perform(() =>
+                              gameAction(sessionId(), {
+                                kind: "seed-discard",
+                                playerId: "p1",
+                                discardCardId: card.id,
+                                discardPile: "a",
+                              }),
+                            )
+                          }
+                        >
+                          to A
+                        </button>
+                        <button
+                          disabled={
+                            busy() || (game.discardB.length > 0 && game.discardA.length === 0)
+                          }
+                          onClick={() =>
+                            perform(() =>
+                              gameAction(sessionId(), {
+                                kind: "seed-discard",
+                                playerId: "p1",
+                                discardCardId: card.id,
+                                discardPile: "b",
+                              }),
+                            )
+                          }
+                        >
+                          to B
+                        </button>
+                      </div>
+                    )}
+                  </For>
+                </Show>
+
                 <Show when={isHumanTurn() && game.phase === "betting"}>
                   <label>
                     Draw after check/call
@@ -801,6 +856,19 @@ function HandSummary(props: { result: HandResult }) {
           </For>
         </div>
       </div>
+      <Show when={props.result.boardResets > 0}>
+        <p class="instruction">
+          Flowers reset the board {props.result.boardResets} time
+          {props.result.boardResets === 1 ? "" : "s"} this hand.
+        </p>
+      </Show>
+      <Show when={props.result.flowerBonus}>
+        {(bonus) => (
+          <p class="instruction">
+            Flower bluff bonus: +{bonus().total} ({bonus().perOpponent} from every opponent).
+          </p>
+        )}
+      </Show>
       <div class="revealed-hands">
         <For each={props.result.players}>
           {(player) => (
@@ -808,8 +876,12 @@ function HandSummary(props: { result: HandResult }) {
               <div>
                 <strong>{player.name}</strong>
                 <small>
-                  {player.folded ? "Folded" : "Showed"} · committed {player.committed} · payout +
-                  {player.payout}
+                  {player.folded
+                    ? "Folded"
+                    : player.flowerDisqualified
+                      ? "Single Flower · ineligible"
+                      : "Showed"}{" "}
+                  · committed {player.committed} · payout +{player.payout}
                 </small>
               </div>
               <div class="tiles">
@@ -834,9 +906,11 @@ function Tile(props: { card: Card; compact?: boolean }) {
         ? `${props.card.dragon[0]!.toUpperCase()}D`
         : props.card.kind === "wind"
           ? `${props.card.wind[0]!.toUpperCase()}W`
-          : props.card.kind === "joker"
-            ? "★"
-            : "🀫"
+          : props.card.kind === "flower"
+            ? String.fromCodePoint(0x1f022 + FLOWERS.indexOf(props.card.flower))
+            : props.card.kind === "joker"
+              ? "★"
+              : "🀫"
   return (
     <div
       class={`tile ${props.card.kind} color-${props.card.color ?? "none"} ${props.compact ? "compact" : ""}`}

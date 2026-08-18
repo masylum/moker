@@ -123,7 +123,7 @@ export class Stud7Engine {
     this.state.pendingDiscard = null
     this.state.currentWager = 0
     this.state.minimumRaise = CHIP_UNIT
-    this.state.deck = this.random.shuffle(createDeck())
+    this.state.deck = this.random.shuffle(createDeck().filter((card) => card.kind !== "flower"))
 
     for (const player of this.state.players) {
       player.cards = []

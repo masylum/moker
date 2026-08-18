@@ -1,10 +1,18 @@
 import { describe, expect, it } from "vitest"
-import { blankFace, dragonFace, jokerFace, numberedFace, windFace } from "../src/game/cards"
+import {
+  blankFace,
+  dragonFace,
+  flowerFace,
+  jokerFace,
+  numberedFace,
+  windFace,
+} from "../src/game/cards"
 import { analyzeHandProgress, summarizeHandProgress } from "../src/game/hand-progress"
 import { compareHandScores, describeScore, scoreHand } from "../src/game/scoring"
 import type {
   Card,
   Dragon,
+  Flower,
   HandKind,
   JokerColor,
   NumberedRank,
@@ -20,6 +28,7 @@ const d = (dragon: Dragon, count = 1): Card[] =>
 const w = (wind: Wind, count = 1): Card[] =>
   Array.from({ length: count }, () => ({ id: `c${serial++}`, ...windFace(wind) }))
 const j = (color: JokerColor): Card => ({ id: `c${serial++}`, ...jokerFace(color) })
+const f = (flower: Flower): Card => ({ id: `c${serial++}`, ...flowerFace(flower) })
 const blanks = (count: number): Card[] =>
   Array.from({ length: count }, () => ({ id: `c${serial++}`, ...blankFace() }))
 
@@ -55,6 +64,8 @@ describe("fixed five-card ladder", () => {
     ],
     [13, "kong", [...n("bamboo", 7, 3), j("green")]],
     [14, "crosswinds", [...w("east", 2), ...w("west", 2)]],
+    [15, "bouquet", [f("plum"), f("orchid")]],
+    [16, "imperial-garden", [f("plum"), f("orchid"), f("bamboo")]],
   ]
 
   it.each(fixtures)("scores rank %i %s", (rank, hand, cards) => {
@@ -112,6 +123,21 @@ describe("Jokers", () => {
     expect(kind([...n("characters", 9, 3), j("red")])).toBe("kong")
     expect(kind([...n("characters", 9, 3), j("green")])).toBe("pung")
   })
+
+  it("lets only the Black Joker complete Imperial Garden", () => {
+    expect(kind([f("plum"), f("orchid"), j("black")])).toBe("imperial-garden")
+    expect(kind([f("plum"), f("orchid"), j("red")])).toBe("bouquet")
+    expect(kind([f("plum"), j("black")])).toBe("high-card")
+  })
+
+  it("gives a lone Flower no ordinary Hand value", () => {
+    const numberedHigh = scoreHand([...n("dots", 9), f("chrysanthemum")])
+    const onlyFlower = scoreHand([f("chrysanthemum")])
+
+    expect(numberedHigh.total).toBe(1)
+    expect(numberedHigh.selectedCardIds).toHaveLength(1)
+    expect(onlyFlower.selectedCardIds).toHaveLength(0)
+  })
 })
 
 describe("tie breakers", () => {
@@ -145,6 +171,13 @@ describe("tie breakers", () => {
     expect(compareHandScores(scoreHand(d("red", 2)), scoreHand(d("white", 2)))).toBe(0)
     expect(compareHandScores(scoreHand(w("east", 2)), scoreHand(w("north", 2)))).toBe(0)
   })
+
+  it("uses Flower identities above Winds to break Flower-hand ties", () => {
+    const low = scoreHand([f("plum"), f("orchid")])
+    const high = scoreHand([f("bamboo"), f("chrysanthemum")])
+
+    expect(compareHandScores(high, low)).toBeGreaterThan(0)
+  })
 })
 
 describe("hand progress", () => {
@@ -170,5 +203,12 @@ describe("hand progress", () => {
 
     expect(summary.currentBest).toMatchObject({ kind: "pung", rank: 7 })
     expect(summary.nextClosest).toMatchObject({ kind: "kong", rank: 13, missing: 1 })
+  })
+
+  it("derives Flower-hand distance from the same pattern definitions", () => {
+    const progress = analyzeHandProgress([f("plum"), f("orchid")])
+
+    expect(progress.find((hand) => hand.kind === "bouquet")).toMatchObject({ missing: 0 })
+    expect(progress.find((hand) => hand.kind === "imperial-garden")).toMatchObject({ missing: 1 })
   })
 })

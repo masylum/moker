@@ -87,6 +87,17 @@ export class GameSession extends Agent<Env, SessionState> {
     return engine.publicView(playerId)
   }
 
+  async applySeedDiscard(
+    playerId: string,
+    discardCardId: string,
+    discardPile: DiscardPile,
+  ): Promise<PublicGameState> {
+    const engine = this.engine()
+    engine.seedDiscard(playerId, { discardCardId, discardPile })
+    this.commit(engine)
+    return engine.publicView(playerId)
+  }
+
   async takeLoan(playerId: string): Promise<PublicGameState> {
     const engine = this.engine()
     engine.takeLoan(playerId)

@@ -72,6 +72,21 @@ try {
 }
 
 async function playHumanTurn(game: GameEngine): Promise<void> {
+  if (game.state.phase === "seeding") {
+    const player = game.state.players.find((candidate) => candidate.id === "p1")!
+    const cardIndex = await choose(
+      "Seed the discard lanes with which tile?",
+      player.privateCards.map((card) => `${tile(card)} ${cardLabel(card)}`),
+    )
+    const pile = await chooseDiscardPile(game)
+    game.seedDiscard("p1", {
+      discardCardId: player.privateCards[cardIndex]!.id,
+      discardPile: pile,
+    })
+
+    return
+  }
+
   if (game.state.phase === "betting") {
     await playBettingTurn(game)
 
@@ -284,11 +299,21 @@ function renderHandResult(result: HandResult): void {
   )
   stdout.write(`Board      ${[...result.community].sort(compareCards).map(tile).join(" ")}\n`)
 
+  if (result.flowerBonus) {
+    stdout.write(
+      `Flower     ${result.flowerBonus.total} bonus (${result.flowerBonus.perOpponent} from each opponent)\n`,
+    )
+  }
+
+  if (result.boardResets > 0) {
+    stdout.write(`Resets     ${result.boardResets} Flower board reset(s)\n`)
+  }
+
   for (const player of result.players) {
     const scored = player.score.combinations[0]
     const combination = scored?.description ?? scored?.label ?? "High Card"
     stdout.write(
-      `${player.name.padEnd(10)} ${player.cards.map(tile).join(" ")} · rank ${player.score.total} (${combination}) · committed ${player.committed} · payout ${player.payout}${player.folded ? " · folded" : ""}\n`,
+      `${player.name.padEnd(10)} ${player.cards.map(tile).join(" ")} · rank ${player.score.total} (${combination}) · committed ${player.committed} · payout ${player.payout}${player.folded ? " · folded" : ""}${player.flowerDisqualified ? " · single Flower: ineligible" : ""}\n`,
     )
   }
 }
@@ -298,7 +323,8 @@ function isHumanDecision(game: GameEngine): boolean {
 
   return (
     !autoPlay &&
-    ((state.phase === "betting" && state.actingPlayerId === "p1") ||
+    ((state.phase === "seeding" && state.actingPlayerId === "p1") ||
+      (state.phase === "betting" && state.actingPlayerId === "p1") ||
       (state.phase === "discarding" && state.pendingDiscard?.playerId === "p1"))
   )
 }

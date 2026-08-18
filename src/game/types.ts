@@ -2,11 +2,13 @@ export const SUITS = ["bamboo", "dots", "characters"] as const
 export const WINDS = ["east", "south", "west", "north"] as const
 export const DRAGONS = ["red", "green", "white"] as const
 export const JOKER_COLORS = ["green", "blue", "red", "black"] as const
+export const FLOWERS = ["plum", "orchid", "bamboo", "chrysanthemum"] as const
 
 export type Suit = (typeof SUITS)[number]
 export type Wind = (typeof WINDS)[number]
 export type Dragon = (typeof DRAGONS)[number]
 export type JokerColor = (typeof JOKER_COLORS)[number]
+export type Flower = (typeof FLOWERS)[number]
 export type CardColor = JokerColor
 export type NumberedRank = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 
@@ -14,6 +16,7 @@ export type CardFace =
   | { kind: "numbered"; suit: Suit; rank: NumberedRank; color: CardColor }
   | { kind: "wind"; wind: Wind; color: "black" }
   | { kind: "dragon"; dragon: Dragon; color: CardColor }
+  | { kind: "flower"; flower: Flower; color: "black" }
   | { kind: "joker"; color: JokerColor }
   | { kind: "blank"; color: null }
 
@@ -35,6 +38,8 @@ export type CombinationKind =
   | "dragon-dancer"
   | "kong"
   | "crosswinds"
+  | "bouquet"
+  | "imperial-garden"
 
 export type HandKind = "high-card" | CombinationKind
 
@@ -60,6 +65,7 @@ export interface HandResultPlayer {
   name: string
   folded: boolean
   riichi: boolean
+  flowerDisqualified: boolean
   cards: Card[]
   score: HandScore
   committed: number
@@ -72,6 +78,8 @@ export interface HandResult {
   community: Card[]
   winnerIds: string[]
   reason: HandWinReason
+  flowerBonus: { winnerId: string; perOpponent: number; total: number } | null
+  boardResets: number
   players: HandResultPlayer[]
 }
 
@@ -94,7 +102,13 @@ export interface PlayerState {
 }
 
 export type Street = 0 | 1 | 2 | 3 | 4
-export type GamePhase = "between-hands" | "discarding" | "betting" | "showdown" | "finished"
+export type GamePhase =
+  | "between-hands"
+  | "seeding"
+  | "discarding"
+  | "betting"
+  | "showdown"
+  | "finished"
 
 export interface PendingDiscard {
   playerId: string
@@ -112,6 +126,13 @@ export interface DrawDiscardRecord {
   playerId: string
   source: CardSource | "blank-exchange"
   drawnCard: Card
+  discardedCard: Card
+  discardPile: DiscardPile
+  discardIndex: number
+}
+
+export interface SeedDiscardRecord {
+  playerId: string
   discardedCard: Card
   discardPile: DiscardPile
   discardIndex: number
@@ -141,6 +162,7 @@ export interface GameState {
   discardA: Card[]
   discardB: Card[]
   removedCards: Card[]
+  scrappedCommunity: Card[]
   pot: number
   centerBlueSticks: number
   currentWager: number
@@ -149,6 +171,8 @@ export interface GameState {
   actingPlayerId: string | null
   pendingDiscard: PendingDiscard | null
   drawDiscardHistory: DrawDiscardRecord[]
+  seedDiscardHistory: SeedDiscardRecord[]
+  boardResetCount: number
   handWinners: string[]
   handResults: HandResult[]
   finalScores: Record<string, number> | null

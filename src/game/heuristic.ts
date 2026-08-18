@@ -23,6 +23,8 @@ export interface DiscardChoice {
   rationale: string
 }
 
+export type SeedDiscardChoice = DiscardChoice
+
 interface DrawPlan {
   source: CardSource
   blankExchange?: BlankExchange
@@ -226,7 +228,7 @@ export function chooseHeuristicDiscard(
     const hand = player.privateCards.filter((_, candidateIndex) => candidateIndex !== index)
     return {
       card,
-      ...analyzePrivateFuture(state, playerId, hand, random.fork(card.id), samples),
+      ...analyzePrivateFuture(state, playerId, hand, random.fork(card.id), samples, [card]),
     }
   })
   evaluations.sort(
@@ -240,6 +242,51 @@ export function chooseHeuristicDiscard(
     discardPile: pile,
     expectedScore: best.expectedScore,
     rationale: `Expected final ladder rank ${best.expectedScore.toFixed(1)} across ${samples} rollouts`,
+  }
+}
+
+export function chooseHeuristicSeedDiscard(
+  state: GameState,
+  playerId: string,
+  samples = state.config.heuristicSamples,
+): SeedDiscardChoice {
+  if (state.phase !== "seeding" || state.actingPlayerId !== playerId) {
+    throw new Error("Player is not seeding a discard lane")
+  }
+
+  const player = getPlayer(state, playerId)
+  const random = new SeededRandom(`${state.config.seed}:seed-discard:${state.version}:${playerId}`)
+  const evaluations = player.privateCards.map((card, index) => {
+    const privateCards = player.privateCards.filter((_, candidateIndex) => candidateIndex !== index)
+    const future = analyzePrivateFuture(
+      state,
+      playerId,
+      privateCards,
+      random.fork(card.id),
+      samples,
+      [card],
+    )
+    const flowerCount = privateCards.filter((candidate) => candidate.kind === "flower").length
+
+    return {
+      card,
+      ...future,
+      value: future.expectedScore - (flowerCount === 1 ? 20 : 0),
+    }
+  })
+  evaluations.sort(
+    (left, right) =>
+      right.value - left.value ||
+      right.showdownEquity - left.showdownEquity ||
+      left.card.id.localeCompare(right.card.id),
+  )
+  const best = evaluations[0]!
+
+  return {
+    discardCardId: best.card.id,
+    discardPile: chooseDiscardPile(state, best.card),
+    expectedScore: best.expectedScore,
+    rationale: `Seeds the discard lanes with expected final ladder rank ${best.expectedScore.toFixed(1)}`,
   }
 }
 
@@ -319,9 +366,10 @@ function analyzePrivateFuture(
   privateCards: Card[],
   random: SeededRandom,
   samples: number,
+  additionallyKnown: Card[] = [],
 ) {
   const neededCommunity = 5 - state.community.length
-  const unknown = unknownCards(state, privateCards)
+  const unknown = unknownCards(state, [...privateCards, ...additionallyKnown])
   const current = currentStrength(privateCards, state)
   let total = 0
   let improvements = 0
@@ -333,7 +381,9 @@ function analyzePrivateFuture(
 
   for (let sample = 0; sample < trials; sample += 1) {
     const shuffled = random.shuffle(unknown)
-    const completion = shuffled.slice(0, neededCommunity)
+    const completion = shuffled.filter((card) => card.kind !== "flower").slice(0, neededCommunity)
+    const completionIds = new Set(completion.map((card) => card.id))
+    const remaining = shuffled.filter((card) => !completionIds.has(card.id))
     const completed = [...privateCards, ...state.community, ...completion]
     const score = scoreHand(completed)
     total += score.total
@@ -342,22 +392,35 @@ function analyzePrivateFuture(
       improvements += 1
     }
 
-    const opponentScores = opponents.map((_, index) => {
-      const start = neededCommunity + index * PRIVATE_CARD_COUNT
-      const cards = shuffled.slice(start, start + PRIVATE_CARD_COUNT)
+    const opponentResults = opponents.map((_, index) => {
+      const start = index * PRIVATE_CARD_COUNT
+      const cards = remaining.slice(start, start + PRIVATE_CARD_COUNT)
 
-      return scoreHand([...cards, ...state.community, ...completion])
+      return {
+        eligible: !hasSingleFlower(cards),
+        score: scoreHand([...cards, ...state.community, ...completion]),
+      }
     })
-    const bestScore = [score, ...opponentScores].sort((left, right) =>
-      compareHandScores(right, left),
-    )[0]!
+    const ownEligible = !hasSingleFlower(privateCards)
+    const eligibleScores = [
+      ...(ownEligible ? [score] : []),
+      ...opponentResults.filter(({ eligible }) => eligible).map((result) => result.score),
+    ]
+    if (eligibleScores.length === 0) {
+      equity += 1 / (opponents.length + 1)
 
-    if (compareHandScores(score, bestScore) === 0) {
+      continue
+    }
+
+    const bestScore = eligibleScores.sort((left, right) => compareHandScores(right, left))[0]!
+
+    if (ownEligible && compareHandScores(score, bestScore) === 0) {
       equity +=
         1 /
         (1 +
-          opponentScores.filter((opponentScore) => compareHandScores(opponentScore, score) === 0)
-            .length)
+          opponentResults.filter(
+            (opponent) => opponent.eligible && compareHandScores(opponent.score, score) === 0,
+          ).length)
     }
   }
   return {
@@ -368,11 +431,19 @@ function analyzePrivateFuture(
   }
 }
 
+function hasSingleFlower(cards: readonly Card[]): boolean {
+  return cards.filter((card) => card.kind === "flower").length === 1
+}
+
 function unknownCards(state: GameState, privateCards: Card[]): Card[] {
   const known = new Set(
-    [...privateCards, ...state.community, ...state.discardA, ...state.discardB].map(
-      (card) => card.id,
-    ),
+    [
+      ...privateCards,
+      ...state.community,
+      ...state.scrappedCommunity,
+      ...state.discardA,
+      ...state.discardB,
+    ].map((card) => card.id),
   )
   return createDeck().filter((card) => !known.has(card.id))
 }
@@ -399,7 +470,7 @@ function chooseDiscardPile(state: GameState, discarded: Card): DiscardPile {
       ? 8
       : card.kind === "blank"
         ? 0
-        : card.kind === "wind" || card.kind === "dragon"
+        : card.kind === "wind" || card.kind === "dragon" || card.kind === "flower"
           ? 3
           : card.rank >= 3 && card.rank <= 7
             ? 4

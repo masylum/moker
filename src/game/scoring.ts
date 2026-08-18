@@ -6,7 +6,7 @@ import type { Card, HandScore } from "./types"
 export function scoreHand(cards: readonly Card[]): HandScore {
   const candidates = generateHandCandidates(cards)
   const highCards = cards
-    .filter((card) => card.kind !== "blank" && card.kind !== "joker")
+    .filter((card) => card.kind !== "blank" && card.kind !== "joker" && card.kind !== "flower")
     .sort((left, right) => tieValue(right) - tieValue(left) || left.id.localeCompare(right.id))
   candidates.sort(compareCandidates)
   const best = candidates[0]
@@ -94,6 +94,10 @@ function tieValue(card: Card): number {
 
   if (card.kind === "wind") {
     return 11
+  }
+
+  if (card.kind === "flower") {
+    return 12
   }
 
   return 0

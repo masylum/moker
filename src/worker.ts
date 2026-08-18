@@ -63,6 +63,12 @@ const ActionSchema = z.discriminatedUnion("kind", [
     discardCardId: z.string(),
     discardPile: z.enum(["a", "b"]),
   }),
+  z.object({
+    kind: z.literal("seed-discard"),
+    playerId: z.string(),
+    discardCardId: z.string(),
+    discardPile: z.enum(["a", "b"]),
+  }),
   z.object({ kind: z.literal("take-loan"), playerId: z.string() }),
   z.object({ kind: z.literal("repay-loan"), playerId: z.string() }),
   z.object({ kind: z.literal("next-hand"), viewerId: z.string().optional() }),
@@ -224,6 +230,8 @@ async function applyAction(
       return game.applyBettingAction(input.playerId, input.action)
     case "discard":
       return game.applyDiscard(input.playerId, input.discardCardId, input.discardPile)
+    case "seed-discard":
+      return game.applySeedDiscard(input.playerId, input.discardCardId, input.discardPile)
     case "take-loan":
       return game.takeLoan(input.playerId)
     case "repay-loan":
@@ -249,6 +257,12 @@ async function applyAgentOperation(
         operation.discardCardId,
         operation.discardPile as "a" | "b",
       )
+    case "seed-discard":
+      return game.applySeedDiscard(
+        playerId,
+        operation.discardCardId,
+        operation.discardPile as "a" | "b",
+      )
   }
 
   throw new Error("Unknown agent operation")
@@ -263,6 +277,10 @@ function decisionPlayerId(state: Awaited<ReturnType<GameSession["getInternalStat
 
   if (state.phase === "discarding" && state.pendingDiscard) {
     return state.pendingDiscard.playerId
+  }
+
+  if (state.phase === "seeding" && state.actingPlayerId) {
+    return state.actingPlayerId
   }
 
   throw new Error(`No LLM decision is available during ${state.phase}`)

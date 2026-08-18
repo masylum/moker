@@ -1,5 +1,6 @@
 import {
   DRAGONS,
+  FLOWERS,
   JOKER_COLORS,
   SUITS,
   WINDS,
@@ -7,6 +8,7 @@ import {
   type CardColor,
   type CardFace,
   type Dragon,
+  type Flower,
   type JokerColor,
   type NumberedRank,
   type Suit,
@@ -42,11 +44,15 @@ export function createDeck(): Card[] {
     cards.push({ ...jokerFace(color), id: `joker-${color}` })
   }
 
+  for (const flower of FLOWERS) {
+    cards.push({ ...flowerFace(flower), id: `flower-${flower}` })
+  }
+
   for (let copy = 1; copy <= 4; copy += 1) {
     cards.push({ ...blankFace(), id: `blank-${copy}` })
   }
 
-  if (cards.length !== 110) {
+  if (cards.length !== 114) {
     throw new Error(`Deck invariant failed: ${cards.length}`)
   }
 
@@ -61,6 +67,8 @@ export function faceKey(card: CardFace): string {
       return `dragon-${card.dragon}`
     case "wind":
       return `wind-${card.wind}`
+    case "flower":
+      return `flower-${card.flower}`
     case "joker":
       return `joker-${card.color}`
     case "blank":
@@ -76,6 +84,8 @@ export function cardLabel(card: CardFace): string {
       return `${capitalize(card.dragon)} Dragon`
     case "wind":
       return `${capitalize(card.wind)} Wind`
+    case "flower":
+      return `${capitalize(card.flower)} Flower`
     case "joker":
       return `${capitalize(card.color)} Joker`
     case "blank":
@@ -109,6 +119,10 @@ export function jokerFace(color: JokerColor): CardFace {
   return { kind: "joker", color }
 }
 
+export function flowerFace(flower: Flower): CardFace {
+  return { kind: "flower", flower, color: "black" }
+}
+
 export function blankFace(): CardFace {
   return { kind: "blank", color: null }
 }
@@ -118,7 +132,12 @@ export function suitColor(suit: Suit): CardColor {
 }
 
 export function sameNaturalFace(left: CardFace, right: CardFace): boolean {
-  return left.kind !== "joker" && left.kind !== "blank" && faceKey(left) === faceKey(right)
+  return (
+    left.kind !== "joker" &&
+    left.kind !== "blank" &&
+    left.kind !== "flower" &&
+    faceKey(left) === faceKey(right)
+  )
 }
 
 export function compareCards(left: Card, right: Card): number {
@@ -141,10 +160,12 @@ function visualSortKey(card: Card): [number, number, number] {
       return [1, DRAGONS.indexOf(card.dragon), 0]
     case "wind":
       return [2, WINDS.indexOf(card.wind), 0]
+    case "flower":
+      return [3, FLOWERS.indexOf(card.flower), 0]
     case "joker":
-      return [3, JOKER_COLORS.indexOf(card.color), 0]
+      return [4, JOKER_COLORS.indexOf(card.color), 0]
     case "blank":
-      return [4, 0, 0]
+      return [5, 0, 0]
   }
 }
 

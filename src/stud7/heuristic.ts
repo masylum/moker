@@ -431,7 +431,7 @@ function unknownCards(
     ].map((card) => card.id),
   )
 
-  return createDeck().filter((card) => !known.has(card.id))
+  return createDeck().filter((card) => card.kind !== "flower" && !known.has(card.id))
 }
 
 function currentRank(cards: readonly StudCard[]): number {

@@ -1,7 +1,16 @@
-import { cardLabel, dragonFace, faceKey, jokerCanRepresent, numberedFace, windFace } from "./cards"
+import {
+  cardLabel,
+  dragonFace,
+  faceKey,
+  flowerFace,
+  jokerCanRepresent,
+  numberedFace,
+  windFace,
+} from "./cards"
 import { HAND_RANKS } from "./rules"
 import {
   DRAGONS,
+  FLOWERS,
   SUITS,
   WINDS,
   type Card,
@@ -23,6 +32,7 @@ interface ChowIdentity {
 
 const dragonTargets = DRAGONS.map(dragonFace)
 const windTargets = WINDS.map(windFace)
+const flowerTargets = FLOWERS.map(flowerFace)
 
 export function generateHandCandidates(cards: readonly Card[]): HandCandidate[] {
   const candidates: HandCandidate[] = []
@@ -33,11 +43,13 @@ export function generateHandCandidates(cards: readonly Card[]): HandCandidate[] 
 
       if (size === 2) {
         addEye(subset, mask, candidates)
+        addBouquet(subset, mask, candidates)
       }
 
       if (size === 3) {
         addChow(subset, mask, candidates)
         addIdentical("pung", "Pung", subset, mask, candidates)
+        addImperialGarden(subset, mask, candidates)
 
         if (matchesTargets(subset, dragonTargets)) {
           candidates.push(
@@ -68,6 +80,66 @@ export function generateHandCandidates(cards: readonly Card[]): HandCandidate[] 
   }
 
   return deduplicate(candidates)
+}
+
+function addBouquet(cards: Card[], mask: number, candidates: HandCandidate[]): void {
+  if (
+    !cards.every((card) => card.kind === "flower") ||
+    new Set(cards.map((card) => (card.kind === "flower" ? card.flower : ""))).size !== 2
+  ) {
+    return
+  }
+
+  candidates.push(
+    candidate(
+      "bouquet",
+      "Bouquet",
+      cards,
+      mask,
+      flowerTieBreak(cards),
+      `Bouquet · ${cards.map(cardLabel).join(" + ")}`,
+    ),
+  )
+}
+
+function addImperialGarden(cards: Card[], mask: number, candidates: HandCandidate[]): void {
+  if (!matchesAnyDistinctFlowers(cards, 3)) {
+    return
+  }
+
+  candidates.push(
+    candidate(
+      "imperial-garden",
+      "Imperial Garden",
+      cards,
+      mask,
+      flowerTieBreak(cards),
+      `Imperial Garden · ${cards.map(cardLabel).join(" + ")}`,
+    ),
+  )
+}
+
+function matchesAnyDistinctFlowers(cards: Card[], count: 2 | 3): boolean {
+  let matched = false
+
+  forEachSubset(flowerTargets.length, count, (indexes) => {
+    if (
+      matchesTargets(
+        cards,
+        indexes.map((index) => flowerTargets[index]!),
+      )
+    ) {
+      matched = true
+    }
+  })
+
+  return matched
+}
+
+function flowerTieBreak(cards: Card[]): number[] {
+  return cards
+    .map((card) => (card.kind === "flower" ? 12 + FLOWERS.indexOf(card.flower) : 12))
+    .sort((left, right) => right - left)
 }
 
 function addEye(cards: Card[], mask: number, candidates: HandCandidate[]): void {
@@ -308,7 +380,9 @@ function addCompoundHands(cards: Card[], mask: number, candidates: HandCandidate
 function naturalPairFace(cards: readonly Card[]): CardFace | null {
   if (
     cards.length !== 2 ||
-    cards.some((card) => card.kind === "joker" || card.kind === "blank") ||
+    cards.some(
+      (card) => card.kind === "joker" || card.kind === "blank" || card.kind === "flower",
+    ) ||
     faceKey(cards[0]!) !== faceKey(cards[1]!)
   ) {
     return null
@@ -318,7 +392,9 @@ function naturalPairFace(cards: readonly Card[]): CardFace | null {
 }
 
 function naturalPairFaces(cards: readonly Card[]): CardFace[] {
-  if (cards.some((card) => card.kind === "joker" || card.kind === "blank")) {
+  if (
+    cards.some((card) => card.kind === "joker" || card.kind === "blank" || card.kind === "flower")
+  ) {
     return []
   }
 
@@ -354,7 +430,9 @@ function chowIdentity(cards: readonly Card[]): ChowIdentity | null {
 }
 
 function identicalFace(cards: readonly Card[]): CardFace | null {
-  const natural = cards.find((card) => card.kind !== "joker" && card.kind !== "blank")
+  const natural = cards.find(
+    (card) => card.kind !== "joker" && card.kind !== "blank" && card.kind !== "flower",
+  )
 
   if (!natural) {
     return null
@@ -405,7 +483,15 @@ function chowTieBreak(chow: ChowIdentity): number[] {
 }
 
 function faceValue(face: CardFace): number {
-  return face.kind === "numbered" ? face.rank : face.kind === "dragon" ? 10 : 11
+  return face.kind === "numbered"
+    ? face.rank
+    : face.kind === "dragon"
+      ? 10
+      : face.kind === "wind"
+        ? 11
+        : face.kind === "flower"
+          ? 12 + FLOWERS.indexOf(face.flower)
+          : 0
 }
 
 function stripId(card: Card): CardFace {

@@ -1,6 +1,6 @@
 # Stud7 prototype
 
-Stud7 is an isolated experimental variant. It shares the 110-card deck, fixed 14-rank Hand ladder, chip economy, blue sticks, Loans, discard lanes, and seeded random generator with the main game, but it does not use community cards. Its implementation lives entirely under `src/stud7`, with separate CLI and simulation entrypoints.
+Stud7 is an isolated experimental variant. It keeps its original flowerless 110-tile deck and 14-rank Hand ladder while sharing the chip economy, blue sticks, Loans, discard lanes, and seeded random generator with the main game. It does not use community cards. Its implementation lives entirely under `src/stud7`, with separate CLI and simulation entrypoints.
 
 ## Five streets
 

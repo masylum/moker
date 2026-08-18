@@ -1,7 +1,11 @@
 import { GameEngine } from "./engine"
-import { chooseHeuristicAction, chooseHeuristicDiscard } from "./heuristic"
+import {
+  chooseHeuristicAction,
+  chooseHeuristicDiscard,
+  chooseHeuristicSeedDiscard,
+} from "./heuristic"
 import { MAX_LOANS, ORBIT_VALUES } from "./rules"
-import type { DiscardChoice } from "./heuristic"
+import type { DiscardChoice, SeedDiscardChoice } from "./heuristic"
 import type { DrawDiscardRecord, HeuristicDecision } from "./types"
 
 export interface AutomatedStep {
@@ -10,10 +14,28 @@ export interface AutomatedStep {
   decision?: HeuristicDecision
   discard?: DiscardChoice
   drawDiscard?: DrawDiscardRecord
+  seedDiscard?: SeedDiscardChoice
 }
 
 export function stepHeuristic(engine: GameEngine): AutomatedStep {
   const state = engine.state
+
+  if (state.phase === "seeding") {
+    const playerId = state.actingPlayerId
+
+    if (!playerId) {
+      throw new Error("No player is seeding a discard lane")
+    }
+
+    const seedDiscard = chooseHeuristicSeedDiscard(state, playerId)
+    engine.seedDiscard(playerId, seedDiscard)
+
+    return {
+      rationale: seedDiscard.rationale,
+      playerId,
+      seedDiscard,
+    }
+  }
 
   if (state.phase === "betting") {
     const playerId = state.actingPlayerId

@@ -4,7 +4,7 @@ A deterministic TypeScript implementation of Mahjong Poker for rules testing, ba
 
 ## What is included
 
-- A framework-independent game library in `src/game` with the 110-card deck, four Texas Hold'em-style streets, `rand-seed` determinism, and the fixed 14-rank five-card Hand ladder.
+- A framework-independent game library in `src/game` with a 114-tile Flower deck, four Texas Hold'em-style streets, `rand-seed` determinism, and the fixed 16-rank five-card Hand ladder.
 - A statistical player that estimates multiway showdown equity, pot odds, call EV, draw sources, discards, legal wagers, Riichi, buried-discard Blank exchanges, and distance from every Hand. Aggression is equity-gated before blue-stick strategy is considered.
 - Replayable simulations whose events, decisions, state, and seed can be inspected later.
 - One Cloudflare Durable Object per game session, with SQLite event snapshots and synchronized current state.

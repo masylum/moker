@@ -1,6 +1,6 @@
 # Rule implementation notes
 
-The engine follows the revised supplied Mahjong Poker rules: 110 cards, 3-card private hands, an empty first street followed by 3/1/1 community reveals, blue-stick and Loan charges, two fully visible discard lanes, own-turn buried-discard Blank exchanges, early-street Riichi, the fixed 14-rank five-card Hand ladder, three dealer orbits, and the final charge.
+The engine follows the revised Mahjong Poker rules: 114 tiles including four Flowers, 4-card opening hands that seed the discard lanes down to 3 private tiles, an empty first street followed by 3/1/1 community reveals, Flower board resets and bluff bonuses, blue-stick and Loan charges, two fully visible discard lanes, own-turn buried-discard Blank exchanges, early-street Riichi, the fixed 16-rank five-card Hand ladder, three dealer orbits, and the final charge.
 
 The source rules leave a few procedural details open. The library makes these deterministic choices:
 
@@ -8,7 +8,12 @@ The source rules leave a few procedural details open. The library makes these de
 - A raise reopens action for every other active player. A street closes once every remaining player has matched the current wager or folded.
 - Chips have physical denominations of 5, 10, 20, 50, and 100. Every wager is a multiple of 5, and its `amount` is the player's target total for that street.
 - The minimum opening wager is 5. Raises follow the poker full-raise rule: the increase must be at least the size of the previous opening bet or raise. A new street resets that minimum to 5.
-- A new 110-card deck is shuffled for each hand.
+- A new 114-tile deck is shuffled for each hand.
+- Each player receives four private tiles and, clockwise after the dealer, seeds one face-up discard before street 1. The first two seed discards must populate the two separate lanes.
+- A Flower revealed on any community street scraps the whole board and the triggering reveal. A Flower-free replacement flop starts a new street-2 betting round without changing the pot, commitments, folded players, Riichi, sticks, or Loans. Replacement flops are redealt until Flower-free.
+- Flowers have no ordinary High Card, Eye, or meld value. Two distinct natural Flowers make rank-15 Bouquet. Three distinct Flowers make rank-16 Imperial Garden, and one Black Joker may substitute there.
+- Exactly one natural private Flower disqualifies a player at showdown, even alongside the Black Joker. If all contenders are disqualified, they split the pot as a dead heat. An uncontested winner with exactly one natural private Flower instead receives 20 chips directly from every opponent.
+- The Stud7 prototype filters Flowers from its deck and retains its original 110-tile, 14-rank rules.
 - A tied pot is split in 5-chip units. Remaining 5-chip units are awarded clockwise after the dealer among the tied winners, so the engine never creates a chip denomination that does not exist.
 - If the center has no blue stick when a player folds, the donor is the first clockwise player holding one.
 - A Joker only takes an identity in a Hand of at least three cards. It cannot form natural Eyes, the natural Dragon Eye in Dragon Dancer, or Crosswinds. A Kong must contain its matching Joker because only three natural copies exist.

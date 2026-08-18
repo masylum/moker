@@ -5,7 +5,11 @@ import { z } from "zod"
 import { GameEngine } from "../game/engine"
 import { analyzeHandProgress, summarizeHandProgress } from "../game/hand-progress"
 import { CHIP_UNIT } from "../game/rules"
-import { chooseHeuristicAction, chooseHeuristicDiscard } from "../game/heuristic"
+import {
+  chooseHeuristicAction,
+  chooseHeuristicDiscard,
+  chooseHeuristicSeedDiscard,
+} from "../game/heuristic"
 import { agentRulebook } from "../game/rulebook"
 import type { GameState } from "../game/types"
 
@@ -52,9 +56,15 @@ const DiscardOperationSchema = z.object({
   discardCardId: z.string(),
   discardPile: z.enum(["a", "b"]),
 })
+const SeedDiscardOperationSchema = z.object({
+  kind: z.literal("seed-discard"),
+  discardCardId: z.string(),
+  discardPile: z.enum(["a", "b"]),
+})
 const OperationSchema = z.discriminatedUnion("kind", [
   BettingOperationSchema,
   DiscardOperationSchema,
+  SeedDiscardOperationSchema,
 ])
 type AgentOperation = z.infer<typeof OperationSchema>
 
@@ -150,6 +160,8 @@ export class MahjongPlayer extends Think<Env> {
             return chooseHeuristicAction(state, playerId, state.config.heuristicSamples)
           if (state.phase === "discarding")
             return chooseHeuristicDiscard(state, playerId, state.config.heuristicSamples)
+          if (state.phase === "seeding")
+            return chooseHeuristicSeedDiscard(state, playerId, state.config.heuristicSamples)
           return { error: `No decision is available during ${state.phase}` }
         },
       }),
@@ -309,6 +321,13 @@ function validateOperation(state: GameState, playerId: string, operation: AgentO
     (state.phase !== "discarding" || state.pendingDiscard?.playerId !== playerId)
   )
     throw new Error("Discard is not legal now")
+
+  if (
+    operation.kind === "seed-discard" &&
+    (state.phase !== "seeding" || state.actingPlayerId !== playerId)
+  ) {
+    throw new Error("Seed discard is not legal now")
+  }
 }
 
 function isGameState(value: unknown): value is GameState {

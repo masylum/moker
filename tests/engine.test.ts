@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { GameEngine } from "../src/game/engine"
-import { blankFace, numberedFace } from "../src/game/cards"
+import { blankFace, flowerFace, jokerFace, numberedFace } from "../src/game/cards"
 import { agentRulebook } from "../src/game/rulebook"
 
 const players = [
@@ -17,22 +17,34 @@ describe("game lifecycle", () => {
     expect(rules).toContain("four betting streets")
     expect(rules).toContain("Street 1 reveals no community cards")
     expect(rules).toContain("14 Crosswinds")
+    expect(rules).toContain("16 Imperial Garden")
+    expect(rules).toContain("scrap the entire current board")
+    expect(rules).toContain("20-chip Flower bluff bonus")
     expect(rules).toContain("never the final street")
   })
 
   it("deals, charges, reveals, and preserves blue-stick conservation", () => {
     const engine = GameEngine.create(players, { seed: "setup" })
     expect(engine.state.handNumber).toBe(1)
-    expect(engine.state.street).toBe(1)
+    expect(engine.state.phase).toBe("seeding")
+    expect(engine.state.street).toBe(0)
     expect(engine.state.community).toHaveLength(0)
-    expect(engine.state.players.every((player) => player.privateCards.length === 3)).toBe(true)
+    expect(engine.state.players.every((player) => player.privateCards.length === 4)).toBe(true)
     expect(engine.state.players.every((player) => player.chips === 505)).toBe(true)
     expect(engine.state.pot).toBe(20)
     expect(totalBlue(engine)).toBe(8)
+
+    finishSeeding(engine)
+    expect(engine.state.phase).toBe("betting")
+    expect(engine.state.street).toBe(1)
+    expect(engine.state.players.every((player) => player.privateCards.length === 3)).toBe(true)
+    expect(engine.state.seedDiscardHistory).toHaveLength(4)
+    expect(engine.state.discardA.length + engine.state.discardB.length).toBe(4)
   })
 
   it("models draw then discard without revealing the deck early", () => {
     const engine = GameEngine.create(players, { seed: "draw" })
+    finishSeeding(engine)
     const actor = engine.state.actingPlayerId!
     engine.act(actor, { type: "check", drawSource: "deck" })
     expect(engine.state.phase).toBe("discarding")
@@ -45,6 +57,7 @@ describe("game lifecycle", () => {
 
   it("makes betting shed a blue stick and folding gain one", () => {
     const engine = GameEngine.create(players, { seed: "sticks" })
+    finishSeeding(engine)
     const bettor = engine.state.actingPlayerId!
     engine.act(bettor, { type: "bet", amount: 5 })
     expect(engine.state.players.find((player) => player.id === bettor)?.blueSticks).toBe(0)
@@ -57,6 +70,7 @@ describe("game lifecycle", () => {
 
   it("enforces chip denominations and poker-style minimum raises", () => {
     const engine = GameEngine.create(players, { seed: "bet-sizing" })
+    finishSeeding(engine)
     const bettor = engine.state.actingPlayerId!
 
     expect(engine.legalActions(bettor).find((action) => action.type === "bet")).toMatchObject({
@@ -82,6 +96,7 @@ describe("game lifecycle", () => {
 
   it("allows Riichi with an early-street bet and locks the three-card hand", () => {
     const engine = GameEngine.create(players, { seed: "riichi" })
+    finishSeeding(engine)
     const actor = engine.state.actingPlayerId!
     engine.act(actor, { type: "bet", amount: 5, riichi: true })
     const player = engine.state.players.find((candidate) => candidate.id === actor)!
@@ -91,6 +106,7 @@ describe("game lifecycle", () => {
 
   it("reveals 3-1-1 community cards and forbids Riichi on the final street", () => {
     const engine = GameEngine.create(players, { seed: "streets" })
+    finishSeeding(engine)
 
     finishCheckingRound(engine)
     expect(engine.state.street).toBe(2)
@@ -127,6 +143,7 @@ describe("game lifecycle", () => {
 
   it("exchanges a private Blank for a buried discard without changing lane order", () => {
     const engine = GameEngine.create(players, { seed: "blank" })
+    finishSeeding(engine)
     const actor = engine.state.actingPlayerId!
     const player = engine.state.players.find((candidate) => candidate.id === actor)!
     player.privateCards[0] = { id: "forced-blank", ...blankFace() }
@@ -159,6 +176,7 @@ describe("game lifecycle", () => {
 
   it("splits an uncontested hand and advances the dealer", () => {
     const engine = GameEngine.create(players, { seed: "foldout" })
+    finishSeeding(engine)
     const originalDealer = engine.state.dealerIndex
     while (engine.state.phase === "betting")
       engine.act(engine.state.actingPlayerId!, { type: "fold" })
@@ -175,6 +193,94 @@ describe("game lifecycle", () => {
     ).toBe(20)
     expect(engine.state.players.every((player) => player.chips % 5 === 0)).toBe(true)
   })
+
+  it("pays the single-Flower fold bonus from every opponent", () => {
+    const engine = GameEngine.create(players, { seed: "flower-bluff" })
+    finishSeeding(engine)
+    const winnerId = engine.state.actingPlayerId!
+    const winner = engine.state.players.find((player) => player.id === winnerId)!
+    winner.privateCards[0] = { id: "forced-flower", ...flowerFace("plum") }
+    const before = Object.fromEntries(
+      engine.state.players.map((player) => [player.id, player.chips]),
+    )
+
+    while (engine.state.phase === "betting") {
+      const actor = engine.state.actingPlayerId!
+      if (actor === winnerId) {
+        engine.act(actor, { type: "bet", amount: 5 })
+      } else {
+        engine.act(actor, { type: "fold" })
+      }
+    }
+
+    const result = engine.state.handResults.at(-1)!
+    expect(result.flowerBonus).toEqual({ winnerId, perOpponent: 20, total: 60 })
+    expect(winner.chips).toBe(before[winnerId]! - 5 + 25 + 60)
+    for (const opponent of engine.state.players.filter((player) => player.id !== winnerId)) {
+      expect(opponent.chips).toBe(before[opponent.id]! - 20)
+    }
+  })
+
+  it("scraps a Flower board and resumes from a fresh flop without resetting the pot", () => {
+    const engine = GameEngine.create(players, { seed: "flower-board" })
+    finishSeeding(engine)
+    for (const player of engine.state.players) player.riichi = true
+    const flower = engine.state.deck.find((card) => card.kind === "flower")!
+    const normals = engine.state.deck.filter((card) => card.kind !== "flower").slice(0, 5)
+    const chosen = new Set([flower.id, ...normals.map((card) => card.id)])
+    const remaining = engine.state.deck.filter((card) => !chosen.has(card.id))
+    const replacement = normals.slice(0, 3)
+    const failedFlop = [normals[3]!, flower, normals[4]!]
+    engine.state.deck = [...remaining, ...replacement.toReversed(), ...failedFlop.toReversed()]
+    const potBefore = engine.state.pot
+
+    finishCheckingRound(engine)
+
+    expect(engine.state.phase).toBe("betting")
+    expect(engine.state.street).toBe(2)
+    expect(engine.state.community.map((card) => card.id)).toEqual(
+      replacement.map((card) => card.id),
+    )
+    expect(engine.state.community.every((card) => card.kind !== "flower")).toBe(true)
+    expect(engine.state.scrappedCommunity.map((card) => card.id)).toEqual(
+      failedFlop.map((card) => card.id),
+    )
+    expect(engine.state.boardResetCount).toBe(1)
+    expect(engine.state.pot).toBe(potBefore)
+  })
+
+  it("disqualifies exactly one private Flower at showdown", () => {
+    const engine = GameEngine.create(players, { seed: "flower-showdown" })
+    finishSeeding(engine)
+    engine.state.street = 4
+    engine.state.phase = "betting"
+    engine.state.community = [
+      { id: "board-nine", ...numberedFace("characters", 9) },
+      { id: "board-joker", ...jokerFace("red") },
+      { id: "board-b1", ...numberedFace("bamboo", 1) },
+      { id: "board-d4", ...numberedFace("dots", 4) },
+      { id: "board-d7", ...numberedFace("dots", 7) },
+    ]
+    const disqualified = engine.state.players[0]!
+    disqualified.privateCards = [
+      { id: "hole-flower", ...flowerFace("plum") },
+      { id: "hole-nine-1", ...numberedFace("characters", 9) },
+      { id: "hole-nine-2", ...numberedFace("characters", 9) },
+    ]
+    for (const player of engine.state.players) player.riichi = true
+    engine.state.pendingPlayerIds = engine.state.players.map((player) => player.id)
+    engine.state.actingPlayerId = engine.state.pendingPlayerIds[0]!
+
+    finishCheckingRound(engine)
+
+    expect(disqualified.score?.total).toBe(13)
+    expect(engine.state.handWinners).not.toContain(disqualified.id)
+    expect(engine.state.handResults.at(-1)?.reason).toBe("showdown")
+    expect(
+      engine.state.handResults.at(-1)?.players.find((player) => player.playerId === disqualified.id)
+        ?.flowerDisqualified,
+    ).toBe(true)
+  })
 })
 
 function totalBlue(engine: GameEngine) {
@@ -190,8 +296,19 @@ function finishCheckingRound(engine: GameEngine): void {
   while (engine.state.phase === "betting" && engine.state.street === street) {
     const actor = engine.state.actingPlayerId!
     engine.act(actor, { type: "check", drawSource: "deck" })
-    const discard = engine.state.players.find((player) => player.id === actor)!.privateCards[0]!
+    if (engine.state.phase === "discarding") {
+      const discard = engine.state.players.find((player) => player.id === actor)!.privateCards[0]!
+      const discardPile = engine.state.discardA.length === 0 ? "a" : "b"
+      engine.discard(actor, { discardCardId: discard.id, discardPile })
+    }
+  }
+}
+
+function finishSeeding(engine: GameEngine): void {
+  while (engine.state.phase === "seeding") {
+    const actor = engine.state.actingPlayerId!
+    const card = engine.state.players.find((player) => player.id === actor)!.privateCards[0]!
     const discardPile = engine.state.discardA.length === 0 ? "a" : "b"
-    engine.discard(actor, { discardCardId: discard.id, discardPile })
+    engine.seedDiscard(actor, { discardCardId: card.id, discardPile })
   }
 }
