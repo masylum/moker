@@ -3,17 +3,37 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider"
 import { tool } from "ai"
 import { z } from "zod"
 import { GameEngine } from "../game/engine"
+import { analyzeHandProgress, summarizeHandProgress } from "../game/hand-progress"
 import { CHIP_UNIT } from "../game/rules"
-import { chooseBlankClaim, chooseHeuristicAction, chooseHeuristicDiscard } from "../game/heuristic"
-import { evaluateSpecialHands } from "../game/patterns"
+import { chooseHeuristicAction, chooseHeuristicDiscard } from "../game/heuristic"
 import { agentRulebook } from "../game/rulebook"
 import type { GameState } from "../game/types"
 
 const BettingOperationSchema = z.object({
   kind: z.literal("betting"),
   action: z.discriminatedUnion("type", [
-    z.object({ type: z.literal("check"), drawSource: z.enum(["deck", "discard-a", "discard-b"]) }),
-    z.object({ type: z.literal("call"), drawSource: z.enum(["deck", "discard-a", "discard-b"]) }),
+    z.object({
+      type: z.literal("check"),
+      drawSource: z.enum(["deck", "discard-a", "discard-b"]),
+      blankExchange: z
+        .object({
+          blankCardId: z.string(),
+          pile: z.enum(["a", "b"]),
+          cardIndex: z.int().nonnegative(),
+        })
+        .optional(),
+    }),
+    z.object({
+      type: z.literal("call"),
+      drawSource: z.enum(["deck", "discard-a", "discard-b"]),
+      blankExchange: z
+        .object({
+          blankCardId: z.string(),
+          pile: z.enum(["a", "b"]),
+          cardIndex: z.int().nonnegative(),
+        })
+        .optional(),
+    }),
     z.object({
       type: z.literal("bet"),
       amount: z.int().positive(),
@@ -32,11 +52,9 @@ const DiscardOperationSchema = z.object({
   discardCardId: z.string(),
   discardPile: z.enum(["a", "b"]),
 })
-const BlankOperationSchema = z.object({ kind: z.literal("blank"), claim: z.boolean() })
 const OperationSchema = z.discriminatedUnion("kind", [
   BettingOperationSchema,
   DiscardOperationSchema,
-  BlankOperationSchema,
 ])
 type AgentOperation = z.infer<typeof OperationSchema>
 
@@ -80,7 +98,7 @@ export class MahjongPlayer extends Think<Env> {
   override getSystemPrompt(): string {
     return [
       "You are an expert Mahjong Poker player.",
-      "Maximize final chips, accounting for pot equity, future blue-stick charges, loan penalties, live discards, Riichi, and information hidden from you.",
+      "Maximize final chips and the highest single Hand on the active ladder, accounting for pot equity, future blue-stick charges, loan penalties, live discards, Riichi, and information hidden from you.",
       "Never infer opponents' private cards. Inspect the canonical rules, position, pattern progress, and statistical baseline with tools, then call commit_decision exactly once.",
       "The reasoning_summary must be a concise, auditable strategic explanation, not hidden chain-of-thought.",
       agentRulebook(),
@@ -133,14 +151,12 @@ export class MahjongPlayer extends Think<Env> {
             return chooseHeuristicAction(state, playerId, state.config.heuristicSamples)
           if (state.phase === "discarding")
             return chooseHeuristicDiscard(state, playerId, state.config.heuristicSamples)
-          if (state.phase === "blank-window")
-            return chooseBlankClaim(state, playerId, state.config.heuristicSamples)
           return { error: `No decision is available during ${state.phase}` }
         },
       }),
       inspect_pattern_progress: tool({
         description:
-          "Measure the visible hand's distance from every active special pattern using the exact scoring matcher.",
+          "Measure the visible hand's current best Hand and distance from every stronger active Hand using the exact scoring matchers.",
         inputSchema: z.object({}),
         execute: async () => {
           const { state, playerId } = this.turnContext()
@@ -150,10 +166,12 @@ export class MahjongPlayer extends Think<Env> {
             throw new Error("Unknown player in trusted turn context")
           }
 
-          return evaluateSpecialHands(
-            [...player.privateCards, ...state.community],
-            state.config.activeSpecialHands,
-          ).map(({ matchingMasks: _matchingMasks, ...evaluation }) => evaluation)
+          const cards = [...player.privateCards, ...state.community]
+
+          return {
+            ...summarizeHandProgress(cards, state.config.activeSpecialHands),
+            hands: analyzeHandProgress(cards, state.config.activeSpecialHands),
+          }
         },
       }),
       commit_decision: tool({
@@ -292,11 +310,6 @@ function validateOperation(state: GameState, playerId: string, operation: AgentO
     (state.phase !== "discarding" || state.pendingDiscard?.playerId !== playerId)
   )
     throw new Error("Discard is not legal now")
-  if (
-    operation.kind === "blank" &&
-    (state.phase !== "blank-window" || state.blankWindow?.eligiblePlayerIds[0] !== playerId)
-  )
-    throw new Error("Blank choice is not legal now")
 }
 
 function isGameState(value: unknown): value is GameState {

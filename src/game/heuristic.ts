@@ -1,10 +1,12 @@
 import { createDeck } from "./cards"
-import { bestMeldArrangement, scoreHand } from "./scoring"
+import { summarizeHandProgress } from "./hand-progress"
 import { evaluateSpecialHands } from "./patterns"
 import { SeededRandom } from "./random"
 import { CHIP_UNIT, ORBIT_VALUES, toChipUnit } from "./rules"
+import { compareHandScores, scoreHand } from "./scoring"
 import type {
   BettingAction,
+  BlankExchange,
   Card,
   CardSource,
   DecisionEvaluation,
@@ -22,10 +24,10 @@ export interface DiscardChoice {
   rationale: string
 }
 
-export interface BlankChoice {
-  claim: boolean
-  improvement: number
-  rationale: string
+interface DrawPlan {
+  source: CardSource
+  blankExchange?: BlankExchange
+  value: number
 }
 
 export function chooseHeuristicAction(
@@ -39,7 +41,7 @@ export function chooseHeuristicAction(
   const random = new SeededRandom(
     `${state.config.seed}:h${state.handNumber}:s${state.street}:v${state.version}:${playerId}`,
   )
-  const drawSource = chooseDrawSource(state, player, random.fork("draw"), samples)
+  const drawPlan = chooseDrawPlan(state, player, random.fork("draw"), samples)
   const math = analyzePokerMath(state, playerId, samples)
   const toCall = state.currentWager - player.roundCommitted
   const evaluations: DecisionEvaluation[] = []
@@ -82,7 +84,7 @@ export function chooseHeuristicAction(
       expectedChipDelta,
       utility,
       samples,
-      rationale: `${Math.round(math.showdownEquity * 100)}% showdown equity; ${formatPercent(math.potOdds)} pot odds; call EV ${formatSigned(math.callExpectedValue)}; ${math.improveRate.toFixed(0)}% improve; closest special is ${formatClosest(math.closestSpecial)}`,
+      rationale: `${Math.round(math.showdownEquity * 100)}% showdown equity; ${formatPercent(math.potOdds)} pot odds; call EV ${formatSigned(math.callExpectedValue)}; ${math.improveRate.toFixed(0)}% improve; current best is ${math.currentBest.label} (rank ${math.currentBest.rank}); next is ${formatNext(math.nextClosest)}`,
     }
   }
 
@@ -98,7 +100,16 @@ export function chooseHeuristicAction(
   })
 
   if (toCall === 0) {
-    evaluations.push(makeEvaluation({ type: "check", drawSource }, 0))
+    evaluations.push(
+      makeEvaluation(
+        {
+          type: "check",
+          drawSource: drawPlan.source,
+          ...(drawPlan.blankExchange ? { blankExchange: drawPlan.blankExchange } : {}),
+        },
+        0,
+      ),
+    )
     const aggressionThreshold = Math.max(0.38, 1 / (math.opponents + 1) + 0.1)
 
     if (math.showdownEquity >= aggressionThreshold) {
@@ -114,7 +125,16 @@ export function chooseHeuristicAction(
       }
     }
   } else if (player.chips >= toCall) {
-    evaluations.push(makeEvaluation({ type: "call", drawSource }, toCall))
+    evaluations.push(
+      makeEvaluation(
+        {
+          type: "call",
+          drawSource: drawPlan.source,
+          ...(drawPlan.blankExchange ? { blankExchange: drawPlan.blankExchange } : {}),
+        },
+        toCall,
+      ),
+    )
     const aggressionThreshold = Math.max(0.5, math.potOdds + 0.15, 1 / (math.opponents + 1) + 0.15)
 
     if (math.showdownEquity >= aggressionThreshold) {
@@ -159,6 +179,10 @@ export function analyzePokerMath(
     `${state.config.seed}:math:h${state.handNumber}:s${state.street}:v${state.version}:${playerId}`,
   )
   const future = analyzePrivateFuture(state, playerId, player.privateCards, random, samples)
+  const progress = summarizeHandProgress(
+    [...player.privateCards, ...state.community],
+    state.config.activeSpecialHands,
+  )
   const toCall = Math.max(0, state.currentWager - player.roundCommitted)
   const potAfterCall = state.pot + toCall
   const potOdds = toCall === 0 ? 0 : toCall / potAfterCall
@@ -177,6 +201,8 @@ export function analyzePokerMath(
     expectedScore: future.expectedScore,
     improveRate: future.improveRate,
     closestSpecial: future.closestSpecial,
+    currentBest: progress.currentBest,
+    nextClosest: progress.nextClosest,
   }
 }
 
@@ -204,71 +230,25 @@ export function chooseHeuristicDiscard(
   )
   const best = evaluations[0]!
   const pile = chooseDiscardPile(state, best.card)
+  const progress = summarizeHandProgress(
+    [...player.privateCards.filter((card) => card.id !== best.card.id), ...state.community],
+    state.config.activeSpecialHands,
+  )
+
   return {
     discardCardId: best.card.id,
     discardPile: pile,
     expectedScore: best.expectedScore,
-    rationale: `Discarding ${best.card.id} leaves an expected final hand score of ${best.expectedScore.toFixed(1)} across ${samples} rollouts; closest special is ${formatClosest(best.closestSpecial)}`,
+    rationale: `Discarding ${best.card.id} leaves an expected final ladder rank of ${best.expectedScore.toFixed(1)} across ${samples} rollouts; current best is ${progress.currentBest.label} and next is ${formatNext(progress.nextClosest)}`,
   }
 }
 
-export function chooseBlankClaim(
-  state: GameState,
-  playerId: string,
-  samples = state.config.heuristicSamples,
-): BlankChoice {
-  const window = state.blankWindow
-  if (state.phase !== "blank-window" || !window || window.eligiblePlayerIds[0] !== playerId) {
-    throw new Error("Player does not have Blank priority")
-  }
-
-  const player = getPlayer(state, playerId)
-  const pile = window.pile === "a" ? state.discardA : state.discardB
-  const offered = pile.at(-1)
-  if (!offered) {
-    return { claim: false, improvement: 0, rationale: "The discard is no longer available" }
-  }
-
-  const blankIndex = player.privateCards.findIndex((card) => card.kind === "blank")
-
-  if (blankIndex < 0) {
-    return { claim: false, improvement: 0, rationale: "No private Blank" }
-  }
-
-  const random = new SeededRandom(`${state.config.seed}:blank:${state.version}:${playerId}`)
-  const current = analyzePrivateFuture(
-    state,
-    playerId,
-    player.privateCards,
-    random.fork("keep"),
-    samples,
-  ).expectedScore
-  const replaced = [...player.privateCards]
-  replaced.splice(blankIndex, 1, offered)
-  const next = analyzePrivateFuture(
-    state,
-    playerId,
-    replaced,
-    random.fork("claim"),
-    samples,
-  ).expectedScore
-  const improvement = next - current
-  return {
-    claim: improvement >= 1.5,
-    improvement,
-    rationale:
-      improvement >= 1.5
-        ? `Claim improves expected score by ${improvement.toFixed(1)}`
-        : `Claim improves expected score by only ${improvement.toFixed(1)}`,
-  }
-}
-
-function chooseDrawSource(
+function chooseDrawPlan(
   state: GameState,
   player: PlayerState,
   random: SeededRandom,
   samples: number,
-): CardSource {
+): DrawPlan {
   const sources: CardSource[] = ["deck"]
   if (state.discardA.length > 0) sources.push("discard-a")
   if (state.discardB.length > 0) sources.push("discard-b")
@@ -288,10 +268,33 @@ function chooseDrawSource(
     }
     return total / count
   }
-  return sources
-    .map((source) => ({ source, value: sourceValue(source) }))
-    .sort((left, right) => right.value - left.value || left.source.localeCompare(right.source))[0]!
-    .source
+  const plans: DrawPlan[] = sources.map((source) => ({ source, value: sourceValue(source) }))
+  const blank = player.privateCards.find((card) => card.kind === "blank")
+
+  if (blank) {
+    for (const [pile, cards] of [
+      ["a", state.discardA],
+      ["b", state.discardB],
+    ] as const) {
+      cards.forEach((card, cardIndex) => {
+        const replaced = player.privateCards.map((privateCard) =>
+          privateCard.id === blank.id ? card : privateCard,
+        )
+        plans.push({
+          source: "deck",
+          blankExchange: { blankCardId: blank.id, pile, cardIndex },
+          value: currentStrength(replaced, state),
+        })
+      })
+    }
+  }
+
+  return plans.sort(
+    (left, right) =>
+      right.value - left.value ||
+      Number(Boolean(left.blankExchange)) - Number(Boolean(right.blankExchange)) ||
+      left.source.localeCompare(right.source),
+  )[0]!
 }
 
 function bestImmediatePrivateScore(fiveCards: Card[], state: GameState): number {
@@ -325,10 +328,10 @@ function analyzePrivateFuture(
     const shuffled = random.shuffle(unknown)
     const completion = shuffled.slice(0, neededCommunity)
     const completed = [...privateCards, ...state.community, ...completion]
-    const score = scoreHand(completed, state.config.activeSpecialHands).total
-    total += score
+    const score = scoreHand(completed, state.config.activeSpecialHands)
+    total += score.total
 
-    if (score > current) {
+    if (score.total > current) {
       improvements += 1
     }
 
@@ -339,12 +342,18 @@ function analyzePrivateFuture(
       return scoreHand(
         [...cards, ...state.community, ...completion],
         state.config.activeSpecialHands,
-      ).total
+      )
     })
-    const bestScore = Math.max(score, ...opponentScores)
+    const bestScore = [score, ...opponentScores].sort((left, right) =>
+      compareHandScores(right, left),
+    )[0]!
 
-    if (score === bestScore) {
-      equity += 1 / (1 + opponentScores.filter((opponentScore) => opponentScore === score).length)
+    if (compareHandScores(score, bestScore) === 0) {
+      equity +=
+        1 /
+        (1 +
+          opponentScores.filter((opponentScore) => compareHandScores(opponentScore, score) === 0)
+            .length)
     }
   }
   const closest = evaluateSpecialHands(
@@ -379,17 +388,10 @@ function unknownCards(state: GameState, privateCards: Card[]): Card[] {
 
 function currentStrength(privateCards: Card[], state: GameState): number {
   const cards = [...privateCards, ...state.community]
-  const meldScore = bestMeldArrangement(cards).score
-  const specialPotential = evaluateSpecialHands(cards, state.config.activeSpecialHands).reduce(
-    (best, pattern) => {
-      const progress = (pattern.size - pattern.missing) / pattern.size
+  const score = scoreHand(cards, state.config.activeSpecialHands).total
+  const next = summarizeHandProgress(cards, state.config.activeSpecialHands).nextClosest
 
-      return Math.max(best, pattern.score * progress * progress)
-    },
-    0,
-  )
-
-  return Math.max(meldScore, specialPotential)
+  return score + (next ? ((next.size - next.missing) / next.size) * next.rank * 0.01 : 0)
 }
 
 function chooseDiscardPile(state: GameState, discarded: Card): DiscardPile {
@@ -448,7 +450,7 @@ function shouldDeclareRiichi(
     state.street < 3 &&
     !player.riichi &&
     player.blueSticks > 0 &&
-    expectedScore >= 13 &&
+    expectedScore >= 6 &&
     winRate >= 0.42
   )
 }
@@ -490,6 +492,6 @@ function formatSigned(value: number): string {
   return `${value >= 0 ? "+" : ""}${value.toFixed(1)}`
 }
 
-function formatClosest(closest: PokerMathAnalysis["closestSpecial"]): string {
-  return closest ? `${closest.label} (${closest.missing} away)` : "none active"
+function formatNext(next: PokerMathAnalysis["nextClosest"]): string {
+  return next ? `${next.label} (${next.missing} away, rank ${next.rank})` : "the top active Hand"
 }

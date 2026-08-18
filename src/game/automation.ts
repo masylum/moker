@@ -1,5 +1,5 @@
 import { GameEngine } from "./engine"
-import { chooseBlankClaim, chooseHeuristicAction, chooseHeuristicDiscard } from "./heuristic"
+import { chooseHeuristicAction, chooseHeuristicDiscard } from "./heuristic"
 import { MAX_LOANS, ORBIT_VALUES } from "./rules"
 import type { HeuristicDecision } from "./types"
 
@@ -22,6 +22,18 @@ export function stepHeuristic(engine: GameEngine): AutomatedStep {
     const decision = chooseHeuristicAction(state, playerId)
     engine.act(playerId, decision.action)
 
+    if (engine.state.phase === "discarding" && engine.state.pendingDiscard?.playerId === playerId) {
+      const drawnCardId = engine.state.pendingDiscard.drawnCardId
+      const discard = chooseHeuristicDiscard(engine.state, playerId)
+      engine.discard(playerId, discard)
+
+      return {
+        rationale: `${decision.rationale} Drew ${drawnCardId}; ${discard.rationale}.`,
+        playerId,
+        decision,
+      }
+    }
+
     return { rationale: decision.rationale, playerId, decision }
   }
 
@@ -34,24 +46,6 @@ export function stepHeuristic(engine: GameEngine): AutomatedStep {
 
     const decision = chooseHeuristicDiscard(state, playerId)
     engine.discard(playerId, decision)
-
-    return { rationale: decision.rationale, playerId }
-  }
-
-  if (state.phase === "blank-window") {
-    const playerId = state.blankWindow?.eligiblePlayerIds[0]
-
-    if (!playerId) {
-      throw new Error("No player has Blank priority")
-    }
-
-    const decision = chooseBlankClaim(state, playerId)
-
-    if (decision.claim) {
-      engine.claimBlank(playerId)
-    } else {
-      engine.passBlank(playerId)
-    }
 
     return { rationale: decision.rationale, playerId }
   }

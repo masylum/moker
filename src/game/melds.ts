@@ -1,4 +1,5 @@
 import { faceKey, jokerCanRepresent } from "./cards"
+import { HAND_RANKS } from "./rules"
 import {
   DRAGONS,
   SUITS,
@@ -13,15 +14,6 @@ export interface MeldCandidate extends ScoredCombination {
   mask: number
 }
 
-const BASIC_SCORES = {
-  eye: 2,
-  chow: 3,
-  pung: 6,
-  "three-dragons": 10,
-  "four-winds": 15,
-  kong: 20,
-} as const
-
 export function generateMeldCandidates(cards: readonly Card[]): MeldCandidate[] {
   const candidates: MeldCandidate[] = []
 
@@ -29,7 +21,7 @@ export function generateMeldCandidates(cards: readonly Card[]): MeldCandidate[] 
     const subset = indexes.map((index) => cards[index]!)
 
     if (isNaturalPair(subset)) {
-      candidates.push(createCandidate("eye", BASIC_SCORES.eye, subset, mask, "Eye"))
+      candidates.push(createCandidate("eye", HAND_RANKS.eye, subset, mask, "Eye"))
     }
   })
 
@@ -37,11 +29,11 @@ export function generateMeldCandidates(cards: readonly Card[]): MeldCandidate[] 
     const subset = indexes.map((index) => cards[index]!)
 
     if (matchesAnyChow(subset)) {
-      candidates.push(createCandidate("chow", BASIC_SCORES.chow, subset, mask, "Chow"))
+      candidates.push(createCandidate("chow", HAND_RANKS.chow, subset, mask, "Chow"))
     }
 
     if (matchesAnyIdentical(subset)) {
-      candidates.push(createCandidate("pung", BASIC_SCORES.pung, subset, mask, "Pung"))
+      candidates.push(createCandidate("pung", HAND_RANKS.pung, subset, mask, "Pung"))
     }
 
     const dragons = DRAGONS.map((dragon) => ({
@@ -59,7 +51,7 @@ export function generateMeldCandidates(cards: readonly Card[]): MeldCandidate[] 
       candidates.push(
         createCandidate(
           "three-dragons",
-          BASIC_SCORES["three-dragons"],
+          HAND_RANKS["three-dragons"],
           subset,
           mask,
           "Three Dragons",
@@ -74,12 +66,12 @@ export function generateMeldCandidates(cards: readonly Card[]): MeldCandidate[] 
 
     if (matchesTargets(subset, winds)) {
       candidates.push(
-        createCandidate("four-winds", BASIC_SCORES["four-winds"], subset, mask, "Four Winds"),
+        createCandidate("four-winds", HAND_RANKS["four-winds"], subset, mask, "Four Winds"),
       )
     }
 
     if (matchesAnyIdentical(subset) && subset.some((card) => card.kind === "joker")) {
-      candidates.push(createCandidate("kong", BASIC_SCORES.kong, subset, mask, "Kong"))
+      candidates.push(createCandidate("kong", HAND_RANKS.kong, subset, mask, "Kong"))
     }
   })
 

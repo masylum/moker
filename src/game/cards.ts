@@ -121,6 +121,33 @@ export function sameNaturalFace(left: CardFace, right: CardFace): boolean {
   return left.kind !== "joker" && left.kind !== "blank" && faceKey(left) === faceKey(right)
 }
 
+export function compareCards(left: Card, right: Card): number {
+  const leftKey = visualSortKey(left)
+  const rightKey = visualSortKey(right)
+
+  return (
+    leftKey[0] - rightKey[0] ||
+    leftKey[1] - rightKey[1] ||
+    leftKey[2] - rightKey[2] ||
+    left.id.localeCompare(right.id)
+  )
+}
+
+function visualSortKey(card: Card): [number, number, number] {
+  switch (card.kind) {
+    case "numbered":
+      return [0, SUITS.indexOf(card.suit), card.rank]
+    case "dragon":
+      return [1, DRAGONS.indexOf(card.dragon), 0]
+    case "wind":
+      return [2, WINDS.indexOf(card.wind), 0]
+    case "joker":
+      return [3, JOKER_COLORS.indexOf(card.color), 0]
+    case "blank":
+      return [4, 0, 0]
+  }
+}
+
 function capitalize(value: string): string {
   return value[0]!.toUpperCase() + value.slice(1)
 }

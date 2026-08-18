@@ -31,7 +31,6 @@ export const SPECIAL_HANDS = [
   "twin-gates",
   "mirror-chows",
   "crossing-winds",
-  "heavenly-honors",
   "brothers",
   "rainbow-eyes",
   "dragon-dance",
@@ -49,6 +48,8 @@ export type CombinationKind =
   | "kong"
   | SpecialHandId
 
+export type HandKind = "high-card" | CombinationKind
+
 export interface ScoredCombination {
   kind: CombinationKind
   score: number
@@ -60,6 +61,7 @@ export interface HandScore {
   total: number
   selectedCardIds: string[]
   combinations: ScoredCombination[]
+  tieBreak: number[]
 }
 
 export type HandWinReason = "showdown" | "uncontested"
@@ -103,26 +105,27 @@ export interface PlayerState {
 }
 
 export type Street = 0 | 1 | 2 | 3
-export type GamePhase =
-  | "between-hands"
-  | "discarding"
-  | "betting"
-  | "blank-window"
-  | "showdown"
-  | "finished"
-
-export interface PendingBlankWindow {
-  discarderId: string
-  pile: DiscardPile
-  cardId: string
-  eligiblePlayerIds: string[]
-  resumeTurnPlayerId: string | null
-}
+export type GamePhase = "between-hands" | "discarding" | "betting" | "showdown" | "finished"
 
 export interface PendingDiscard {
   playerId: string
   drawnCardId: string
   source: CardSource
+}
+
+export interface BlankExchange {
+  blankCardId: string
+  pile: DiscardPile
+  cardIndex: number
+}
+
+export interface DrawDiscardRecord {
+  playerId: string
+  source: CardSource | "blank-exchange"
+  drawnCard: Card
+  discardedCard: Card
+  discardPile: DiscardPile
+  discardIndex: number
 }
 
 export interface GameConfig {
@@ -157,7 +160,7 @@ export interface GameState {
   pendingPlayerIds: string[]
   actingPlayerId: string | null
   pendingDiscard: PendingDiscard | null
-  blankWindow: PendingBlankWindow | null
+  drawDiscardHistory: DrawDiscardRecord[]
   handWinners: string[]
   handResults: HandResult[]
   finalScores: Record<string, number> | null
@@ -165,8 +168,8 @@ export interface GameState {
 }
 
 export type BettingAction =
-  | { type: "check"; drawSource: CardSource }
-  | { type: "call"; drawSource: CardSource }
+  | { type: "check"; drawSource: CardSource; blankExchange?: BlankExchange }
+  | { type: "call"; drawSource: CardSource; blankExchange?: BlankExchange }
   | { type: "bet"; amount: number; riichi?: boolean }
   | { type: "raise"; amount: number; riichi?: boolean }
   | { type: "fold" }
@@ -208,6 +211,15 @@ export interface ClosestSpecialHand {
   score: number
 }
 
+export interface HandProgressSummary {
+  kind: HandKind
+  label: string
+  rank: number
+  size: number
+  missing: number
+  matchedCardIds: string[]
+}
+
 export interface PokerMathAnalysis {
   playerId: string
   samples: number
@@ -222,6 +234,8 @@ export interface PokerMathAnalysis {
   expectedScore: number
   improveRate: number
   closestSpecial: ClosestSpecialHand | null
+  currentBest: HandProgressSummary
+  nextClosest: HandProgressSummary | null
 }
 
 export interface GameEvent<T = unknown> {
@@ -246,7 +260,10 @@ export interface PublicPlayerState extends Omit<PlayerState, "privateCards"> {
   privateCards: Card[] | { count: number }
 }
 
-export interface PublicGameState extends Omit<GameState, "players" | "deck"> {
+export interface PublicGameState extends Omit<
+  GameState,
+  "players" | "deck" | "drawDiscardHistory"
+> {
   players: PublicPlayerState[]
   deck: { count: number }
 }
@@ -255,6 +272,7 @@ export interface DebugGameView {
   state: PublicGameState
   analyses: PokerMathAnalysis[]
   actingDecision: HeuristicDecision | null
+  recentDrawDiscards: DrawDiscardRecord[]
 }
 
 export const DEFAULT_SPECIAL_HANDS: SpecialHandId[] = [

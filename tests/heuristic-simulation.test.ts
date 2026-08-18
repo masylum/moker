@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { GameEngine } from "../src/game/engine"
+import { stepHeuristic } from "../src/game/automation"
 import {
   analyzePokerMath,
   chooseHeuristicAction,
@@ -21,7 +22,7 @@ describe("heuristic player and simulations", () => {
     const playerId = engine.state.actingPlayerId!
     const decision = chooseHeuristicAction(engine.state, playerId, 64)
 
-    expect(analyzePokerMath(engine.state, playerId, 64).showdownEquity).toBeLessThan(0.1)
+    expect(analyzePokerMath(engine.state, playerId, 64).showdownEquity).toBeLessThan(0.2)
     expect(decision.action.type).toBe("check")
     expect(decision.evaluations.some((evaluation) => evaluation.action.type === "bet")).toBe(false)
   })
@@ -40,7 +41,7 @@ describe("heuristic player and simulations", () => {
     engine.state.pendingPlayerIds = ["p4"]
     const decision = chooseHeuristicAction(engine.state, "p4", 64)
 
-    expect(analyzePokerMath(engine.state, "p4", 64).showdownEquity).toBeGreaterThan(0.6)
+    expect(analyzePokerMath(engine.state, "p4", 64).showdownEquity).toBeGreaterThan(0.5)
     expect(decision.action.type).toBe("bet")
   })
 
@@ -95,6 +96,24 @@ describe("heuristic player and simulations", () => {
         .find((player) => player.id === playerId)
         ?.privateCards.some((card) => card.id === choice.discardCardId),
     ).toBe(true)
+  })
+
+  it("resolves a heuristic Check and Draw & Discard as one client step", () => {
+    const engine = GameEngine.create(
+      [
+        { id: "p1", name: "You", controller: "human" },
+        { id: "p2", name: "Bot", controller: "heuristic" },
+        { id: "p3", name: "Bot 3", controller: "heuristic" },
+        { id: "p4", name: "Bot 4", controller: "heuristic" },
+      ],
+      { seed: "jade-table", heuristicSamples: 2 },
+    )
+
+    const step = stepHeuristic(engine)
+
+    expect(step.rationale).toMatch(/Drew/)
+    expect(engine.state.phase).not.toBe("discarding")
+    expect(engine.state.drawDiscardHistory).toHaveLength(1)
   })
 
   it("replays an entire game deterministically", { timeout: 60_000 }, () => {

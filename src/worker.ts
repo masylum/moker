@@ -27,8 +27,25 @@ const ActionSchema = z.discriminatedUnion("kind", [
       z.object({
         type: z.literal("check"),
         drawSource: z.enum(["deck", "discard-a", "discard-b"]),
+        blankExchange: z
+          .object({
+            blankCardId: z.string(),
+            pile: z.enum(["a", "b"]),
+            cardIndex: z.int().nonnegative(),
+          })
+          .optional(),
       }),
-      z.object({ type: z.literal("call"), drawSource: z.enum(["deck", "discard-a", "discard-b"]) }),
+      z.object({
+        type: z.literal("call"),
+        drawSource: z.enum(["deck", "discard-a", "discard-b"]),
+        blankExchange: z
+          .object({
+            blankCardId: z.string(),
+            pile: z.enum(["a", "b"]),
+            cardIndex: z.int().nonnegative(),
+          })
+          .optional(),
+      }),
       z.object({
         type: z.literal("bet"),
         amount: z.int().positive(),
@@ -48,7 +65,6 @@ const ActionSchema = z.discriminatedUnion("kind", [
     discardCardId: z.string(),
     discardPile: z.enum(["a", "b"]),
   }),
-  z.object({ kind: z.literal("blank"), playerId: z.string(), claim: z.boolean() }),
   z.object({ kind: z.literal("take-loan"), playerId: z.string() }),
   z.object({ kind: z.literal("repay-loan"), playerId: z.string() }),
   z.object({ kind: z.literal("next-hand"), viewerId: z.string().optional() }),
@@ -176,17 +192,29 @@ async function handleApi(request: Request, env: Env, url: URL): Promise<Response
     return Response.json(await game.stepHeuristic())
   }
   if (request.method === "POST" && operation === "llm-step") {
-    const state = await game.getInternalState()
+    let state = await game.getInternalState()
     const playerId = decisionPlayerId(state)
     const agent = env.MAHJONG_PLAYER.getByName(`${sessionId}:${playerId}`)
-    const decision = await agent.decide(state.id, state, playerId)
-    await applyAgentOperation(game, playerId, decision.operation)
+    const decisions = []
+
+    for (let step = 0; step < 2; step += 1) {
+      const decision = await agent.decide(state.id, state, playerId)
+      decisions.push(decision)
+      await applyAgentOperation(game, playerId, decision.operation)
+      state = await game.getInternalState()
+
+      if (state.phase !== "discarding" || state.pendingDiscard?.playerId !== playerId) {
+        break
+      }
+    }
+
     const humanId = state.players.find((player) => player.controller === "human")?.id
     const publicState = await game.getGame(humanId)
     return Response.json({
       state: publicState,
-      rationale: decision.reasoningSummary,
-      turnId: decision.turnId,
+      rationale: decisions.map((decision) => decision.reasoningSummary).join(" "),
+      turnId: decisions[0]!.turnId,
+      turnIds: decisions.map((decision) => decision.turnId),
     })
   }
   return Response.json({ error: "Not found" }, { status: 404 })
@@ -201,8 +229,6 @@ async function applyAction(
       return game.applyBettingAction(input.playerId, input.action)
     case "discard":
       return game.applyDiscard(input.playerId, input.discardCardId, input.discardPile)
-    case "blank":
-      return game.applyBlankChoice(input.playerId, input.claim)
     case "take-loan":
       return game.takeLoan(input.playerId)
     case "repay-loan":
@@ -228,8 +254,6 @@ async function applyAgentOperation(
         operation.discardCardId,
         operation.discardPile as "a" | "b",
       )
-    case "blank":
-      return game.applyBlankChoice(playerId, operation.claim)
   }
 
   throw new Error("Unknown agent operation")
@@ -244,10 +268,6 @@ function decisionPlayerId(state: Awaited<ReturnType<GameSession["getInternalStat
 
   if (state.phase === "discarding" && state.pendingDiscard) {
     return state.pendingDiscard.playerId
-  }
-
-  if (state.phase === "blank-window" && state.blankWindow?.eligiblePlayerIds[0]) {
-    return state.blankWindow.eligiblePlayerIds[0]
   }
 
   throw new Error(`No LLM decision is available during ${state.phase}`)

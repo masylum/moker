@@ -65,6 +65,7 @@ export class GameSession extends Agent<Env, SessionState> {
       state: engine.publicView(undefined, true),
       analyses,
       actingDecision,
+      recentDrawDiscards: structuredClone(engine.state.drawDiscardHistory.slice(-8)),
     }
   }
 
@@ -82,14 +83,6 @@ export class GameSession extends Agent<Env, SessionState> {
   ): Promise<PublicGameState> {
     const engine = this.engine()
     engine.discard(playerId, { discardCardId, discardPile })
-    this.commit(engine)
-    return engine.publicView(playerId)
-  }
-
-  async applyBlankChoice(playerId: string, claim: boolean): Promise<PublicGameState> {
-    const engine = this.engine()
-    if (claim) engine.claimBlank(playerId)
-    else engine.passBlank(playerId)
     this.commit(engine)
     return engine.publicView(playerId)
   }

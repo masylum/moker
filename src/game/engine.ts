@@ -10,9 +10,10 @@ import {
   maxHandsFor,
   orbitFor,
 } from "./rules"
-import { scoreHand } from "./scoring"
+import { compareHandScores, scoreHand } from "./scoring"
 import type {
   BettingAction,
+  BlankExchange,
   Card,
   DiscardPile,
   GameConfig,
@@ -39,6 +40,7 @@ export class GameEngine {
     this.state = state
     this.state.minimumRaise ??= CHIP_UNIT
     this.state.handResults ??= []
+    this.state.drawDiscardHistory ??= []
     this.events = events
     this.random = new SeededRandom(state.config.seed, state.rngState)
   }
@@ -86,7 +88,7 @@ export class GameEngine {
       pendingPlayerIds: [],
       actingPlayerId: null,
       pendingDiscard: null,
-      blankWindow: null,
+      drawDiscardHistory: [],
       handWinners: [],
       handResults: [],
       finalScores: null,
@@ -118,8 +120,8 @@ export class GameEngine {
     this.state.discardA = []
     this.state.discardB = []
     this.state.removedCards = []
+    this.state.drawDiscardHistory = []
     this.state.handWinners = []
-    this.state.blankWindow = null
     this.state.pendingDiscard = null
     this.state.currentWager = 0
     this.state.minimumRaise = CHIP_UNIT
@@ -152,11 +154,7 @@ export class GameEngine {
   }
 
   legalActions(playerId: string): LegalAction[] {
-    if (
-      this.state.phase !== "betting" ||
-      this.state.actingPlayerId !== playerId ||
-      this.state.blankWindow
-    ) {
+    if (this.state.phase !== "betting" || this.state.actingPlayerId !== playerId) {
       return []
     }
 
@@ -200,10 +198,6 @@ export class GameEngine {
       throw new Error("Betting action is not available now")
     }
 
-    if (this.state.blankWindow) {
-      throw new Error("Resolve the Blank exchange window first")
-    }
-
     if (this.state.actingPlayerId !== playerId) {
       throw new Error(`It is not ${playerId}'s turn`)
     }
@@ -219,6 +213,14 @@ export class GameEngine {
     switch (action.type) {
       case "check":
         if (!player.riichi) {
+          if (action.blankExchange) {
+            this.exchangeBlank(player, action.blankExchange)
+            this.emit("betting-action", { action }, playerId)
+            this.completeTurn(playerId, false)
+
+            return
+          }
+
           this.beginDraw(player, action.drawSource)
           this.emit("betting-action", { action }, playerId)
           return
@@ -227,6 +229,14 @@ export class GameEngine {
       case "call":
         this.payToPot(player, this.state.currentWager - player.roundCommitted, true)
         if (!player.riichi) {
+          if (action.blankExchange) {
+            this.exchangeBlank(player, action.blankExchange)
+            this.emit("betting-action", { action }, playerId)
+            this.completeTurn(playerId, false)
+
+            return
+          }
+
           this.beginDraw(player, action.drawSource)
           this.emit("betting-action", { action }, playerId)
           return
@@ -296,6 +306,8 @@ export class GameEngine {
       throw new Error("An empty discard pile must be filled first")
     }
 
+    const drawn = player.privateCards.find((card) => card.id === pending.drawnCardId)
+    const laneIndex = target.length
     const [discarded] = player.privateCards.splice(discardIndex, 1)
     target.push(discarded!)
     this.state.pendingDiscard = null
@@ -310,57 +322,19 @@ export class GameEngine {
       },
       player.id,
     )
-
-    const discarderIndex = this.state.players.findIndex((candidate) => candidate.id === player.id)
-    const eligible = this.orderedAfter(discarderIndex)
-      .filter(
-        (candidate) =>
-          !candidate.folded &&
-          !candidate.riichi &&
-          candidate.privateCards.some((card) => card.kind === "blank"),
-      )
-      .map((candidate) => candidate.id)
-    if (eligible.length > 0) {
-      this.state.phase = "blank-window"
-      this.state.blankWindow = {
-        discarderId: player.id,
-        pile: decision.discardPile,
-        cardId: discarded!.id,
-        eligiblePlayerIds: eligible,
-        resumeTurnPlayerId: null,
-      }
+    if (!drawn) {
+      throw new Error("Drawn card is missing from the private hand")
     }
+
+    this.state.drawDiscardHistory.push({
+      playerId,
+      source: pending.source,
+      drawnCard: structuredClone(drawn),
+      discardedCard: structuredClone(discarded!),
+      discardPile: decision.discardPile,
+      discardIndex: laneIndex,
+    })
     this.completeTurn(playerId, false)
-  }
-
-  passBlank(playerId: string): void {
-    const window = this.requireBlankPriority(playerId)
-    window.eligiblePlayerIds.shift()
-    this.emit("blank-passed", { cardId: window.cardId }, playerId)
-    if (window.eligiblePlayerIds.length === 0) {
-      this.resumeAfterBlankWindow()
-    }
-  }
-
-  claimBlank(playerId: string): void {
-    const window = this.requireBlankPriority(playerId)
-    const player = this.getPlayer(playerId)
-    const blankIndex = player.privateCards.findIndex((card) => card.kind === "blank")
-    if (blankIndex < 0 || player.riichi) {
-      throw new Error("Player cannot exchange a Blank")
-    }
-
-    const pile = window.pile === "a" ? this.state.discardA : this.state.discardB
-    const claimed = pile.at(-1)
-    if (!claimed || claimed.id !== window.cardId) {
-      throw new Error("The offered discard is no longer visible")
-    }
-
-    pile.pop()
-    const [blank] = player.privateCards.splice(blankIndex, 1, claimed)
-    this.state.removedCards.push(blank!)
-    this.emit("blank-claimed", { cardId: claimed.id, pile: window.pile }, playerId)
-    this.resumeAfterBlankWindow()
   }
 
   takeLoan(playerId: string): void {
@@ -398,9 +372,17 @@ export class GameEngine {
   }
 
   publicView(viewerId?: string, revealAll = false): PublicGameState {
+    const { drawDiscardHistory: _drawDiscardHistory, ...publicState } = structuredClone(this.state)
+
     return {
-      ...structuredClone(this.state),
+      ...publicState,
       deck: { count: this.state.deck.length },
+      pendingDiscard:
+        this.state.pendingDiscard && (revealAll || this.state.pendingDiscard.playerId === viewerId)
+          ? structuredClone(this.state.pendingDiscard)
+          : this.state.pendingDiscard
+            ? { ...structuredClone(this.state.pendingDiscard), drawnCardId: "hidden" }
+            : null,
       players: this.state.players.map((player) => ({
         ...structuredClone(player),
         privateCards:
@@ -450,13 +432,7 @@ export class GameEngine {
         (id) => id !== playerId && !this.getPlayer(id).folded,
       )
     }
-    const nextPlayerId = this.state.pendingPlayerIds[0] ?? null
-    if (this.state.blankWindow) {
-      this.state.blankWindow.resumeTurnPlayerId = nextPlayerId
-      this.state.actingPlayerId = null
-      return
-    }
-    this.continueRound(nextPlayerId)
+    this.continueRound(this.state.pendingPlayerIds[0] ?? null)
   }
 
   private continueRound(nextPlayerId: string | null): void {
@@ -503,11 +479,45 @@ export class GameEngine {
     this.emit("card-drawn", { source, cardId: drawn.id }, player.id)
   }
 
-  private resumeAfterBlankWindow(): void {
-    const resume = this.state.blankWindow?.resumeTurnPlayerId ?? null
-    this.state.blankWindow = null
-    this.state.phase = "betting"
-    this.continueRound(resume)
+  private exchangeBlank(player: PlayerState, exchange: BlankExchange): void {
+    if (player.riichi) {
+      throw new Error("Riichi locks the private hand")
+    }
+
+    const blankIndex = player.privateCards.findIndex((card) => card.id === exchange.blankCardId)
+    const blank = player.privateCards[blankIndex]
+
+    if (!blank || blank.kind !== "blank") {
+      throw new Error("Blank exchange requires a private Blank")
+    }
+
+    const lane = exchange.pile === "a" ? this.state.discardA : this.state.discardB
+    const claimed = lane[exchange.cardIndex]
+
+    if (!claimed) {
+      throw new Error("Blank exchange target is not in that discard lane")
+    }
+
+    lane[exchange.cardIndex] = blank
+    player.privateCards[blankIndex] = claimed
+    this.state.drawDiscardHistory.push({
+      playerId: player.id,
+      source: "blank-exchange",
+      drawnCard: structuredClone(claimed),
+      discardedCard: structuredClone(blank),
+      discardPile: exchange.pile,
+      discardIndex: exchange.cardIndex,
+    })
+    this.emit(
+      "blank-exchanged",
+      {
+        blankCardId: blank.id,
+        claimedCardId: claimed.id,
+        pile: exchange.pile,
+        cardIndex: exchange.cardIndex,
+      },
+      player.id,
+    )
   }
 
   private resolveShowdown(): void {
@@ -521,8 +531,10 @@ export class GameEngine {
       )
     }
 
-    const highScore = Math.max(...contenders.map((player) => player.score?.total ?? 0))
-    const winners = contenders.filter((player) => player.score?.total === highScore)
+    const bestScore = contenders
+      .map((player) => player.score!)
+      .sort((left, right) => compareHandScores(right, left))[0]!
+    const winners = contenders.filter((player) => compareHandScores(player.score!, bestScore) === 0)
     this.state.handWinners = winners.map((player) => player.id)
     const pot = this.state.pot
     const payouts = this.splitPot(winners)
@@ -684,15 +696,6 @@ export class GameEngine {
 
   private canDeclareRiichi(player: PlayerState): boolean {
     return !player.riichi && this.state.street < 3 && player.privateCards.length === 4
-  }
-
-  private requireBlankPriority(playerId: string) {
-    const window = this.state.blankWindow
-    if (this.state.phase !== "blank-window" || !window)
-      throw new Error("There is no Blank exchange window")
-    if (window.eligiblePlayerIds[0] !== playerId)
-      throw new Error("Another player has Blank priority")
-    return window
   }
 
   private activePlayers(): PlayerState[] {

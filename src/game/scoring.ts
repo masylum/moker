@@ -1,135 +1,230 @@
-import { cardLabel } from "./cards"
+import { cardLabel, faceKey, jokerCanRepresent, numberedFace } from "./cards"
 import { generateMeldCandidates, type MeldCandidate } from "./melds"
 import { evaluateSpecialHands } from "./patterns"
-import type { Card, HandScore, ScoredCombination, SpecialHandId } from "./types"
+import { HAND_RANKS } from "./rules"
+import {
+  SUITS,
+  type Card,
+  type HandScore,
+  type ScoredCombination,
+  type SpecialHandId,
+} from "./types"
 
-interface MeldArrangement {
-  score: number
-  mask: number
-  combinations: MeldCandidate[]
+interface HandCandidate {
+  rank: number
+  cardIds: string[]
+  tieBreak: number[]
+  combination?: ScoredCombination
 }
 
 export function scoreHand(
   cards: readonly Card[],
   activeSpecialHands: readonly SpecialHandId[],
 ): HandScore {
-  if (cards.length < 8) {
-    throw new Error("A showdown needs at least 8 available cards")
-  }
-
   if (cards.length > 30) {
     throw new Error("Scoring mask supports no more than 30 cards")
   }
 
-  const special = evaluateSpecialHands(cards, activeSpecialHands).find(
-    (evaluation) => evaluation.missing === 0,
-  )
+  const candidates: HandCandidate[] = generateMeldCandidates(cards).map((candidate) => ({
+    rank: candidate.score,
+    cardIds: [...candidate.cardIds],
+    tieBreak: basicTieBreak(candidate, cards),
+    combination: {
+      kind: candidate.kind,
+      score: candidate.score,
+      cardIds: [...candidate.cardIds],
+      label: candidate.label,
+    },
+  }))
 
-  if (special) {
-    const mask = special.matchingMasks[0]!
+  for (const special of evaluateSpecialHands(cards, activeSpecialHands)) {
+    if (special.missing !== 0) {
+      continue
+    }
 
-    return result(cards, mask, [
-      {
-        kind: special.id,
-        score: special.score,
-        cardIds: indexesFromMask(mask).map((index) => cards[index]!.id),
-        label: special.label,
-      },
-    ])
-  }
-
-  const arrangement = bestMeldArrangement(cards)
-
-  return result(cards, arrangement.mask, arrangement.combinations)
-}
-
-export function bestMeldArrangement(cards: readonly Card[]): MeldArrangement {
-  const arrangements = new Map<number, MeldArrangement>([
-    [0, { score: 0, mask: 0, combinations: [] }],
-  ])
-
-  for (const candidate of generateMeldCandidates(cards)) {
-    const snapshot = [...arrangements.values()]
-
-    for (const arrangement of snapshot) {
-      if ((arrangement.mask & candidate.mask) !== 0) {
-        continue
-      }
-
-      const mask = arrangement.mask | candidate.mask
-
-      if (popCount(mask) > 8) {
-        continue
-      }
-
-      const next: MeldArrangement = {
-        score: arrangement.score + candidate.score,
-        mask,
-        combinations: [...arrangement.combinations, candidate],
-      }
-      const current = arrangements.get(mask)
-
-      if (!current || next.score > current.score) {
-        arrangements.set(mask, next)
-      }
+    for (const mask of special.matchingMasks) {
+      const selected = indexesFromMask(mask).map((index) => cards[index]!)
+      const cardIds = selected.map((card) => card.id)
+      candidates.push({
+        rank: special.score,
+        cardIds,
+        tieBreak: selected.map(tieValue).sort((left, right) => right - left),
+        combination: {
+          kind: special.id,
+          score: special.score,
+          cardIds,
+          label: special.label,
+        },
+      })
     }
   }
 
-  return [...arrangements.values()].sort(
-    (left, right) => right.score - left.score || popCount(right.mask) - popCount(left.mask),
-  )[0]!
+  const naturalCards = cards
+    .filter((card) => card.kind !== "blank" && card.kind !== "joker")
+    .sort((left, right) => tieValue(right) - tieValue(left) || left.id.localeCompare(right.id))
+  candidates.push({
+    rank: HAND_RANKS["high-card"],
+    cardIds: naturalCards.map((card) => card.id),
+    tieBreak: naturalCards.map(tieValue),
+  })
+  candidates.sort(compareCandidates)
+  const best = candidates[0]!
+
+  return {
+    total: best.rank,
+    selectedCardIds: best.cardIds,
+    combinations: best.combination ? [best.combination] : [],
+    tieBreak: best.tieBreak,
+  }
+}
+
+export function compareHandScores(left: HandScore, right: HandScore): number {
+  if (left.total !== right.total) {
+    return left.total - right.total
+  }
+
+  const length = Math.max(left.tieBreak.length, right.tieBreak.length)
+
+  for (let index = 0; index < length; index += 1) {
+    const difference = (left.tieBreak[index] ?? 0) - (right.tieBreak[index] ?? 0)
+
+    if (difference !== 0) {
+      return difference
+    }
+  }
+
+  return 0
 }
 
 export function describeScore(score: HandScore, cards: readonly Card[]): string {
   const byId = new Map(cards.map((card) => [card.id, card]))
+  const combination = score.combinations[0]
 
-  if (score.combinations.length === 0) {
-    return "No scoring combination"
+  if (!combination) {
+    const high = score.selectedCardIds[0]
+
+    return high ? `High Card: ${cardLabel(byId.get(high)!)}` : "High Card"
   }
 
-  return score.combinations
-    .map(
-      (combination) =>
-        `${combination.label} (${combination.score}): ${combination.cardIds
-          .map((id) => cardLabel(byId.get(id)!))
-          .join(", ")}`,
-    )
-    .join("; ")
+  return `${combination.label} (rank ${combination.score}): ${combination.cardIds
+    .map((id) => cardLabel(byId.get(id)!))
+    .join(", ")}`
 }
 
-function result(
-  cards: readonly Card[],
-  scoringMask: number,
-  combinations: readonly ScoredCombination[],
-): HandScore {
-  const selectedIndexes = indexesFromMask(scoringMask)
+function compareCandidates(left: HandCandidate, right: HandCandidate): number {
+  if (left.rank !== right.rank) {
+    return right.rank - left.rank
+  }
 
-  for (let index = 0; selectedIndexes.length < 8 && index < cards.length; index += 1) {
-    if ((scoringMask & (1 << index)) === 0) {
-      selectedIndexes.push(index)
+  const scoreComparison = compareHandScores(
+    { total: left.rank, selectedCardIds: left.cardIds, combinations: [], tieBreak: left.tieBreak },
+    {
+      total: right.rank,
+      selectedCardIds: right.cardIds,
+      combinations: [],
+      tieBreak: right.tieBreak,
+    },
+  )
+
+  return -scoreComparison || left.cardIds.join(":").localeCompare(right.cardIds.join(":"))
+}
+
+function basicTieBreak(candidate: MeldCandidate, cards: readonly Card[]): number[] {
+  const selected = candidate.cardIds.map((id) => cards.find((card) => card.id === id)!)
+
+  if (candidate.kind === "three-dragons") {
+    return [10, 10, 10]
+  }
+
+  if (candidate.kind === "four-winds") {
+    return [11, 11, 11, 11]
+  }
+
+  if (candidate.kind === "chow") {
+    const matches: number[][] = []
+
+    for (const suit of SUITS) {
+      for (let start = 1; start <= 7; start += 1) {
+        const targets = [
+          numberedFace(suit, start as 1 | 2 | 3 | 4 | 5 | 6 | 7),
+          numberedFace(suit, (start + 1) as 2 | 3 | 4 | 5 | 6 | 7 | 8),
+          numberedFace(suit, (start + 2) as 3 | 4 | 5 | 6 | 7 | 8 | 9),
+        ]
+
+        if (matchesTargets(selected, targets)) {
+          matches.push([start + 2, start + 1, start])
+        }
+      }
+    }
+
+    return matches.sort(compareTieVectors)[0] ?? []
+  }
+
+  const natural = selected.find((card) => card.kind !== "joker" && card.kind !== "blank")
+  const value = natural ? tieValue(natural) : 0
+
+  return Array.from({ length: selected.length }, () => value)
+}
+
+function matchesTargets(
+  cards: readonly Card[],
+  targets: ReturnType<typeof numberedFace>[],
+): boolean {
+  const available = [...targets]
+
+  for (const card of cards.filter((candidate) => candidate.kind !== "joker")) {
+    const index = available.findIndex((target) => faceKey(target) === faceKey(card))
+
+    if (index < 0) {
+      return false
+    }
+
+    available.splice(index, 1)
+  }
+
+  for (const joker of cards.filter((candidate) => candidate.kind === "joker")) {
+    const index = available.findIndex((target) => jokerCanRepresent(joker, target))
+
+    if (index < 0) {
+      return false
+    }
+
+    available.splice(index, 1)
+  }
+
+  return available.length === 0
+}
+
+function compareTieVectors(left: number[], right: number[]): number {
+  for (let index = 0; index < Math.max(left.length, right.length); index += 1) {
+    const difference = (right[index] ?? 0) - (left[index] ?? 0)
+
+    if (difference !== 0) {
+      return difference
     }
   }
 
-  return {
-    total: combinations.reduce((total, combination) => total + combination.score, 0),
-    selectedCardIds: selectedIndexes.slice(0, 8).map((index) => cards[index]!.id),
-    combinations: combinations.map((combination) => ({
-      kind: combination.kind,
-      score: combination.score,
-      cardIds: combination.cardIds,
-      label: combination.label,
-    })),
-  }
+  return 0
 }
 
-function popCount(value: number): number {
-  let count = 0
-
-  for (let current = value >>> 0; current !== 0; current &= current - 1) {
-    count += 1
+function tieValue(card: Card): number {
+  if (card.kind === "numbered") {
+    return card.rank
   }
 
-  return count
+  if (card.kind === "dragon") {
+    return 10
+  }
+
+  if (card.kind === "wind") {
+    return 11
+  }
+
+  if (card.kind === "joker") {
+    return card.color === "black" ? 11 : 10
+  }
+
+  return 0
 }
 
 function indexesFromMask(mask: number): number[] {

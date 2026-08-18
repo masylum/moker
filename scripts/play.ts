@@ -2,17 +2,23 @@ import { createInterface } from "node:readline/promises"
 import { stdin, stdout } from "node:process"
 import { coloredTile as tile } from "../src/cli/tiles"
 import { stepHeuristic } from "../src/game/automation"
-import { cardLabel } from "../src/game/cards"
+import { cardLabel, compareCards } from "../src/game/cards"
 import { GameEngine, type PlayerSetup } from "../src/game/engine"
 import { analyzePokerMath } from "../src/game/heuristic"
 import { CHIP_UNIT } from "../src/game/rules"
 import type {
   BettingAction,
+  BlankExchange,
   CardSource,
   DiscardPile,
   HandResult,
   LegalAction,
 } from "../src/game/types"
+
+interface DrawChoice {
+  drawSource: CardSource
+  blankExchange?: BlankExchange
+}
 
 const terminal = createInterface({ input: stdin, output: stdout })
 const seed = argument("--seed") ?? "terminal-table"
@@ -83,16 +89,6 @@ async function playHumanTurn(game: GameEngine): Promise<void> {
 
     return
   }
-
-  if (game.state.phase === "blank-window") {
-    const claim = await choose("Exchange your Blank for the fresh discard?", ["Yes", "No"])
-
-    if (claim === 0) {
-      game.claimBlank("p1")
-    } else {
-      game.passBlank("p1")
-    }
-  }
 }
 
 async function playBettingTurn(game: GameEngine): Promise<void> {
@@ -127,8 +123,8 @@ async function playBettingTurn(game: GameEngine): Promise<void> {
   const action = legal[selected]!
 
   if (action.type === "check" || action.type === "call") {
-    const drawSource = await chooseDrawSource(game)
-    game.act("p1", { type: action.type, drawSource })
+    const draw = player.riichi ? { drawSource: "deck" as const } : await chooseDraw(game)
+    game.act("p1", { type: action.type, ...draw })
 
     return
   }
@@ -150,32 +146,53 @@ async function playBettingTurn(game: GameEngine): Promise<void> {
   game.act("p1", { type: "fold" })
 }
 
-async function chooseDrawSource(game: GameEngine): Promise<CardSource> {
-  const sources: CardSource[] = ["deck"]
+async function chooseDraw(game: GameEngine): Promise<DrawChoice> {
+  const choices: Array<{ label: string; draw: DrawChoice }> = [
+    { label: "Deck (hidden)", draw: { drawSource: "deck" } },
+  ]
 
   if (game.state.discardA.length > 0) {
-    sources.push("discard-a")
+    const card = game.state.discardA.at(-1)!
+    choices.push({
+      label: `Fish A: ${tile(card)} ${cardLabel(card)}`,
+      draw: { drawSource: "discard-a" },
+    })
   }
 
   if (game.state.discardB.length > 0) {
-    sources.push("discard-b")
+    const card = game.state.discardB.at(-1)!
+    choices.push({
+      label: `Fish B: ${tile(card)} ${cardLabel(card)}`,
+      draw: { drawSource: "discard-b" },
+    })
+  }
+
+  const player = game.state.players.find((candidate) => candidate.id === "p1")!
+  const blank = player.privateCards.find((card) => card.kind === "blank")
+
+  if (blank) {
+    for (const [pile, cards] of [
+      ["a", game.state.discardA],
+      ["b", game.state.discardB],
+    ] as const) {
+      cards.forEach((card, cardIndex) => {
+        choices.push({
+          label: `Blank swap ${pile.toUpperCase()}${cardIndex + 1}: ${tile(card)} ${cardLabel(card)}`,
+          draw: {
+            drawSource: "deck",
+            blankExchange: { blankCardId: blank.id, pile, cardIndex },
+          },
+        })
+      })
+    }
   }
 
   const index = await choose(
-    "Draw from",
-    sources.map((source) => {
-      if (source === "deck") {
-        return "Deck (hidden)"
-      }
-
-      const pile = source === "discard-a" ? game.state.discardA : game.state.discardB
-      const card = pile.at(-1)!
-
-      return `${source === "discard-a" ? "Pile A" : "Pile B"}: ${tile(card)} ${cardLabel(card)}`
-    }),
+    "Draw & Discard",
+    choices.map((choice) => choice.label),
   )
 
-  return sources[index]!
+  return choices[index]!.draw
 }
 
 async function chooseDiscardPile(game: GameEngine): Promise<DiscardPile> {
@@ -193,24 +210,29 @@ async function chooseDiscardPile(game: GameEngine): Promise<DiscardPile> {
 function renderTable(game: GameEngine): void {
   const state = game.state
   const human = state.players.find((player) => player.id === "p1")!
-  const discardA = state.discardA.at(-1)
-  const discardB = state.discardB.at(-1)
   stdout.write("\n────────────────────────────────────────────────────────\n")
   stdout.write(
     `Hand ${state.handNumber}/${state.maxHands} · orbit ${state.orbit} (${state.orbitValue}) · street ${state.street} · ${state.phase} · pot ${state.pot} · wager ${state.currentWager} · min raise ${state.minimumRaise}\n`,
   )
-  stdout.write(`Community  ${state.community.map(tile).join(" ") || "—"}\n`)
-  stdout.write(
-    `Discards   A ${discardA ? tile(discardA) : "—"}    B ${discardB ? tile(discardB) : "—"}\n`,
-  )
-  stdout.write(`Your hand  ${human.privateCards.map(tile).join(" ")}\n`)
-  stdout.write(
-    `You        ${human.chips} chips · street ${human.roundCommitted} (total ${human.handCommitted}) · ${human.blueSticks} blue · ${human.loans} loans${human.riichi ? " · RIICHI" : ""}\n`,
-  )
+  stdout.write(`Community  ${[...state.community].sort(compareCards).map(tile).join(" ") || "—"}\n`)
+  stdout.write(`Discard A  ${state.discardA.map(tile).join(" ") || "—"}\n`)
+  stdout.write(`Discard B  ${state.discardB.map(tile).join(" ") || "—"}\n`)
 
-  for (const player of state.players.slice(1)) {
+  for (const player of state.players) {
+    const cards =
+      player.id === human.id || debug ? ` · ${player.privateCards.map(tile).join(" ")}` : ""
+    const math = debug ? analyzePokerMath(state, player.id, Math.min(32, samples)) : null
+    const analysis = math
+      ? ` · equity ${percent(math.showdownEquity)} · odds ${percent(math.potOdds)} · EV ${signed(math.callExpectedValue)} · best ${math.currentBest.label} (${math.currentBest.rank}) · next ${math.nextClosest ? `${math.nextClosest.label} ${math.nextClosest.missing} away` : "top"}`
+      : ""
+    const draw = debug
+      ? state.drawDiscardHistory.filter((record) => record.playerId === player.id).at(-1)
+      : null
+    const drawNote = draw
+      ? ` · ${draw.source === "blank-exchange" ? "swapped for" : "drew"} ${tile(draw.drawnCard)}, left ${tile(draw.discardedCard)} in ${draw.discardPile.toUpperCase()}`
+      : ""
     stdout.write(
-      `${player.name.padEnd(10)} ${player.chips} chips · street ${player.roundCommitted} (total ${player.handCommitted}) · ${player.blueSticks} blue · ${player.loans} loans${player.folded ? " · folded" : ""}${player.riichi ? " · RIICHI" : ""}\n`,
+      `${player.name.padEnd(10)} ${player.chips} chips · bet ${player.roundCommitted} (total ${player.handCommitted}) · ${player.blueSticks} blue · ${player.loans} loans${cards}${analysis}${drawNote}${player.folded ? " · folded" : ""}${player.riichi ? " · RIICHI" : ""}\n`,
     )
   }
 
@@ -219,10 +241,6 @@ function renderTable(game: GameEngine): void {
   if (result && result.handNumber > lastResultRendered) {
     renderHandResult(result)
     lastResultRendered = result.handNumber
-  }
-
-  if (debug && state.phase !== "between-hands" && state.phase !== "finished") {
-    renderDebug(game)
   }
 }
 
@@ -234,33 +252,12 @@ function renderHandResult(result: HandResult): void {
   stdout.write(
     `\nResult     ${winners} won ${result.pot} by ${result.reason === "showdown" ? "showdown" : "folds"}\n`,
   )
-  stdout.write(`Board      ${result.community.map(tile).join(" ")}\n`)
+  stdout.write(`Board      ${[...result.community].sort(compareCards).map(tile).join(" ")}\n`)
 
   for (const player of result.players) {
-    const combinations =
-      player.score.combinations.map((combination) => combination.label).join(" + ") || "no hand"
+    const combination = player.score.combinations[0]?.label ?? "High Card"
     stdout.write(
-      `${player.name.padEnd(10)} ${player.cards.map(tile).join(" ")} · ${player.score.total} points (${combinations}) · committed ${player.committed} · payout ${player.payout}${player.folded ? " · folded" : ""}\n`,
-    )
-  }
-}
-
-function renderDebug(game: GameEngine): void {
-  stdout.write("\nDebug · all private hands\n")
-
-  for (const player of game.state.players) {
-    stdout.write(`${player.name.padEnd(10)} ${player.privateCards.map(tile).join(" ")}\n`)
-  }
-
-  stdout.write("Player     Equity  Call  Pot odds  Edge    Call EV  Avg score  Improves  Closest\n")
-
-  for (const player of game.state.players) {
-    const math = analyzePokerMath(game.state, player.id, Math.min(32, samples))
-    const closest = math.closestSpecial
-      ? `${math.closestSpecial.label} (${math.closestSpecial.missing} away)`
-      : "—"
-    stdout.write(
-      `${player.name.padEnd(10)} ${percent(math.showdownEquity).padStart(6)}  ${String(math.toCall).padStart(4)}  ${percent(math.potOdds).padStart(8)}  ${signedPercent(math.equityEdge).padStart(6)}  ${signed(math.callExpectedValue).padStart(7)}  ${math.expectedScore.toFixed(1).padStart(9)}  ${(math.improveRate.toFixed(0) + "%").padStart(8)}  ${closest}\n`,
+      `${player.name.padEnd(10)} ${player.cards.map(tile).join(" ")} · rank ${player.score.total} (${combination}) · committed ${player.committed} · payout ${player.payout}${player.folded ? " · folded" : ""}\n`,
     )
   }
 }
@@ -271,30 +268,25 @@ function isHumanDecision(game: GameEngine): boolean {
   return (
     !autoPlay &&
     ((state.phase === "betting" && state.actingPlayerId === "p1") ||
-      (state.phase === "discarding" && state.pendingDiscard?.playerId === "p1") ||
-      (state.phase === "blank-window" && state.blankWindow?.eligiblePlayerIds[0] === "p1"))
+      (state.phase === "discarding" && state.pendingDiscard?.playerId === "p1"))
   )
 }
 
 function currentPlayerName(game: GameEngine): string {
   const state = game.state
   const playerId =
-    state.phase === "discarding"
-      ? state.pendingDiscard?.playerId
-      : state.phase === "blank-window"
-        ? state.blankWindow?.eligiblePlayerIds[0]
-        : state.actingPlayerId
+    state.phase === "discarding" ? state.pendingDiscard?.playerId : state.actingPlayerId
 
   return state.players.find((player) => player.id === playerId)?.name ?? "Table"
 }
 
 function actionLabel(action: LegalAction): string {
   if (action.type === "call") {
-    return `Call ${action.callAmount} + draw`
+    return `Call ${action.callAmount} + Draw & Discard`
   }
 
   if (action.type === "check") {
-    return "Check + draw"
+    return "Check + Draw & Discard"
   }
 
   if (action.type === "bet" || action.type === "raise") {
@@ -337,10 +329,6 @@ async function askInteger(
 
 function percent(value: number): string {
   return `${Math.round(value * 100)}%`
-}
-
-function signedPercent(value: number): string {
-  return `${value >= 0 ? "+" : ""}${Math.round(value * 100)}%`
 }
 
 function signed(value: number): string {

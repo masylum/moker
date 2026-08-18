@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest"
 import { blankFace, dragonFace, jokerFace, numberedFace, windFace } from "../src/game/cards"
 import { evaluateSpecialHands } from "../src/game/patterns"
-import { scoreHand } from "../src/game/scoring"
+import { analyzeHandProgress, summarizeHandProgress } from "../src/game/hand-progress"
+import { compareHandScores, scoreHand } from "../src/game/scoring"
 import type { Card, Dragon, JokerColor, SpecialHandId, Suit, Wind } from "../src/game/types"
 
 let serial = 0
@@ -22,7 +23,7 @@ function has(cards: Card[], special: SpecialHandId) {
 }
 
 describe("basic scoring", () => {
-  it("scores disjoint Eye, Chow, and Pung combinations", () => {
+  it("returns only the highest single Hand instead of adding combinations", () => {
     const cards = [
       ...n("bamboo", 2, 2),
       ...n("dots", 3),
@@ -32,10 +33,8 @@ describe("basic scoring", () => {
       ...blanks(4),
     ]
     const score = scoreHand(cards, [])
-    expect(score.total).toBe(11)
-    expect(score.combinations.map((value) => value.kind)).toEqual(
-      expect.arrayContaining(["eye", "chow", "pung"]),
-    )
+    expect(score.total).toBe(4)
+    expect(score.combinations.map((value) => value.kind)).toEqual(["pung"])
   })
 
   it("lets a colored Joker complete a Chow but never an Eye", () => {
@@ -47,7 +46,7 @@ describe("basic scoring", () => {
 
   it("requires a Joker for a Kong because only three natural copies exist", () => {
     const score = scoreHand([...n("characters", 9, 3), j("red"), ...blanks(4)], [])
-    expect(score.combinations.some((value) => value.kind === "kong" && value.score === 20)).toBe(
+    expect(score.combinations.some((value) => value.kind === "kong" && value.score === 12)).toBe(
       true,
     )
   })
@@ -66,7 +65,17 @@ describe("basic scoring", () => {
       ],
       [],
     )
-    expect(score.total).toBe(25)
+    expect(score.total).toBe(13)
+    expect(score.combinations[0]?.kind).toBe("four-winds")
+  })
+
+  it("uses defining-card tie breaks while treating suits as equal", () => {
+    const low = scoreHand([...n("bamboo", 2, 2), ...blanks(2)], [])
+    const sameValueDifferentSuit = scoreHand([...n("dots", 2, 2), ...blanks(2)], [])
+    const high = scoreHand([...n("characters", 9, 2), ...blanks(2)], [])
+
+    expect(compareHandScores(low, sameValueDifferentSuit)).toBe(0)
+    expect(compareHandScores(high, low)).toBeGreaterThan(0)
   })
 })
 
@@ -152,7 +161,6 @@ describe("all special hand cards", () => {
       [...n("characters", 3, 2), ...n("characters", 4, 2), ...n("characters", 5, 2), ...blanks(2)],
     ],
     ["crossing-winds", [...w("north", 2), ...w("south", 2), ...blanks(4)]],
-    ["heavenly-honors", [...d("red", 2), ...d("green", 2), ...w("east", 2), ...w("west", 2)]],
     ["brothers", [...n("bamboo", 5, 3), ...n("dots", 5, 3), ...blanks(2)]],
     [
       "rainbow-eyes",
@@ -189,14 +197,14 @@ describe("all special hand cards", () => {
     const cards = [...w("east", 2), ...w("west", 2), ...w("north", 2), ...w("south", 2)]
     const score = scoreHand(cards, ["crossing-winds"])
     expect(score.combinations.filter((value) => value.kind === "crossing-winds")).toHaveLength(1)
-    expect(score.total).toBe(32)
+    expect(score.total).toBe(15)
   })
 
   it("checks completed special patterns from highest score to lowest", () => {
     const cards = [...w("east", 2), ...w("south", 2), ...w("west", 2), ...w("north", 2)]
     const score = scoreHand(cards, ["four-eyes", "crossing-winds", "four-winds-at-peace"])
 
-    expect(score.total).toBe(70)
+    expect(score.total).toBe(21)
     expect(score.combinations.map((combination) => combination.kind)).toEqual([
       "four-winds-at-peace",
     ])
@@ -220,7 +228,7 @@ describe("all special hand cards", () => {
     const complete = evaluateSpecialHands(cards, ["staircase"])[0]!
 
     expect(complete.missing).toBe(0)
-    expect(scoreHand(cards, ["staircase"]).total).toBe(20)
+    expect(scoreHand(cards, ["staircase"]).total).toBe(10)
   })
 
   it("does not treat Jokers as loose terminals in Terminals & Honors", () => {
@@ -235,5 +243,51 @@ describe("all special hand cards", () => {
       j("black"),
     ]
     expect(has(cards, "terminals-honors")).toBe(false)
+  })
+
+  it("counts a Joker in a collection Hand only through a legal combination", () => {
+    const terminals = [
+      ...n("bamboo", 1, 2),
+      j("green"),
+      ...n("dots", 9),
+      ...n("characters", 1),
+      ...d("red"),
+      ...w("east"),
+      ...w("south"),
+    ]
+    const evenWithPung = [
+      ...n("characters", 2, 2),
+      j("red"),
+      ...n("bamboo", 4),
+      ...n("bamboo", 6),
+      ...n("dots", 4),
+      ...n("dots", 6),
+      ...n("dots", 8),
+    ]
+    const looseEvenJoker = [
+      ...n("characters", 2),
+      ...n("characters", 4),
+      j("red"),
+      ...n("bamboo", 2),
+      ...n("bamboo", 4),
+      ...n("dots", 2),
+      ...n("dots", 4),
+      ...n("dots", 6),
+    ]
+
+    expect(has(terminals, "terminals-honors")).toBe(true)
+    expect(has(evenWithPung, "eight-blessings")).toBe(true)
+    expect(has(looseEvenJoker, "eight-blessings")).toBe(false)
+  })
+
+  it("reports the current best Hand and closest stronger Hand from the same matchers", () => {
+    const cards = [...n("bamboo", 3), ...n("bamboo", 4), ...n("dots", 3), ...n("dots", 4)]
+    const progress = analyzeHandProgress(cards, ["sisters"])
+    const sisters = progress.find((hand) => hand.kind === "sisters")
+    const summary = summarizeHandProgress(cards, ["sisters"])
+
+    expect(sisters).toMatchObject({ rank: 6, missing: 2 })
+    expect(summary.currentBest).toMatchObject({ kind: "high-card", rank: 1 })
+    expect(summary.nextClosest).toMatchObject({ kind: "chow", missing: 1 })
   })
 })

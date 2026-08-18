@@ -1,11 +1,14 @@
 import { For, Show, createEffect, createMemo, createSignal } from "solid-js"
-import { cardLabel } from "../game/cards"
+import { cardLabel, compareCards } from "../game/cards"
 import type {
   BettingAction,
+  BlankExchange,
   Card,
   CardSource,
   DebugGameView,
+  DrawDiscardRecord,
   HandResult,
+  PokerMathAnalysis,
   PublicGameState,
   PublicPlayerState,
 } from "../game/types"
@@ -29,7 +32,7 @@ export function App() {
   const [busy, setBusy] = createSignal(false)
   const [error, setError] = createSignal("")
   const [notice, setNotice] = createSignal("Create a seeded table to begin.")
-  const [drawSource, setDrawSource] = createSignal<CardSource>("deck")
+  const [drawChoice, setDrawChoice] = createSignal("deck")
   const [wager, setWager] = createSignal(10)
   const [riichi, setRiichi] = createSignal(false)
   const [debugEnabled, setDebugEnabled] = createSignal(false)
@@ -56,12 +59,7 @@ export function App() {
       return undefined
     }
 
-    const id =
-      game.phase === "discarding"
-        ? game.pendingDiscard?.playerId
-        : game.phase === "blank-window"
-          ? game.blankWindow?.eligiblePlayerIds[0]
-          : game.actingPlayerId
+    const id = game.phase === "discarding" ? game.pendingDiscard?.playerId : game.actingPlayerId
     return game.players.find((player) => player.id === id)
   })
   const isHumanTurn = createMemo(() => actor()?.controller === "human")
@@ -132,6 +130,33 @@ export function App() {
     return game.currentWager === 0 ? 5 : game.currentWager + game.minimumRaise
   }
   const maximumWager = () => (human()?.roundCommitted ?? 0) + (human()?.chips ?? 0)
+  const sortedCommunity = () => [...(state()?.community ?? [])].sort(compareCards)
+  const debugPlayer = (playerId: string) =>
+    debugView()?.state.players.find((player) => player.id === playerId)
+  const debugAnalysis = (playerId: string) =>
+    debugView()?.analyses.find((analysis) => analysis.playerId === playerId)
+  const recentDraw = (playerId: string) =>
+    debugView()
+      ?.recentDrawDiscards.filter((record) => record.playerId === playerId)
+      .at(-1)
+  const drawAction = (type: "check" | "call"): BettingAction => {
+    const [kind, blankCardId, pile, cardIndex] = drawChoice().split(":")
+
+    if (kind === "blank" && blankCardId && (pile === "a" || pile === "b")) {
+      const blankExchange: BlankExchange = {
+        blankCardId,
+        pile,
+        cardIndex: Number(cardIndex),
+      }
+
+      return { type, drawSource: "deck", blankExchange }
+    }
+
+    const source: CardSource =
+      kind && ["deck", "discard-a", "discard-b"].includes(kind) ? (kind as CardSource) : "deck"
+
+    return { type, drawSource: source }
+  }
 
   createEffect(() => {
     const minimum = minimumWager()
@@ -297,28 +322,40 @@ export function App() {
             </div>
 
             <section class="table-shell">
-              <div class="felt">
+              <div class={`felt ${debugEnabled() ? "debug-felt" : ""}`}>
                 <div class="community">
                   <p>Community · {game.community.length} / 8</p>
                   <div class="tiles">
-                    <For each={game.community}>{(card) => <Tile card={card} />}</For>
+                    <For each={sortedCommunity()}>{(card) => <Tile card={card} />}</For>
                   </div>
                 </div>
                 <div class="discard discard-a">
                   <span>Discard A</span>
-                  <Show when={game.discardA.at(-1)}>
-                    {(card) => <Tile card={card()} compact />}
-                  </Show>
+                  <div class="lane-tiles">
+                    <For each={game.discardA}>{(card) => <Tile card={card} compact />}</For>
+                  </div>
                 </div>
                 <div class="discard discard-b">
                   <span>Discard B</span>
-                  <Show when={game.discardB.at(-1)}>
-                    {(card) => <Tile card={card()} compact />}
-                  </Show>
+                  <div class="lane-tiles">
+                    <For each={game.discardB}>{(card) => <Tile card={card} compact />}</For>
+                  </div>
                 </div>
                 <For each={game.players}>
                   {(player, index) => (
-                    <Seat player={player} active={actor()?.id === player.id} position={index()} />
+                    <Seat
+                      player={player}
+                      active={actor()?.id === player.id}
+                      position={index()}
+                      debugPlayer={debugEnabled() ? debugPlayer(player.id) : undefined}
+                      analysis={debugEnabled() ? debugAnalysis(player.id) : undefined}
+                      recentDraw={debugEnabled() ? recentDraw(player.id) : undefined}
+                      recommendation={
+                        debugEnabled() && debugView()?.actingDecision?.playerId === player.id
+                          ? debugView()?.actingDecision?.action
+                          : undefined
+                      }
+                    />
                   )}
                 </For>
                 <div class="pot-mark">
@@ -335,10 +372,6 @@ export function App() {
               }
             >
               {(result) => <HandSummary result={result()} />}
-            </Show>
-
-            <Show when={debugEnabled() && debugView()}>
-              {(view) => <DebugPanel view={view()} />}
             </Show>
 
             <section class="hand-panel panel">
@@ -362,29 +395,59 @@ export function App() {
                   <label>
                     Draw after check/call
                     <select
-                      value={drawSource()}
-                      onChange={(event) => setDrawSource(event.currentTarget.value as CardSource)}
+                      value={drawChoice()}
+                      disabled={human()?.riichi}
+                      onChange={(event) => setDrawChoice(event.currentTarget.value)}
                     >
-                      <option value="deck">Deck (hidden)</option>
+                      <option value="deck">
+                        {human()?.riichi ? "Riichi hand is locked" : "Deck (hidden)"}
+                      </option>
                       <option value="discard-a" disabled={game.discardA.length === 0}>
                         Discard A
                       </option>
                       <option value="discard-b" disabled={game.discardB.length === 0}>
                         Discard B
                       </option>
+                      <For
+                        each={
+                          human()?.riichi
+                            ? []
+                            : privateCards(human()).filter((card) => card.kind === "blank")
+                        }
+                      >
+                        {(blank) => (
+                          <>
+                            <For each={game.discardA}>
+                              {(card, index) => (
+                                <option value={`blank:${blank.id}:a:${index()}`}>
+                                  Blank swap · A{index() + 1} · {cardLabel(card)}
+                                </option>
+                              )}
+                            </For>
+                            <For each={game.discardB}>
+                              {(card, index) => (
+                                <option value={`blank:${blank.id}:b:${index()}`}>
+                                  Blank swap · B{index() + 1} · {cardLabel(card)}
+                                </option>
+                              )}
+                            </For>
+                          </>
+                        )}
+                      </For>
                     </select>
                   </label>
                   <button
                     disabled={busy() || callAmount() > 0}
-                    onClick={() => act({ type: "check", drawSource: drawSource() })}
+                    onClick={() => act(drawAction("check"))}
                   >
-                    Check + draw
+                    {human()?.riichi ? "Check" : "Check + Draw & Discard"}
                   </button>
                   <button
                     disabled={busy() || callAmount() === 0 || (human()?.chips ?? 0) < callAmount()}
-                    onClick={() => act({ type: "call", drawSource: drawSource() })}
+                    onClick={() => act(drawAction("call"))}
                   >
-                    Call {callAmount()} + draw
+                    Call {callAmount()}
+                    {human()?.riichi ? "" : " + Draw & Discard"}
                   </button>
                   <label>
                     Wager
@@ -469,31 +532,6 @@ export function App() {
                       </div>
                     )}
                   </For>
-                </Show>
-
-                <Show when={isHumanTurn() && game.phase === "blank-window"}>
-                  <p class="instruction">Use a Blank to claim {game.blankWindow?.cardId}?</p>
-                  <button
-                    class="accent"
-                    disabled={busy()}
-                    onClick={() =>
-                      perform(() =>
-                        gameAction(sessionId(), { kind: "blank", playerId: "p1", claim: true }),
-                      )
-                    }
-                  >
-                    Claim discard
-                  </button>
-                  <button
-                    disabled={busy()}
-                    onClick={() =>
-                      perform(() =>
-                        gameAction(sessionId(), { kind: "blank", playerId: "p1", claim: false }),
-                      )
-                    }
-                  >
-                    Pass
-                  </button>
                 </Show>
 
                 <Show when={actor() && !isHumanTurn()}>
@@ -632,13 +670,21 @@ export function App() {
   )
 }
 
-function Seat(props: { player: PublicPlayerState; active: boolean; position: number }) {
+function Seat(props: {
+  player: PublicPlayerState
+  active: boolean
+  position: number
+  debugPlayer?: PublicPlayerState
+  analysis?: PokerMathAnalysis
+  recentDraw?: DrawDiscardRecord
+  recommendation?: BettingAction
+}) {
   return (
     <div
-      class={`seat seat-${props.position} ${props.active ? "active" : ""} ${props.player.folded ? "folded" : ""}`}
+      class={`seat seat-${props.position} ${props.active ? "active" : ""} ${props.player.folded ? "folded" : ""} ${props.debugPlayer ? "debug-seat" : ""}`}
     >
       <div class="avatar">{props.player.name.slice(0, 1)}</div>
-      <div>
+      <div class="seat-content">
         <strong>{props.player.name}</strong>
         <small>
           {props.player.controller} · {props.player.chips} chips
@@ -650,6 +696,78 @@ function Seat(props: { player: PublicPlayerState; active: boolean; position: num
         <small class="seat-bet">
           Street {props.player.roundCommitted} · total {props.player.handCommitted}
         </small>
+        <Show when={props.debugPlayer}>
+          {(player) => (
+            <div class="seat-debug">
+              <div class="tiles">
+                <For each={privateCards(player())}>{(card) => <Tile card={card} compact />}</For>
+              </div>
+              <Show when={props.analysis}>
+                {(analysis) => (
+                  <>
+                    <div class="seat-math">
+                      <span>
+                        Equity <b>{formatPercent(analysis().showdownEquity)}</b>
+                      </span>
+                      <span>
+                        Pot odds <b>{formatPercent(analysis().potOdds)}</b>
+                      </span>
+                      <span>
+                        Edge{" "}
+                        <b class={analysis().equityEdge >= 0 ? "positive" : "negative"}>
+                          {formatSignedPercent(analysis().equityEdge)}
+                        </b>
+                      </span>
+                      <span>
+                        To call <b>{analysis().toCall}</b>
+                      </span>
+                      <span>
+                        Avg rank <b>{analysis().expectedScore.toFixed(1)}</b>
+                      </span>
+                      <span>
+                        Improves <b>{analysis().improveRate.toFixed(0)}%</b>
+                      </span>
+                      <span>
+                        Call EV{" "}
+                        <b class={analysis().callExpectedValue >= 0 ? "positive" : "negative"}>
+                          {formatSignedNumber(analysis().callExpectedValue)}
+                        </b>
+                      </span>
+                    </div>
+                    <div class="seat-progress">
+                      <span>
+                        Best · <b>{analysis().currentBest.label}</b> (rank{" "}
+                        {analysis().currentBest.rank})
+                      </span>
+                      <span>
+                        Next ·{" "}
+                        <b>
+                          {analysis().nextClosest
+                            ? `${analysis().nextClosest!.label}, ${analysis().nextClosest!.missing} away`
+                            : "top of active ladder"}
+                        </b>
+                      </span>
+                    </div>
+                  </>
+                )}
+              </Show>
+              <Show when={props.recommendation}>
+                {(action) => (
+                  <small class="recommendation">Baseline · {formatAction(action())}</small>
+                )}
+              </Show>
+              <Show when={props.recentDraw}>
+                {(record) => (
+                  <small class="draw-debug">
+                    {record().source === "blank-exchange" ? "Swapped for" : "Drew"}{" "}
+                    {cardLabel(record().drawnCard)} · left {cardLabel(record().discardedCard)} in{" "}
+                    {record().discardPile.toUpperCase()}
+                  </small>
+                )}
+              </Show>
+            </div>
+          )}
+        </Show>
       </div>
     </div>
   )
@@ -678,7 +796,9 @@ function HandSummary(props: { result: HandResult }) {
       <div class="result-community">
         <span>Board</span>
         <div class="tiles">
-          <For each={props.result.community}>{(card) => <Tile card={card} compact />}</For>
+          <For each={[...props.result.community].sort(compareCards)}>
+            {(card) => <Tile card={card} compact />}
+          </For>
         </div>
       </div>
       <div class="revealed-hands">
@@ -696,94 +816,12 @@ function HandSummary(props: { result: HandResult }) {
                 <For each={player.cards}>{(card) => <Tile card={card} compact />}</For>
               </div>
               <p>
-                <b>{player.score.total} points</b> · {scoreLabel(player.score)}
+                <b>Rank {player.score.total}</b> · {scoreLabel(player.score)}
               </p>
             </article>
           )}
         </For>
       </div>
-    </section>
-  )
-}
-
-function DebugPanel(props: { view: DebugGameView }) {
-  const playerName = (playerId: string) =>
-    props.view.state.players.find((player) => player.id === playerId)?.name ?? playerId
-
-  return (
-    <section class="debug-panel panel">
-      <div class="section-title">
-        <div>
-          <p class="eyebrow">Debug table</p>
-          <h3>Hidden information and poker math</h3>
-        </div>
-        <Show when={props.view.actingDecision}>
-          {(decision) => (
-            <span class="recommendation">
-              {playerName(decision().playerId)}: {formatAction(decision().action)}
-            </span>
-          )}
-        </Show>
-      </div>
-      <div class="debug-hands">
-        <For each={props.view.state.players}>
-          {(player) => (
-            <article>
-              <strong>{player.name}</strong>
-              <div class="tiles">
-                <For each={privateCards(player)}>{(card) => <Tile card={card} compact />}</For>
-              </div>
-            </article>
-          )}
-        </For>
-      </div>
-      <div class="math-table-wrap">
-        <table class="math-table">
-          <thead>
-            <tr>
-              <th>Player</th>
-              <th>Equity</th>
-              <th>To call</th>
-              <th>Pot odds</th>
-              <th>Edge</th>
-              <th>Call EV</th>
-              <th>Avg score</th>
-              <th>Improves</th>
-              <th>Closest special</th>
-            </tr>
-          </thead>
-          <tbody>
-            <For each={props.view.analyses}>
-              {(analysis) => (
-                <tr>
-                  <td>{playerName(analysis.playerId)}</td>
-                  <td>{formatPercent(analysis.showdownEquity)}</td>
-                  <td>{analysis.toCall}</td>
-                  <td>{formatPercent(analysis.potOdds)}</td>
-                  <td class={analysis.equityEdge >= 0 ? "positive" : "negative"}>
-                    {formatSignedPercent(analysis.equityEdge)}
-                  </td>
-                  <td class={analysis.callExpectedValue >= 0 ? "positive" : "negative"}>
-                    {formatSignedNumber(analysis.callExpectedValue)}
-                  </td>
-                  <td>{analysis.expectedScore.toFixed(1)}</td>
-                  <td>{analysis.improveRate.toFixed(0)}%</td>
-                  <td>
-                    {analysis.closestSpecial
-                      ? `${analysis.closestSpecial.label} · ${analysis.closestSpecial.missing} away`
-                      : "—"}
-                  </td>
-                </tr>
-              )}
-            </For>
-          </tbody>
-        </table>
-      </div>
-      <p class="debug-note">
-        Equity includes ties. Pot odds are call ÷ (current pot + call). Call EV is equity × pot
-        after calling − call cost. Positive edge means the estimated equity exceeds the break-even
-        odds.
-      </p>
     </section>
   )
 }
@@ -821,14 +859,16 @@ function privateCards(player?: PublicPlayerState): Card[] {
 }
 
 function scoreLabel(score: HandResult["players"][number]["score"]): string {
-  return score.combinations.length > 0
-    ? score.combinations.map((combination) => combination.label).join(" + ")
-    : "No scoring combination"
+  return score.combinations.length > 0 ? score.combinations[0]!.label : "High Card"
 }
 
 function formatAction(action: BettingAction): string {
   if (action.type === "bet" || action.type === "raise") {
-    return `${action.type} ${action.amount}`
+    return `${action.type} ${action.amount}${action.riichi ? " + Riichi" : ""}`
+  }
+
+  if (action.type === "check" || action.type === "call") {
+    return `${action.type}${action.blankExchange ? " + Blank exchange" : " + Draw & Discard"}`
   }
 
   return action.type

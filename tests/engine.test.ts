@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { GameEngine } from "../src/game/engine"
-import { blankFace } from "../src/game/cards"
+import { blankFace, numberedFace } from "../src/game/cards"
 
 const players = [
   { id: "p1", name: "A", controller: "human" as const },
@@ -28,7 +28,6 @@ describe("game lifecycle", () => {
     expect(engine.state.players.find((player) => player.id === actor)?.privateCards).toHaveLength(5)
     const discard = engine.state.players.find((player) => player.id === actor)!.privateCards[0]!
     engine.discard(actor, { discardCardId: discard.id, discardPile: "a" })
-    resolveBlankWindow(engine)
     expect(engine.state.players.find((player) => player.id === actor)?.privateCards).toHaveLength(4)
     expect(engine.state.discardA.at(-1)?.id).toBe(discard.id)
   })
@@ -91,19 +90,36 @@ describe("game lifecycle", () => {
     expect(engine.state.players.find((player) => player.id === "p1")!.chips).toBe(chips - 200)
   })
 
-  it("honors clockwise Blank priority and removes the exchanged Blank", () => {
+  it("exchanges a private Blank for a buried discard without changing lane order", () => {
     const engine = GameEngine.create(players, { seed: "blank" })
     const actor = engine.state.actingPlayerId!
-    const actorIndex = engine.state.players.findIndex((player) => player.id === actor)
-    const next = engine.state.players[(actorIndex + 1) % engine.state.players.length]!
-    next.privateCards[0] = { id: "forced-blank", ...blankFace() }
-    engine.act(actor, { type: "check", drawSource: "deck" })
-    const discarded = engine.state.players[actorIndex]!.privateCards[0]!
-    engine.discard(actor, { discardCardId: discarded.id, discardPile: "a" })
-    expect(engine.state.blankWindow?.eligiblePlayerIds[0]).toBe(next.id)
-    engine.claimBlank(next.id)
-    expect(next.privateCards.some((card) => card.id === discarded.id)).toBe(true)
-    expect(engine.state.removedCards.some((card) => card.id === "forced-blank")).toBe(true)
+    const player = engine.state.players.find((candidate) => candidate.id === actor)!
+    player.privateCards[0] = { id: "forced-blank", ...blankFace() }
+    engine.state.discardA = [
+      { id: "lane-1", ...numberedFace("bamboo", 3) },
+      { id: "buried", ...numberedFace("dots", 7) },
+      { id: "lane-top", ...numberedFace("characters", 9) },
+    ]
+
+    engine.act(actor, {
+      type: "check",
+      drawSource: "deck",
+      blankExchange: { blankCardId: "forced-blank", pile: "a", cardIndex: 1 },
+    })
+
+    expect(player.privateCards).toHaveLength(4)
+    expect(player.privateCards.some((card) => card.id === "buried")).toBe(true)
+    expect(engine.state.discardA.map((card) => card.id)).toEqual([
+      "lane-1",
+      "forced-blank",
+      "lane-top",
+    ])
+    expect(engine.state.phase).not.toBe("discarding")
+    expect(engine.state.drawDiscardHistory.at(-1)).toMatchObject({
+      playerId: actor,
+      source: "blank-exchange",
+      discardIndex: 1,
+    })
   })
 
   it("splits an uncontested hand and advances the dealer", () => {
@@ -131,9 +147,4 @@ function totalBlue(engine: GameEngine) {
     engine.state.centerBlueSticks +
     engine.state.players.reduce((sum, player) => sum + player.blueSticks, 0)
   )
-}
-
-function resolveBlankWindow(engine: GameEngine) {
-  while (engine.state.phase === "blank-window")
-    engine.passBlank(engine.state.blankWindow!.eligiblePlayerIds[0]!)
 }

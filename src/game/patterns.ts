@@ -1,5 +1,6 @@
 import { dragonFace, faceKey, jokerCanRepresent, numberedFace, windFace } from "./cards"
 import { jokersParticipate } from "./melds"
+import { HAND_RANKS } from "./rules"
 import {
   SUITS,
   type Card,
@@ -75,60 +76,69 @@ const naturalPairs = (notation: string, pairs: number): NaturalPairsPattern => (
 })
 
 export const SPECIAL_HAND_PATTERNS: readonly SpecialHandPattern[] = [
-  definition("four-winds-at-peace", "Four Winds at Peace", 70, [exact("!EE !SS !WW !NN")]),
-  definition("raging-winds", "Raging Winds", 60, [exact("EEE WWW"), exact("NNN SSS")]),
-  definition("dragon-dance", "Dragon Dance", 52, dragonDancePatterns()),
+  definition("four-winds-at-peace", "Four Winds at Peace", HAND_RANKS["four-winds-at-peace"], [
+    exact("!EE !SS !WW !NN"),
+  ]),
+  definition("raging-winds", "Raging Winds", HAND_RANKS["raging-winds"], [
+    exact("EEE WWW"),
+    exact("NNN SSS"),
+  ]),
+  definition("dragon-dance", "Dragon Dance", HAND_RANKS["dragon-dance"], dragonDancePatterns()),
   definition(
     "rainbow-eyes",
     "Rainbow Eyes",
-    46,
+    HAND_RANKS["rainbow-eyes"],
     ranks().map((rank) => exact(`!${rank}${rank}B !${rank}${rank}D !${rank}${rank}C`)),
   ),
   definition(
     "brothers",
     "Brothers",
-    44,
+    HAND_RANKS.brothers,
     ranks().flatMap((rank) =>
       suitPairs().map(([left, right]) =>
         exact(`${rank}${rank}${rank}${left} ${rank}${rank}${rank}${right}`),
       ),
     ),
   ),
-  definition("heavenly-honors", "Heavenly Honors", 42, [
-    collection(
-      "8x Honors",
-      8,
-      (card) => card.kind === "wind" || card.kind === "dragon" || card.kind === "joker",
-      jokersParticipate,
-    ),
+  definition("mirror-chows", "Mirror Chows", HAND_RANKS["mirror-chows"], mirrorChowPatterns()),
+  definition("crossing-winds", "Crossing Winds", HAND_RANKS["crossing-winds"], [
+    exact("!NN !SS"),
+    exact("!EE !WW"),
   ]),
-  definition("crossing-winds", "Crossing Winds", 32, [exact("!NN !SS"), exact("!EE !WW")]),
-  definition("mirror-chows", "Mirror Chows", 32, mirrorChowPatterns()),
   definition(
     "twin-gates",
     "Twin Gates",
-    28,
+    HAND_RANKS["twin-gates"],
     suitCodes().map((suit) => exact(`123${suit} 789${suit}`)),
   ),
-  definition("four-eyes", "Four Eyes", 20, [
+  definition("eight-blessings", "Eight Blessings", HAND_RANKS["eight-blessings"], [
+    collection(
+      "8x Even",
+      8,
+      (card) =>
+        (card.kind === "numbered" && card.rank % 2 === 0) ||
+        (card.kind === "joker" && card.color !== "black"),
+      evenJokersParticipate,
+    ),
+  ]),
+  definition("staircase", "Staircase", HAND_RANKS.staircase, staircasePatterns()),
+  definition("four-eyes", "Four Eyes", HAND_RANKS["four-eyes"], [
     naturalPairs("AA BB CC DD (four distinct natural pairs)", 4),
   ]),
-  definition("staircase", "Staircase", 20, staircasePatterns()),
-  definition("eight-blessings", "Eight Blessings", 18, [
-    collection("8x Even", 8, (card) => card.kind === "numbered" && card.rank % 2 === 0),
-  ]),
-  definition("four-treasures", "Four Treasures", 18, treasurePatterns()),
-  definition("terminals-honors", "Terminals & Honors", 16, [
+  definition("terminals-honors", "Terminals & Honors", HAND_RANKS["terminals-honors"], [
     collection(
       "8x Terminal/Honor",
       8,
       (card) =>
+        card.kind === "joker" ||
         card.kind === "wind" ||
         card.kind === "dragon" ||
         (card.kind === "numbered" && (card.rank === 1 || card.rank === 9)),
+      jokersParticipate,
     ),
   ]),
-  definition("sisters", "Sisters", 14, sistersPatterns()),
+  definition("four-treasures", "Four Treasures", HAND_RANKS["four-treasures"], treasurePatterns()),
+  definition("sisters", "Sisters", HAND_RANKS.sisters, sistersPatterns()),
 ]
 
 export function evaluateSpecialHands(
@@ -148,7 +158,7 @@ export function specialHandRulesText(active?: readonly SpecialHandId[]): string 
   return SPECIAL_HAND_PATTERNS.filter((pattern) => !enabled || enabled.has(pattern.id))
     .map(
       (pattern) =>
-        `${pattern.label} (${pattern.score}): ${pattern.patterns.map((value) => value.notation).join(" | ")}`,
+        `${pattern.label} (rank ${pattern.score}): ${pattern.patterns.map((value) => value.notation).join(" | ")}`,
     )
     .join("\n")
 }
@@ -430,6 +440,23 @@ function treasurePatterns(): CollectionPattern[] {
       jokersParticipate,
     ),
   )
+}
+
+function evenJokersParticipate(cards: readonly Card[]): boolean {
+  return cards
+    .filter((card) => card.kind === "joker")
+    .every(
+      (joker) =>
+        cards.filter(
+          (card) =>
+            card.kind === "numbered" &&
+            card.color === joker.color &&
+            card.rank % 2 === 0 &&
+            cards.filter(
+              (candidate) => candidate.kind === "numbered" && faceKey(candidate) === faceKey(card),
+            ).length >= 2,
+        ).length > 0,
+    )
 }
 
 function ranks(): number[] {

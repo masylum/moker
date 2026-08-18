@@ -1,4 +1,4 @@
-import type { GameConfig } from "./types"
+import type { GameConfig, HandKind } from "./types"
 import { DEFAULT_SPECIAL_HANDS, SPECIAL_HANDS } from "./types"
 
 // Lifecycle and economy rules only. Tile patterns live in patterns.ts; scoring lives in scoring.ts.
@@ -11,6 +11,29 @@ export const PRIVATE_CARD_COUNT = 4
 export const COMMUNITY_REVEALS = [4, 2, 2] as const
 export const CHIP_DENOMINATIONS = [5, 10, 20, 50, 100] as const
 export const CHIP_UNIT = CHIP_DENOMINATIONS[0]
+export const HAND_RANKS = {
+  "high-card": 1,
+  eye: 2,
+  chow: 3,
+  pung: 4,
+  "three-dragons": 5,
+  sisters: 6,
+  "four-treasures": 7,
+  "terminals-honors": 8,
+  "four-eyes": 9,
+  staircase: 10,
+  "eight-blessings": 11,
+  kong: 12,
+  "four-winds": 13,
+  "twin-gates": 14,
+  "crossing-winds": 15,
+  "mirror-chows": 16,
+  brothers: 17,
+  "rainbow-eyes": 18,
+  "dragon-dance": 19,
+  "raging-winds": 20,
+  "four-winds-at-peace": 21,
+} as const satisfies Record<HandKind, number>
 
 export function toChipUnit(amount: number): number {
   return Math.floor(amount / CHIP_UNIT) * CHIP_UNIT
