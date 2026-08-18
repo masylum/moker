@@ -64,7 +64,7 @@ describe("fixed five-card ladder", () => {
     ],
     [13, "kong", [...n("bamboo", 7, 3), j("green")]],
     [14, "crosswinds", [...w("east", 2), ...w("west", 2)]],
-    [15, "bouquet", [f("plum"), f("orchid")]],
+    [15, "bouquet", [f("plum"), f("orchid"), ...n("dots", 8, 2)]],
     [16, "imperial-garden", [f("plum"), f("orchid"), f("bamboo")]],
   ]
 
@@ -126,7 +126,7 @@ describe("Jokers", () => {
 
   it("lets only the Black Joker complete Imperial Garden", () => {
     expect(kind([f("plum"), f("orchid"), j("black")])).toBe("imperial-garden")
-    expect(kind([f("plum"), f("orchid"), j("red")])).toBe("bouquet")
+    expect(kind([f("plum"), f("orchid"), j("red")])).toBe("high-card")
     expect(kind([f("plum"), j("black")])).toBe("high-card")
   })
 
@@ -173,8 +173,8 @@ describe("tie breakers", () => {
   })
 
   it("uses Flower identities above Winds to break Flower-hand ties", () => {
-    const low = scoreHand([f("plum"), f("orchid")])
-    const high = scoreHand([f("bamboo"), f("chrysanthemum")])
+    const low = scoreHand([f("plum"), f("orchid"), ...n("dots", 2, 2)])
+    const high = scoreHand([f("bamboo"), f("chrysanthemum"), ...n("dots", 2, 2)])
 
     expect(compareHandScores(high, low)).toBeGreaterThan(0)
   })
@@ -208,7 +208,10 @@ describe("hand progress", () => {
   it("derives Flower-hand distance from the same pattern definitions", () => {
     const progress = analyzeHandProgress([f("plum"), f("orchid")])
 
-    expect(progress.find((hand) => hand.kind === "bouquet")).toMatchObject({ missing: 0 })
+    expect(progress.find((hand) => hand.kind === "bouquet")).toMatchObject({ missing: 2 })
     expect(progress.find((hand) => hand.kind === "imperial-garden")).toMatchObject({ missing: 1 })
+
+    const completed = analyzeHandProgress([f("plum"), f("orchid"), ...n("dots", 4, 2)])
+    expect(completed.find((hand) => hand.kind === "bouquet")).toMatchObject({ missing: 0 })
   })
 })

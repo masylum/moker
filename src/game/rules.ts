@@ -9,6 +9,7 @@ export const MAX_LOANS = 2
 export const PRIVATE_CARD_COUNT = 3
 export const OPENING_PRIVATE_CARD_COUNT = 4
 export const FLOWER_FOLD_BONUS = 20
+export const FOLD_BLUE_STICKS = 2
 export const COMMUNITY_REVEALS = [0, 3, 1, 1] as const
 export const CHIP_DENOMINATIONS = [5, 10, 20, 50, 100] as const
 export const CHIP_UNIT = CHIP_DENOMINATIONS[0]

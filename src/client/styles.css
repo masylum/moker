@@ -324,6 +324,17 @@ button.ghost {
   width: 48px;
   height: 64px;
 }
+.hidden-tile {
+  width: 30px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #557362;
+  border-radius: 5px;
+  background: #152b20;
+  color: #eef0e7;
+  font-size: 1.2rem;
+}
 .discard {
   position: absolute;
   display: grid;

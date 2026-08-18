@@ -1,8 +1,10 @@
 import { createDeck } from "./cards"
+import { publicKnownPrivateCards } from "./information"
 import { SeededRandom } from "./random"
 import {
   COMMUNITY_REVEALS,
   CHIP_UNIT,
+  FOLD_BLUE_STICKS,
   FLOWER_FOLD_BONUS,
   LOAN_VALUE,
   MAX_LOANS,
@@ -46,6 +48,7 @@ export class GameEngine {
     this.state.handResults ??= []
     this.state.drawDiscardHistory ??= []
     this.state.seedDiscardHistory ??= []
+    this.state.bettingHistory ??= []
     this.state.boardResetCount ??= 0
     this.state.scrappedCommunity ??= []
     this.events = events
@@ -98,6 +101,7 @@ export class GameEngine {
       pendingDiscard: null,
       drawDiscardHistory: [],
       seedDiscardHistory: [],
+      bettingHistory: [],
       boardResetCount: 0,
       handWinners: [],
       handResults: [],
@@ -133,6 +137,7 @@ export class GameEngine {
     this.state.scrappedCommunity = []
     this.state.drawDiscardHistory = []
     this.state.seedDiscardHistory = []
+    this.state.bettingHistory = []
     this.state.boardResetCount = 0
     this.state.handWinners = []
     this.state.pendingDiscard = null
@@ -149,7 +154,7 @@ export class GameEngine {
       player.score = undefined
       player.loansCharged = player.loansCharged.map((charges) => charges + 1)
       const charge = this.state.orbitValue * (player.blueSticks + player.loans)
-      this.payToPot(player, charge)
+      this.payOpeningCharge(player, charge)
     }
 
     for (let cardIndex = 0; cardIndex < OPENING_PRIVATE_CARD_COUNT; cardIndex += 1) {
@@ -277,14 +282,14 @@ export class GameEngine {
         if (!player.riichi) {
           if (action.blankExchange) {
             this.exchangeBlank(player, action.blankExchange)
-            this.emit("betting-action", { action }, playerId)
+            this.recordBettingAction(playerId, action)
             this.completeTurn(playerId, false)
 
             return
           }
 
           this.beginDraw(player, action.drawSource)
-          this.emit("betting-action", { action }, playerId)
+          this.recordBettingAction(playerId, action)
           return
         }
         break
@@ -293,14 +298,14 @@ export class GameEngine {
         if (!player.riichi) {
           if (action.blankExchange) {
             this.exchangeBlank(player, action.blankExchange)
-            this.emit("betting-action", { action }, playerId)
+            this.recordBettingAction(playerId, action)
             this.completeTurn(playerId, false)
 
             return
           }
 
           this.beginDraw(player, action.drawSource)
-          this.emit("betting-action", { action }, playerId)
+          this.recordBettingAction(playerId, action)
           return
         }
         break
@@ -337,11 +342,14 @@ export class GameEngine {
       case "fold":
         player.folded = true
         this.state.removedCards.push(...player.privateCards)
-        this.gainBlueStick(player)
+
+        for (let stick = 0; stick < FOLD_BLUE_STICKS; stick += 1) {
+          this.gainBlueStick(player)
+        }
         break
     }
 
-    this.emit("betting-action", { action }, playerId)
+    this.recordBettingAction(playerId, action)
     if (this.activePlayers().length === 1) {
       this.awardUncontested(this.activePlayers()[0]!)
 
@@ -435,6 +443,7 @@ export class GameEngine {
 
   publicView(viewerId?: string, revealAll = false): PublicGameState {
     const { drawDiscardHistory: _drawDiscardHistory, ...publicState } = structuredClone(this.state)
+    const knownPrivateCards = publicKnownPrivateCards(this.state)
 
     return {
       ...publicState,
@@ -447,6 +456,7 @@ export class GameEngine {
             : null,
       players: this.state.players.map((player) => ({
         ...structuredClone(player),
+        knownPrivateCards: structuredClone(knownPrivateCards[player.id] ?? []),
         privateCards:
           revealAll ||
           player.id === viewerId ||
@@ -769,6 +779,16 @@ export class GameEngine {
     return player.privateCards.filter((card) => card.kind === "flower").length === 1
   }
 
+  private recordBettingAction(playerId: string, action: BettingAction): void {
+    this.state.bettingHistory.push({
+      playerId,
+      street: this.state.street,
+      type: action.type,
+      ...((action.type === "bet" || action.type === "raise") && { amount: action.amount }),
+    })
+    this.emit("betting-action", { action }, playerId)
+  }
+
   private payFlowerFoldBonus(winner: PlayerState): HandResult["flowerBonus"] {
     let total = 0
 
@@ -839,6 +859,16 @@ export class GameEngine {
     player.chips -= amount
     player.handCommitted += amount
     if (round) player.roundCommitted += amount
+    this.state.pot += amount
+  }
+
+  private payOpeningCharge(player: PlayerState, amount: number): void {
+    if (player.chips < amount && player.loans < MAX_LOANS) {
+      throw new Error(`${player.name} needs a Loan before paying ${amount}`)
+    }
+
+    player.chips -= amount
+    player.handCommitted += amount
     this.state.pot += amount
   }
 

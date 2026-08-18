@@ -542,7 +542,7 @@ export function App() {
                     {game.currentWager === 0 ? "Bet" : `Raise (min ${minimumWager()})`}
                   </button>
                   <button class="danger" disabled={busy()} onClick={() => act({ type: "fold" })}>
-                    Fold + blue stick
+                    Fold + 2 blue sticks
                   </button>
                 </Show>
 
@@ -751,6 +751,24 @@ function Seat(props: {
         <small class="seat-bet">
           Street {props.player.roundCommitted} · total {props.player.handCommitted}
         </small>
+        <Show when={!props.debugPlayer && !Array.isArray(props.player.privateCards)}>
+          <div class="tiles">
+            <For each={props.player.knownPrivateCards}>
+              {(card) => <Tile card={card} compact />}
+            </For>
+            <For
+              each={Array.from({
+                length: Math.max(
+                  0,
+                  ("count" in props.player.privateCards ? props.player.privateCards.count : 0) -
+                    props.player.knownPrivateCards.length,
+                ),
+              })}
+            >
+              {() => <span class="hidden-tile">🀫</span>}
+            </For>
+          </div>
+        </Show>
         <Show when={props.debugPlayer}>
           {(player) => (
             <div class="seat-debug">
@@ -778,6 +796,12 @@ function Seat(props: {
                       </span>
                       <span>
                         Avg rank <b>{analysis().expectedScore.toFixed(1)}</b>
+                      </span>
+                      <span>
+                        Public range <b>{analysis().knownOpponentTiles} tiles</b>
+                      </span>
+                      <span>
+                        Opponent action <b>{analysis().opponentAggressiveActions} aggressive</b>
                       </span>
                       <span>
                         Improves <b>{analysis().improveRate.toFixed(0)}%</b>
@@ -910,7 +934,7 @@ function Tile(props: { card: Card; compact?: boolean }) {
             ? String.fromCodePoint(0x1f022 + FLOWERS.indexOf(props.card.flower))
             : props.card.kind === "joker"
               ? "★"
-              : "🀫"
+              : "□"
   return (
     <div
       class={`tile ${props.card.kind} color-${props.card.color ?? "none"} ${props.compact ? "compact" : ""}`}

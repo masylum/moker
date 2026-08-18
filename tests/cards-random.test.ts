@@ -52,7 +52,7 @@ describe("deck and seeded randomness", () => {
 
     expect(tileGlyph(bambooOne)).toBe("🀐")
     expect(coloredTile(bambooOne)).toContain("\u001B[32m🀐\u001B[0m")
-    expect(tileGlyph(blank)).toBe("🀫")
+    expect(tileGlyph(blank)).toBe("□")
     expect(flowers.map(tileGlyph)).toEqual(["🀢", "🀣", "🀤", "🀥"])
   })
 })

@@ -24,7 +24,7 @@ const HAND_LADDER_TEXT = [
   "12 Dragon Dancer — a Chow and a natural Eye of its matching Dragon",
   "13 Kong — four identical cards; it necessarily uses the matching Joker",
   "14 Crosswinds — natural Eyes of East + West or North + South",
-  "15 Bouquet — two different natural Flowers",
+  "15 Bouquet — two different natural Flowers plus a separate natural Eye",
   "16 Imperial Garden — three different Flowers; a Black Joker may replace one",
 ].join("; ")
 
@@ -36,7 +36,7 @@ export const CORE_RULES_TEXT = [
   `There are four betting streets. Street 1 reveals no community cards; streets 2, 3, and 4 reveal ${COMMUNITY_REVEALS.slice(1).join("/")} cards, respectively. There are five community cards by showdown.`,
   "If any revealed community tile is a Flower, scrap the entire current board, including that reveal, and deal a new three-tile Flower-free flop. The pot, commitments, folded players, blue sticks, Loans, and Riichi declarations remain. Betting resumes as street 2, followed by new turn and river streets. If the replacement flop contains a Flower, scrap it and redeal again.",
   "After every check or call, perform Draw & Discard, even after an earlier Draw & Discard on that street. Draw one card and discard one private card, always finishing with three. A bet or raise does not draw and returns one blue stick to the center when available; every aggressive action may return one.",
-  "A fold gains one blue stick from the center. If the center is empty, take the first available stick clockwise after the folding player. Folded private cards are removed face down.",
+  "A fold gains two blue sticks as its penalty. Take them from the center; whenever the center is empty, take the first available stick clockwise after the folding player. Folded private cards are removed face down.",
   "Draw from the deck or Fish the newest card in either discard lane, then discard one private card to either lane. If one lane is empty, the discard must fill it. Both ordered lanes remain fully visible; Fishing a top card exposes the previous one.",
   "A player holding a private Blank may use it during their own Draw & Discard instead of drawing normally: exchange it for any card at any position in either discard lane. The Blank occupies that exact position, lane order is unchanged, and no additional discard occurs. Community Blanks remain blank.",
   "Green/blue/red/black Jokers substitute for Bamboo or Green Dragon, Dots or White Dragon, Characters or Red Dragon, and Winds or Flowers respectively. A Joker takes an identity only inside a Hand of at least three cards, except that the Black Joker may complete Imperial Garden. Jokers may help Chow, Pure Suit, Pung, Three Dragons, Chow + Eye, Pung + Eye, Three Dragons + Eye, Four Winds, Dragon Dancer, Kong, and Imperial Garden. They cannot form an Eye, Two Eyes, Bouquet, the Dragon Eye in Dragon Dancer, or Crosswinds.",

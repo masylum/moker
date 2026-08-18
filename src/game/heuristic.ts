@@ -1,5 +1,6 @@
 import { createDeck } from "./cards"
 import { summarizeHandProgress } from "./hand-progress"
+import { publicKnownPrivateCards } from "./information"
 import { SeededRandom } from "./random"
 import { CHIP_UNIT, ORBIT_VALUES, PRIVATE_CARD_COUNT, toChipUnit } from "./rules"
 import { compareHandScores, scoreHand } from "./scoring"
@@ -85,7 +86,7 @@ export function chooseHeuristicAction(
       expectedChipDelta,
       utility,
       samples,
-      rationale: `${Math.round(math.showdownEquity * 100)}% showdown equity; ${formatPercent(math.potOdds)} pot odds; call EV ${formatSigned(math.callExpectedValue)}; ${math.improveRate.toFixed(0)}% improve`,
+      rationale: `${Math.round(math.showdownEquity * 100)}% showdown equity; ${formatPercent(math.potOdds)} pot odds; call EV ${formatSigned(math.callExpectedValue)}; ${math.improveRate.toFixed(0)}% improve${rangeContext(math)}`,
     }
   }
 
@@ -191,6 +192,12 @@ export function analyzePokerMath(
   )
   const future = analyzePrivateFuture(state, playerId, player.privateCards, random, samples)
   const progress = summarizeHandProgress([...player.privateCards, ...state.community])
+  const activeOpponentIds = new Set(
+    state.players
+      .filter((candidate) => !candidate.folded && candidate.id !== playerId)
+      .map((candidate) => candidate.id),
+  )
+  const publicCards = publicKnownPrivateCards(state)
   const toCall = Math.max(0, state.currentWager - player.roundCommitted)
   const potAfterCall = state.pot + toCall
   const potOdds = toCall === 0 ? 0 : toCall / potAfterCall
@@ -199,6 +206,15 @@ export function analyzePokerMath(
     playerId,
     samples: Math.max(1, samples),
     opponents: future.opponents,
+    knownOpponentTiles: [...activeOpponentIds].reduce(
+      (count, opponentId) => count + (publicCards[opponentId]?.length ?? 0),
+      0,
+    ),
+    opponentAggressiveActions: state.bettingHistory.filter(
+      (record) =>
+        activeOpponentIds.has(record.playerId) &&
+        (record.type === "bet" || record.type === "raise"),
+    ).length,
     toCall,
     potBeforeCall: state.pot,
     potAfterCall,
@@ -369,15 +385,22 @@ function analyzePrivateFuture(
   additionallyKnown: Card[] = [],
 ) {
   const neededCommunity = 5 - state.community.length
-  const unknown = unknownCards(state, [...privateCards, ...additionallyKnown])
   const current = currentStrength(privateCards, state)
   let total = 0
   let improvements = 0
   let equity = 0
+  let equityWeight = 0
   const trials = Math.max(1, samples)
   const opponents = state.players.filter(
     (candidate) => !candidate.folded && candidate.id !== playerId,
   )
+  const publicCards = publicKnownPrivateCards(state)
+  const knownOpponentCards = opponents.flatMap((opponent) => publicCards[opponent.id] ?? [])
+  const unknown = unknownCards(state, [
+    ...privateCards,
+    ...additionallyKnown,
+    ...knownOpponentCards,
+  ])
 
   for (let sample = 0; sample < trials; sample += 1) {
     const shuffled = random.shuffle(unknown)
@@ -392,22 +415,29 @@ function analyzePrivateFuture(
       improvements += 1
     }
 
-    const opponentResults = opponents.map((_, index) => {
-      const start = index * PRIVATE_CARD_COUNT
-      const cards = remaining.slice(start, start + PRIVATE_CARD_COUNT)
+    let cursor = 0
+    const opponentResults = opponents.map((opponent) => {
+      const known = publicCards[opponent.id] ?? []
+      const hiddenCount = Math.max(0, PRIVATE_CARD_COUNT - known.length)
+      const cards = [...known, ...remaining.slice(cursor, cursor + hiddenCount)]
+      cursor += hiddenCount
+      const opponentScore = scoreHand([...cards, ...state.community, ...completion])
 
       return {
         eligible: !hasSingleFlower(cards),
-        score: scoreHand([...cards, ...state.community, ...completion]),
+        score: opponentScore,
+        weight: opponentRangeWeight(state, opponent.id, opponentScore.total),
       }
     })
+    const sampleWeight = opponentResults.reduce((weight, result) => weight * result.weight, 1)
+    equityWeight += sampleWeight
     const ownEligible = !hasSingleFlower(privateCards)
     const eligibleScores = [
       ...(ownEligible ? [score] : []),
       ...opponentResults.filter(({ eligible }) => eligible).map((result) => result.score),
     ]
     if (eligibleScores.length === 0) {
-      equity += 1 / (opponents.length + 1)
+      equity += sampleWeight / (opponents.length + 1)
 
       continue
     }
@@ -416,7 +446,7 @@ function analyzePrivateFuture(
 
     if (ownEligible && compareHandScores(score, bestScore) === 0) {
       equity +=
-        1 /
+        (sampleWeight * 1) /
         (1 +
           opponentResults.filter(
             (opponent) => opponent.eligible && compareHandScores(opponent.score, score) === 0,
@@ -426,9 +456,34 @@ function analyzePrivateFuture(
   return {
     expectedScore: total / trials,
     improveRate: (improvements / trials) * 100,
-    showdownEquity: equity / trials,
+    showdownEquity: equity / Math.max(Number.EPSILON, equityWeight),
     opponents: opponents.length,
   }
+}
+
+function opponentRangeWeight(state: GameState, playerId: string, finalRank: number): number {
+  const strength = Math.max(0, Math.min(1, (finalRank - 1) / 15))
+  let weight = 1
+
+  for (const action of state.bettingHistory.filter((record) => record.playerId === playerId)) {
+    if (action.type === "raise") {
+      weight *= 0.08 + 0.92 * strength ** 2
+    } else if (action.type === "bet") {
+      weight *= 0.15 + 0.85 * strength ** 1.5
+    } else if (action.type === "call") {
+      weight *= 0.3 + 0.7 * strength
+    }
+  }
+
+  return weight
+}
+
+function rangeContext(math: PokerMathAnalysis): string {
+  if (math.knownOpponentTiles === 0 && math.opponentAggressiveActions === 0) {
+    return ""
+  }
+
+  return `; opponent ranges include ${math.knownOpponentTiles} publicly retained tile${math.knownOpponentTiles === 1 ? "" : "s"} and ${math.opponentAggressiveActions} aggressive action${math.opponentAggressiveActions === 1 ? "" : "s"}`
 }
 
 function hasSingleFlower(cards: readonly Card[]): boolean {

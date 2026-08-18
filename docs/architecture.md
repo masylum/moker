@@ -9,9 +9,10 @@ The library is split by responsibility so rules do not leak into unrelated modul
 - `rules.ts` owns lifecycle and economy constants, the fixed ladder ranks, and game configuration validation. It contains no card-matching algorithms.
 - `melds.ts` recognizes every completed Hand in the fixed ladder, including compound five-card Hands, Joker restrictions, descriptions, and defining-card tie vectors.
 - `hand-progress.ts` declares the corresponding Hand requirements and measures the current best Hand and distance to every stronger Hand. It uses the scorer to identify the current completed Hand, so the table cannot report a different winner.
+- `information.ts` reconstructs publicly known private tiles from Fishing, Blank exchanges, and later discards without exposing hidden deck draws.
 - `scoring.ts` tests completed candidates from the highest fixed rank down and resolves defining-card tie breaks. It never adds several Hands or requires a fixed private/community split.
 - `rulebook.ts` renders the complete canonical rules and ladder for non-code consumers, including the LLM player.
-- `heuristic.ts` performs seeded multiway rollouts and exposes the shared showdown-equity, pot-odds, expected-value, and pattern-distance analysis used by decisions and debug clients. It does not contain a second list of special-hand conditions.
+- `heuristic.ts` performs seeded multiway rollouts, pins publicly known opponent tiles, weights opponent ranges by public betting actions, and exposes the shared showdown-equity, pot-odds, expected-value, and pattern-distance analysis used by decisions and debug clients. It does not contain a second list of special-hand conditions.
 - `automation.ts` applies one heuristic transition. Simulations, the terminal client, and `GameSession` all call it.
 - `engine.ts` owns legal state transitions and invariants.
 
@@ -31,7 +32,3 @@ Cloudflare Think already uses the Agent's local SQLite-backed storage for durabl
 ## Clients
 
 The SolidJS client talks to the Worker API, whose `GameSession` applies engine methods. Its opt-in debug endpoint reveals current private hands but not the future deck order, and calculates each seat's view independently from information available to that player. Hands, chip commitments, current/next Hands, and poker math are rendered together at each seat. The terminal client runs the same library locally and exposes the equivalent compact view through `--debug`. Both clients render state and collect choices; neither implements scoring or legal transitions.
-
-## Stud7 prototype
-
-`src/stud7` is a parallel variant boundary. It has separate state types, engine transitions, visibility-aware heuristic, automation, and simulation. `scripts/play-stud7.ts` is its independent client. It imports shared deck, RNG, economy, and scoring primitives from `src/game`, but the main `GameEngine`, Worker routes, Durable Objects, LLM agent, and SolidJS client do not import Stud7 code.

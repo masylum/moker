@@ -138,6 +138,13 @@ export interface SeedDiscardRecord {
   discardIndex: number
 }
 
+export interface BettingRecord {
+  playerId: string
+  street: Street
+  type: BettingAction["type"]
+  amount?: number
+}
+
 export interface GameConfig {
   playerCount: number
   seed: string
@@ -172,6 +179,7 @@ export interface GameState {
   pendingDiscard: PendingDiscard | null
   drawDiscardHistory: DrawDiscardRecord[]
   seedDiscardHistory: SeedDiscardRecord[]
+  bettingHistory: BettingRecord[]
   boardResetCount: number
   handWinners: string[]
   handResults: HandResult[]
@@ -229,6 +237,8 @@ export interface PokerMathAnalysis {
   playerId: string
   samples: number
   opponents: number
+  knownOpponentTiles: number
+  opponentAggressiveActions: number
   toCall: number
   potBeforeCall: number
   potAfterCall: number
@@ -262,6 +272,7 @@ export interface SimulationResult {
 
 export interface PublicPlayerState extends Omit<PlayerState, "privateCards"> {
   privateCards: Card[] | { count: number }
+  knownPrivateCards: Card[]
 }
 
 export interface PublicGameState extends Omit<

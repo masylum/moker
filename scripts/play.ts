@@ -5,6 +5,7 @@ import { stepHeuristic, type AutomatedStep } from "../src/game/automation"
 import { cardLabel, compareCards } from "../src/game/cards"
 import { GameEngine, type PlayerSetup } from "../src/game/engine"
 import { analyzePokerMath } from "../src/game/heuristic"
+import { publicKnownPrivateCards } from "../src/game/information"
 import { CHIP_UNIT } from "../src/game/rules"
 import type {
   BettingAction,
@@ -225,6 +226,7 @@ async function chooseDiscardPile(game: GameEngine): Promise<DiscardPile> {
 function renderTable(game: GameEngine): void {
   const state = game.state
   const human = state.players.find((player) => player.id === "p1")!
+  const knownPrivateCards = publicKnownPrivateCards(state)
   stdout.write("\n────────────────────────────────────────────────────────\n")
   stdout.write(
     `Hand ${state.handNumber}/${state.maxHands} · orbit ${state.orbit} (${state.orbitValue}) · street ${state.street} · ${state.phase} · pot ${state.pot} · wager ${state.currentWager} · min raise ${state.minimumRaise}\n`,
@@ -249,7 +251,15 @@ function renderTable(game: GameEngine): void {
       String(player.handCommitted),
       String(player.blueSticks),
       String(player.loans),
-      visible ? player.privateCards.map(tile).join(" ") : "hidden",
+      visible
+        ? player.privateCards.map(tile).join(" ")
+        : [
+            ...(knownPrivateCards[player.id] ?? []).map(tile),
+            ...Array.from(
+              { length: player.privateCards.length - (knownPrivateCards[player.id]?.length ?? 0) },
+              () => "🀫",
+            ),
+          ].join(" "),
     ]
 
     if (debug) {
@@ -350,7 +360,7 @@ function actionLabel(action: LegalAction): string {
     return `${action.type === "bet" ? "Bet" : "Raise"} (${action.minimum}-${action.maximum})${action.canRiichi ? " · Riichi available" : ""}`
   }
 
-  return "Fold + take a blue stick"
+  return "Fold + take 2 blue sticks"
 }
 
 async function choose(prompt: string, choices: readonly string[]): Promise<number> {

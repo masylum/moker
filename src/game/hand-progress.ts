@@ -81,7 +81,7 @@ const definitions: HandDefinition[] = [
     [...repeat(windFace("east"), 2, true), ...repeat(windFace("west"), 2, true)],
     [...repeat(windFace("north"), 2, true), ...repeat(windFace("south"), 2, true)],
   ]),
-  exactDefinition("bouquet", "Bouquet", 2, distinctFlowerAlternatives(2)),
+  exactDefinition("bouquet", "Bouquet", 4, bouquetAlternatives()),
   exactDefinition("imperial-garden", "Imperial Garden", 3, distinctFlowerAlternatives(3)),
 ]
 
@@ -223,6 +223,12 @@ function distinctFlowerAlternatives(count: 2 | 3): Requirement[][] {
   choose(0, [])
 
   return alternatives
+}
+
+function bouquetAlternatives(): Requirement[][] {
+  return distinctFlowerAlternatives(2).flatMap((flowers) =>
+    naturalFaces.map((face) => [...flowers, ...repeat(face, 2, true)]),
+  )
 }
 
 function bestAlternativeMatch(

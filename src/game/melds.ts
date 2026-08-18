@@ -43,7 +43,6 @@ export function generateHandCandidates(cards: readonly Card[]): HandCandidate[] 
 
       if (size === 2) {
         addEye(subset, mask, candidates)
-        addBouquet(subset, mask, candidates)
       }
 
       if (size === 3) {
@@ -70,6 +69,7 @@ export function generateHandCandidates(cards: readonly Card[]): HandCandidate[] 
         addFourWinds(subset, mask, candidates)
         addKong(subset, mask, candidates)
         addCrosswinds(subset, mask, candidates)
+        addBouquet(subset, mask, candidates)
       }
 
       if (size === 5) {
@@ -83,10 +83,11 @@ export function generateHandCandidates(cards: readonly Card[]): HandCandidate[] 
 }
 
 function addBouquet(cards: Card[], mask: number, candidates: HandCandidate[]): void {
-  if (
-    !cards.every((card) => card.kind === "flower") ||
-    new Set(cards.map((card) => (card.kind === "flower" ? card.flower : ""))).size !== 2
-  ) {
+  const flowers = cards.filter((card) => card.kind === "flower")
+  const eyeCards = cards.filter((card) => card.kind !== "flower")
+  const eye = naturalPairFace(eyeCards)
+
+  if (flowers.length !== 2 || new Set(flowers.map((card) => card.flower)).size !== 2 || !eye) {
     return
   }
 
@@ -96,8 +97,8 @@ function addBouquet(cards: Card[], mask: number, candidates: HandCandidate[]): v
       "Bouquet",
       cards,
       mask,
-      flowerTieBreak(cards),
-      `Bouquet · ${cards.map(cardLabel).join(" + ")}`,
+      [...flowerTieBreak(flowers), faceValue(eye), faceValue(eye)],
+      `Bouquet · ${flowers.map(cardLabel).join(" + ")} + Eye · ${cardLabel(eye)}`,
     ),
   )
 }

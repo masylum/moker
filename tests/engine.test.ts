@@ -18,6 +18,8 @@ describe("game lifecycle", () => {
     expect(rules).toContain("Street 1 reveals no community cards")
     expect(rules).toContain("14 Crosswinds")
     expect(rules).toContain("16 Imperial Garden")
+    expect(rules).toContain("two different natural Flowers plus a separate natural Eye")
+    expect(rules).toContain("fold gains two blue sticks")
     expect(rules).toContain("scrap the entire current board")
     expect(rules).toContain("20-chip Flower bluff bonus")
     expect(rules).toContain("never the final street")
@@ -55,7 +57,7 @@ describe("game lifecycle", () => {
     expect(engine.state.discardA.at(-1)?.id).toBe(discard.id)
   })
 
-  it("makes betting shed a blue stick and folding gain one", () => {
+  it("makes betting shed a blue stick and folding gain two", () => {
     const engine = GameEngine.create(players, { seed: "sticks" })
     finishSeeding(engine)
     const bettor = engine.state.actingPlayerId!
@@ -64,7 +66,7 @@ describe("game lifecycle", () => {
     const folder = engine.state.actingPlayerId!
     const before = engine.state.players.find((player) => player.id === folder)!.blueSticks
     engine.act(folder, { type: "fold" })
-    expect(engine.state.players.find((player) => player.id === folder)?.blueSticks).toBe(before + 1)
+    expect(engine.state.players.find((player) => player.id === folder)?.blueSticks).toBe(before + 2)
     expect(totalBlue(engine)).toBe(8)
   })
 
@@ -139,6 +141,21 @@ describe("game lifecycle", () => {
     const chips = engine.state.players.find((player) => player.id === "p1")!.chips
     engine.repayLoan("p1")
     expect(engine.state.players.find((player) => player.id === "p1")!.chips).toBe(chips - 200)
+  })
+
+  it("lets a fully loaned player survive a mandatory opening charge", () => {
+    const engine = GameEngine.create(players, { seed: "mandatory-debt" })
+    engine.state.phase = "between-hands"
+    const player = engine.state.players[0]!
+    player.chips = 0
+    player.loans = 2
+    player.loansCharged = [1, 1]
+    player.blueSticks = 3
+
+    engine.startNextHand()
+
+    expect(player.chips).toBe(-25)
+    expect(engine.state.phase).toBe("seeding")
   })
 
   it("exchanges a private Blank for a buried discard without changing lane order", () => {

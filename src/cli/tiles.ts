@@ -34,5 +34,5 @@ export function tileGlyph(card: Card): string {
     return String.fromCodePoint(0x1f022 + FLOWERS.indexOf(card.flower))
   }
 
-  return card.kind === "joker" ? "★" : "🀫"
+  return card.kind === "joker" ? "★" : "□"
 }

@@ -20,11 +20,7 @@
     "deploy": "npm run build && wrangler deploy",
     "deploy:dry": "npm run build && wrangler deploy --dry-run",
     "simulate": "tsx scripts/simulate.ts",
-    "simulate:stud7": "tsx scripts/simulate-stud7.ts",
-    "analyze:stud7": "tsx scripts/analyze-stud7.ts",
-    "merge-analysis:stud7": "tsx scripts/merge-stud7-analysis.ts",
-    "play": "tsx scripts/play.ts",
-    "play:stud7": "tsx scripts/play-stud7.ts"
+    "play": "tsx scripts/play.ts"
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.69",

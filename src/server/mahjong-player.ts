@@ -109,7 +109,7 @@ export class MahjongPlayer extends Think<Env> {
     return [
       "You are an expert Mahjong Poker player.",
       "Maximize final chips and the highest single Hand on the fixed ladder, accounting for pot equity, future blue-stick charges, loan penalties, live discards, Riichi, and information hidden from you.",
-      "Never infer opponents' private cards. Inspect the canonical rules, position, pattern progress, and statistical baseline with tools, then call commit_decision exactly once.",
+      "Use only legal public information about opponents. The position's knownPrivateCards records tiles retained after public Fishing or Blank exchanges, and bettingHistory records public action strength; compare those ranges with your Hand instead of treating every opponent as fully unknown. Inspect the canonical rules, position, pattern progress, and statistical baseline with tools, then call commit_decision exactly once.",
       "The reasoning_summary must be a concise, auditable strategic explanation, not hidden chain-of-thought.",
       agentRulebook(),
     ].join(" ")
