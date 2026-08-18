@@ -1,11 +1,11 @@
-import type { BettingAction, PublicGameState } from "../game/types"
+import type { BettingAction, DebugGameView, PublicGameState } from "../game/types"
 
 export async function createGame(seed: string) {
   return request<{ sessionId: string; state: PublicGameState }>("/api/games", {
     method: "POST",
     body: JSON.stringify({
       seed,
-      heuristicSamples: 16,
+      heuristicSamples: 64,
       players: [
         { id: "p1", name: "You", controller: "human" },
         { id: "p2", name: "Mori", controller: "heuristic" },
@@ -20,6 +20,10 @@ export async function loadGame(sessionId: string, viewer = "p1") {
   return request<{ sessionId: string; state: PublicGameState }>(
     `/api/games/${encodeURIComponent(sessionId)}?viewer=${viewer}`,
   )
+}
+
+export async function loadDebugGame(sessionId: string) {
+  return request<DebugGameView>(`/api/games/${encodeURIComponent(sessionId)}/debug`)
 }
 
 export async function gameAction(sessionId: string, action: Record<string, unknown>) {
@@ -66,7 +70,7 @@ export async function runSimulations(seedPrefix: string, count: number) {
     }>
   }>("/api/simulations", {
     method: "POST",
-    body: JSON.stringify({ seedPrefix, count, playerCount: 4, heuristicSamples: 6 }),
+    body: JSON.stringify({ seedPrefix, count, playerCount: 4, heuristicSamples: 12 }),
   })
 }
 

@@ -1,5 +1,6 @@
 import { specialHandRulesText } from "./patterns"
 import {
+  CHIP_DENOMINATIONS,
   COMMUNITY_REVEALS,
   LOAN_VALUE,
   MAX_LOANS,
@@ -11,6 +12,7 @@ import type { SpecialHandId } from "./types"
 
 export const CORE_RULES_TEXT = [
   `Players start with ${STARTING_CHIPS} chips, one blue stick, and ${PRIVATE_CARD_COUNT} private cards.`,
+  `Wagers use ${CHIP_DENOMINATIONS.join("/")}-chip denominations. The opening minimum is 5; a full raise must increase the wager by at least the previous bet or raise size.`,
   `Three streets reveal ${COMMUNITY_REVEALS.join("/")} community cards. Check or call draws and discards; bet or raise sheds one blue stick and does not draw; fold gains one blue stick.`,
   "Draw from the deck or either live discard top, then discard back to pile A or B.",
   "A private Blank may claim another player's fresh discard in clockwise priority. Public Blanks never change.",

@@ -1,9 +1,11 @@
-import { For, Show, createMemo, createSignal } from "solid-js"
+import { For, Show, createEffect, createMemo, createSignal } from "solid-js"
 import { cardLabel } from "../game/cards"
 import type {
   BettingAction,
   Card,
   CardSource,
+  DebugGameView,
+  HandResult,
   PublicGameState,
   PublicPlayerState,
 } from "../game/types"
@@ -13,6 +15,7 @@ import {
   createGame,
   gameAction,
   getEvents,
+  loadDebugGame,
   loadGame,
   runSimulations,
 } from "./api"
@@ -29,6 +32,8 @@ export function App() {
   const [drawSource, setDrawSource] = createSignal<CardSource>("deck")
   const [wager, setWager] = createSignal(10)
   const [riichi, setRiichi] = createSignal(false)
+  const [debugEnabled, setDebugEnabled] = createSignal(false)
+  const [debugView, setDebugView] = createSignal<DebugGameView>()
   const [events, setEvents] = createSignal<
     Array<{
       sequence: number
@@ -61,12 +66,25 @@ export function App() {
   })
   const isHumanTurn = createMemo(() => actor()?.controller === "human")
 
+  const refreshDebug = async () => {
+    if (!debugEnabled() || !sessionId()) {
+      return
+    }
+
+    try {
+      setDebugView(await loadDebugGame(sessionId()))
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not refresh debug math")
+    }
+  }
+
   const perform = async (work: () => Promise<{ state: PublicGameState }>, success?: string) => {
     setBusy(true)
     setError("")
     try {
       const result = await work()
       setState(result.state)
+      await refreshDebug()
       if (success) setNotice(success)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Something went wrong")
@@ -85,6 +103,8 @@ export function App() {
       setState(result.state)
       setNotice(`Table created from seed “${seed()}”.`)
       setEvents([])
+      setDebugView(undefined)
+      await refreshDebug()
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not create game")
     } finally {
@@ -102,6 +122,24 @@ export function App() {
   const humanPlayer = () => human()
   const callAmount = () =>
     Math.max(0, (state()?.currentWager ?? 0) - (humanPlayer()?.roundCommitted ?? 0))
+  const minimumWager = () => {
+    const game = state()
+
+    if (!game) {
+      return 5
+    }
+
+    return game.currentWager === 0 ? 5 : game.currentWager + game.minimumRaise
+  }
+  const maximumWager = () => (human()?.roundCommitted ?? 0) + (human()?.chips ?? 0)
+
+  createEffect(() => {
+    const minimum = minimumWager()
+
+    if (state() && (wager() < minimum || wager() % 5 !== 0)) {
+      setWager(minimum)
+    }
+  })
 
   const runBot = async () => {
     const controller = actor()?.controller
@@ -116,10 +154,27 @@ export function App() {
       const result = await botStep(sessionId(), controller)
       setState(result.state)
       setNotice(result.rationale)
+      await refreshDebug()
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Bot turn failed")
     } finally {
       setBusy(false)
+    }
+  }
+
+  const toggleDebug = async (enabled: boolean) => {
+    setDebugEnabled(enabled)
+
+    if (!enabled) {
+      setDebugView(undefined)
+
+      return
+    }
+
+    try {
+      setDebugView(await loadDebugGame(sessionId()))
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not load debug math")
     }
   }
 
@@ -216,6 +271,10 @@ export function App() {
                 <strong>{game.pot}</strong>
               </div>
               <div>
+                <span>Wager to match</span>
+                <strong>{game.currentWager || "—"}</strong>
+              </div>
+              <div>
                 <span>Blue center</span>
                 <strong>{game.centerBlueSticks}</strong>
               </div>
@@ -224,6 +283,18 @@ export function App() {
                 <strong>{game.phase.replace("-", " ")}</strong>
               </div>
             </section>
+
+            <div class="debug-switch">
+              <label class="check">
+                <input
+                  type="checkbox"
+                  checked={debugEnabled()}
+                  onChange={(event) => void toggleDebug(event.currentTarget.checked)}
+                />
+                Debug table: reveal hands and tournament math
+              </label>
+              <small>Monte Carlo estimates use only information visible to each player.</small>
+            </div>
 
             <section class="table-shell">
               <div class="felt">
@@ -256,6 +327,19 @@ export function App() {
                 </div>
               </div>
             </section>
+
+            <Show
+              when={
+                (game.phase === "between-hands" || game.phase === "finished") &&
+                game.handResults.at(-1)
+              }
+            >
+              {(result) => <HandSummary result={result()} />}
+            </Show>
+
+            <Show when={debugEnabled() && debugView()}>
+              {(view) => <DebugPanel view={view()} />}
+            </Show>
 
             <section class="hand-panel panel">
               <div class="hand-heading">
@@ -306,7 +390,9 @@ export function App() {
                     Wager
                     <input
                       type="number"
-                      min={Math.max(1, game.currentWager + 1)}
+                      min={minimumWager()}
+                      max={maximumWager()}
+                      step="5"
                       value={wager()}
                       onInput={(event) => setWager(event.currentTarget.valueAsNumber)}
                     />
@@ -321,7 +407,12 @@ export function App() {
                   </label>
                   <button
                     class="accent"
-                    disabled={busy()}
+                    disabled={
+                      busy() ||
+                      wager() < minimumWager() ||
+                      wager() > maximumWager() ||
+                      wager() % 5 !== 0
+                    }
                     onClick={() =>
                       act(
                         game.currentWager === 0
@@ -330,7 +421,7 @@ export function App() {
                       )
                     }
                   >
-                    {game.currentWager === 0 ? "Bet" : "Raise"}
+                    {game.currentWager === 0 ? "Bet" : `Raise (min ${minimumWager()})`}
                   </button>
                   <button class="danger" disabled={busy()} onClick={() => act({ type: "fold" })}>
                     Fold + blue stick
@@ -556,8 +647,144 @@ function Seat(props: { player: PublicPlayerState; active: boolean; position: num
           <b class="blue">● {props.player.blueSticks}</b> <b class="red">● {props.player.loans}</b>
           {props.player.riichi ? " · RIICHI" : ""}
         </small>
+        <small class="seat-bet">
+          Street {props.player.roundCommitted} · total {props.player.handCommitted}
+        </small>
       </div>
     </div>
+  )
+}
+
+function HandSummary(props: { result: HandResult }) {
+  const winnerNames = () =>
+    props.result.players
+      .filter((player) => props.result.winnerIds.includes(player.playerId))
+      .map((player) => `${player.name} (+${player.payout})`)
+      .join(", ")
+
+  return (
+    <section class="result-panel panel">
+      <div class="section-title">
+        <div>
+          <p class="eyebrow">Hand {props.result.handNumber} result</p>
+          <h3>
+            {winnerNames()} won the {props.result.pot}-chip pot
+          </h3>
+        </div>
+        <span class="result-reason">
+          {props.result.reason === "uncontested" ? "Won by folds" : "Showdown"}
+        </span>
+      </div>
+      <div class="result-community">
+        <span>Board</span>
+        <div class="tiles">
+          <For each={props.result.community}>{(card) => <Tile card={card} compact />}</For>
+        </div>
+      </div>
+      <div class="revealed-hands">
+        <For each={props.result.players}>
+          {(player) => (
+            <article class={props.result.winnerIds.includes(player.playerId) ? "winner" : ""}>
+              <div>
+                <strong>{player.name}</strong>
+                <small>
+                  {player.folded ? "Folded" : "Showed"} · committed {player.committed} · payout +
+                  {player.payout}
+                </small>
+              </div>
+              <div class="tiles">
+                <For each={player.cards}>{(card) => <Tile card={card} compact />}</For>
+              </div>
+              <p>
+                <b>{player.score.total} points</b> · {scoreLabel(player.score)}
+              </p>
+            </article>
+          )}
+        </For>
+      </div>
+    </section>
+  )
+}
+
+function DebugPanel(props: { view: DebugGameView }) {
+  const playerName = (playerId: string) =>
+    props.view.state.players.find((player) => player.id === playerId)?.name ?? playerId
+
+  return (
+    <section class="debug-panel panel">
+      <div class="section-title">
+        <div>
+          <p class="eyebrow">Debug table</p>
+          <h3>Hidden information and poker math</h3>
+        </div>
+        <Show when={props.view.actingDecision}>
+          {(decision) => (
+            <span class="recommendation">
+              {playerName(decision().playerId)}: {formatAction(decision().action)}
+            </span>
+          )}
+        </Show>
+      </div>
+      <div class="debug-hands">
+        <For each={props.view.state.players}>
+          {(player) => (
+            <article>
+              <strong>{player.name}</strong>
+              <div class="tiles">
+                <For each={privateCards(player)}>{(card) => <Tile card={card} compact />}</For>
+              </div>
+            </article>
+          )}
+        </For>
+      </div>
+      <div class="math-table-wrap">
+        <table class="math-table">
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Equity</th>
+              <th>To call</th>
+              <th>Pot odds</th>
+              <th>Edge</th>
+              <th>Call EV</th>
+              <th>Avg score</th>
+              <th>Improves</th>
+              <th>Closest special</th>
+            </tr>
+          </thead>
+          <tbody>
+            <For each={props.view.analyses}>
+              {(analysis) => (
+                <tr>
+                  <td>{playerName(analysis.playerId)}</td>
+                  <td>{formatPercent(analysis.showdownEquity)}</td>
+                  <td>{analysis.toCall}</td>
+                  <td>{formatPercent(analysis.potOdds)}</td>
+                  <td class={analysis.equityEdge >= 0 ? "positive" : "negative"}>
+                    {formatSignedPercent(analysis.equityEdge)}
+                  </td>
+                  <td class={analysis.callExpectedValue >= 0 ? "positive" : "negative"}>
+                    {formatSignedNumber(analysis.callExpectedValue)}
+                  </td>
+                  <td>{analysis.expectedScore.toFixed(1)}</td>
+                  <td>{analysis.improveRate.toFixed(0)}%</td>
+                  <td>
+                    {analysis.closestSpecial
+                      ? `${analysis.closestSpecial.label} · ${analysis.closestSpecial.missing} away`
+                      : "—"}
+                  </td>
+                </tr>
+              )}
+            </For>
+          </tbody>
+        </table>
+      </div>
+      <p class="debug-note">
+        Equity includes ties. Pot odds are call ÷ (current pot + call). Call EV is equity × pot
+        after calling − call cost. Positive edge means the estimated equity exceeds the break-even
+        odds.
+      </p>
+    </section>
   )
 }
 
@@ -591,4 +818,30 @@ function Tile(props: { card: Card; compact?: boolean }) {
 
 function privateCards(player?: PublicPlayerState): Card[] {
   return player && Array.isArray(player.privateCards) ? player.privateCards : []
+}
+
+function scoreLabel(score: HandResult["players"][number]["score"]): string {
+  return score.combinations.length > 0
+    ? score.combinations.map((combination) => combination.label).join(" + ")
+    : "No scoring combination"
+}
+
+function formatAction(action: BettingAction): string {
+  if (action.type === "bet" || action.type === "raise") {
+    return `${action.type} ${action.amount}`
+  }
+
+  return action.type
+}
+
+function formatPercent(value: number): string {
+  return `${Math.round(value * 100)}%`
+}
+
+function formatSignedPercent(value: number): string {
+  return `${value >= 0 ? "+" : ""}${Math.round(value * 100)}%`
+}
+
+function formatSignedNumber(value: number): string {
+  return `${value >= 0 ? "+" : ""}${value.toFixed(1)}`
 }

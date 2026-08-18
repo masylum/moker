@@ -45,6 +45,31 @@ describe("game lifecycle", () => {
     expect(totalBlue(engine)).toBe(8)
   })
 
+  it("enforces chip denominations and poker-style minimum raises", () => {
+    const engine = GameEngine.create(players, { seed: "bet-sizing" })
+    const bettor = engine.state.actingPlayerId!
+
+    expect(engine.legalActions(bettor).find((action) => action.type === "bet")).toMatchObject({
+      minimum: 5,
+    })
+    expect(() => engine.act(bettor, { type: "bet", amount: 1 })).toThrow(/multiple of 5/)
+
+    engine.act(bettor, { type: "bet", amount: 5 })
+    const raiser = engine.state.actingPlayerId!
+
+    expect(engine.legalActions(raiser).find((action) => action.type === "raise")).toMatchObject({
+      minimum: 10,
+    })
+    expect(() => engine.act(raiser, { type: "raise", amount: 7 })).toThrow(/multiple of 5/)
+
+    engine.act(raiser, { type: "raise", amount: 15 })
+    const next = engine.state.actingPlayerId!
+
+    expect(engine.legalActions(next).find((action) => action.type === "raise")).toMatchObject({
+      minimum: 25,
+    })
+  })
+
   it("allows Riichi only with a first/second-street bet or raise and locks the hand", () => {
     const engine = GameEngine.create(players, { seed: "riichi" })
     const actor = engine.state.actingPlayerId!
@@ -89,6 +114,15 @@ describe("game lifecycle", () => {
     expect(engine.state.phase).toBe("between-hands")
     expect(engine.state.dealerIndex).toBe((originalDealer + 1) % players.length)
     expect(engine.state.handWinners).toHaveLength(1)
+    expect(engine.state.handResults).toHaveLength(1)
+    expect(engine.state.handResults[0]).toMatchObject({ reason: "uncontested", pot: 20 })
+    expect(engine.state.handResults[0]?.players.every((player) => player.cards.length === 4)).toBe(
+      true,
+    )
+    expect(
+      engine.state.handResults[0]?.players.reduce((sum, player) => sum + player.payout, 0),
+    ).toBe(20)
+    expect(engine.state.players.every((player) => player.chips % 5 === 0)).toBe(true)
   })
 })
 

@@ -2,6 +2,7 @@ import { createDeck } from "./cards"
 import { SeededRandom } from "./random"
 import {
   COMMUNITY_REVEALS,
+  CHIP_UNIT,
   LOAN_VALUE,
   MAX_LOANS,
   ORBIT_VALUES,
@@ -36,6 +37,8 @@ export class GameEngine {
 
   private constructor(state: GameState, events: GameEvent[]) {
     this.state = state
+    this.state.minimumRaise ??= CHIP_UNIT
+    this.state.handResults ??= []
     this.events = events
     this.random = new SeededRandom(state.config.seed, state.rngState)
   }
@@ -79,11 +82,13 @@ export class GameEngine {
       pot: 0,
       centerBlueSticks: config.playerCount,
       currentWager: 0,
+      minimumRaise: CHIP_UNIT,
       pendingPlayerIds: [],
       actingPlayerId: null,
       pendingDiscard: null,
       blankWindow: null,
       handWinners: [],
+      handResults: [],
       finalScores: null,
       version: 0,
     }
@@ -117,6 +122,7 @@ export class GameEngine {
     this.state.blankWindow = null
     this.state.pendingDiscard = null
     this.state.currentWager = 0
+    this.state.minimumRaise = CHIP_UNIT
     this.state.deck = this.random.shuffle(createDeck())
 
     for (const player of this.state.players) {
@@ -161,24 +167,26 @@ export class GameEngine {
     }
 
     const toCall = this.state.currentWager - player.roundCommitted
+    const maximum = player.roundCommitted + player.chips
     const actions: LegalAction[] = [{ type: "fold" }]
     if (toCall === 0) {
       actions.push({ type: "check" })
-      if (player.chips > 0) {
+      if (maximum >= CHIP_UNIT) {
         actions.push({
           type: "bet",
-          minimum: 1,
-          maximum: player.roundCommitted + player.chips,
+          minimum: CHIP_UNIT,
+          maximum,
           canRiichi: this.canDeclareRiichi(player),
         })
       }
     } else if (player.chips >= toCall) {
       actions.push({ type: "call", callAmount: toCall })
-      if (player.chips > toCall) {
+      const minimum = this.state.currentWager + this.state.minimumRaise
+      if (maximum >= minimum) {
         actions.push({
           type: "raise",
-          minimum: this.state.currentWager + 1,
-          maximum: player.roundCommitted + player.chips,
+          minimum,
+          maximum,
           canRiichi: this.canDeclareRiichi(player),
         })
       }
@@ -226,21 +234,26 @@ export class GameEngine {
         break
       case "bet":
       case "raise": {
-        const minimum = legal.minimum ?? 1
+        const minimum = legal.minimum ?? CHIP_UNIT
         const maximum = legal.maximum ?? player.roundCommitted + player.chips
         if (
           !Number.isInteger(action.amount) ||
+          action.amount % CHIP_UNIT !== 0 ||
           action.amount < minimum ||
           action.amount > maximum
         ) {
-          throw new RangeError(`${action.type} must be between ${minimum} and ${maximum}`)
+          throw new RangeError(
+            `${action.type} must be a multiple of ${CHIP_UNIT} between ${minimum} and ${maximum}`,
+          )
         }
         if (action.riichi && !legal.canRiichi) {
           throw new Error("Riichi is not available")
         }
 
+        const raiseSize = action.amount - this.state.currentWager
         this.payToPot(player, action.amount - player.roundCommitted, true)
         this.state.currentWager = action.amount
+        this.state.minimumRaise = raiseSize
         this.returnBlueStick(player)
         if (action.riichi) {
           player.riichi = true
@@ -252,7 +265,6 @@ export class GameEngine {
       case "fold":
         player.folded = true
         this.state.removedCards.push(...player.privateCards)
-        player.privateCards = []
         this.gainBlueStick(player)
         break
     }
@@ -385,13 +397,14 @@ export class GameEngine {
     this.emit("loan-repaid", { amount: LOAN_VALUE, loans: player.loans }, playerId)
   }
 
-  publicView(viewerId?: string): PublicGameState {
+  publicView(viewerId?: string, revealAll = false): PublicGameState {
     return {
       ...structuredClone(this.state),
       deck: { count: this.state.deck.length },
       players: this.state.players.map((player) => ({
         ...structuredClone(player),
         privateCards:
+          revealAll ||
           player.id === viewerId ||
           this.state.phase === "showdown" ||
           this.state.phase === "between-hands" ||
@@ -411,6 +424,7 @@ export class GameEngine {
     }
 
     this.state.currentWager = 0
+    this.state.minimumRaise = CHIP_UNIT
 
     for (const player of this.state.players) {
       player.roundCommitted = 0
@@ -510,7 +524,8 @@ export class GameEngine {
     const highScore = Math.max(...contenders.map((player) => player.score?.total ?? 0))
     const winners = contenders.filter((player) => player.score?.total === highScore)
     this.state.handWinners = winners.map((player) => player.id)
-    this.splitPot(winners)
+    const pot = this.state.pot
+    const payouts = this.splitPot(winners)
 
     for (const winner of winners) {
       if (winner.riichi) {
@@ -522,14 +537,17 @@ export class GameEngine {
       winners: this.state.handWinners,
       scores: Object.fromEntries(contenders.map((player) => [player.id, player.score?.total ?? 0])),
     })
+    this.recordHandResult("showdown", pot, payouts)
     this.endHand()
   }
 
   private awardUncontested(winner: PlayerState): void {
-    winner.chips += this.state.pot
+    const pot = this.state.pot
+    winner.chips += pot
     this.state.handWinners = [winner.id]
-    this.emit("uncontested-win", { winnerId: winner.id, pot: this.state.pot })
+    this.emit("uncontested-win", { winnerId: winner.id, pot })
     this.state.pot = 0
+    this.recordHandResult("uncontested", pot, { [winner.id]: pot })
     this.endHand()
   }
 
@@ -560,9 +578,10 @@ export class GameEngine {
     this.emit("game-finished", { finalScores: this.state.finalScores })
   }
 
-  private splitPot(winners: PlayerState[]): void {
-    const share = Math.floor(this.state.pot / winners.length)
+  private splitPot(winners: PlayerState[]): Record<string, number> {
+    const share = Math.floor(this.state.pot / winners.length / CHIP_UNIT) * CHIP_UNIT
     let remainder = this.state.pot - share * winners.length
+    const payouts = Object.fromEntries(winners.map((winner) => [winner.id, share]))
     const ordered = this.orderedAfter(this.state.dealerIndex).filter((player) =>
       winners.includes(player),
     )
@@ -575,10 +594,42 @@ export class GameEngine {
         break
       }
 
-      winner.chips += 1
-      remainder -= 1
+      winner.chips += CHIP_UNIT
+      payouts[winner.id] = (payouts[winner.id] ?? 0) + CHIP_UNIT
+      remainder -= CHIP_UNIT
     }
     this.state.pot = 0
+
+    return payouts
+  }
+
+  private recordHandResult(
+    reason: "showdown" | "uncontested",
+    pot: number,
+    payouts: Record<string, number>,
+  ): void {
+    this.state.handResults.push({
+      handNumber: this.state.handNumber,
+      pot,
+      community: structuredClone(this.state.community),
+      winnerIds: [...this.state.handWinners],
+      reason,
+      players: this.state.players.map((player) => ({
+        playerId: player.id,
+        name: player.name,
+        folded: player.folded,
+        riichi: player.riichi,
+        cards: structuredClone(player.privateCards),
+        score:
+          player.score ??
+          scoreHand(
+            [...player.privateCards, ...this.state.community],
+            this.state.config.activeSpecialHands,
+          ),
+        committed: player.handCommitted,
+        payout: payouts[player.id] ?? 0,
+      })),
+    })
   }
 
   private resolveRiichiWin(winner: PlayerState, contenders: PlayerState[]): void {

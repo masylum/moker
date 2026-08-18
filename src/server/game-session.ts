@@ -1,8 +1,10 @@
 import { Agent } from "agents"
 import { stepHeuristic } from "../game/automation"
 import { GameEngine, type PlayerSetup } from "../game/engine"
+import { analyzePokerMath, chooseHeuristicAction } from "../game/heuristic"
 import type {
   BettingAction,
+  DebugGameView,
   DiscardPile,
   GameConfig,
   GameEvent,
@@ -46,6 +48,24 @@ export class GameSession extends Agent<Env, SessionState> {
 
   async getInternalState(): Promise<GameState> {
     return structuredClone(this.requireGame())
+  }
+
+  async getDebugGame(): Promise<DebugGameView> {
+    const engine = this.engine()
+    const samples = engine.state.config.heuristicSamples
+    const analyses = engine.state.players.map((player) =>
+      analyzePokerMath(engine.state, player.id, samples),
+    )
+    const actingDecision =
+      engine.state.phase === "betting" && engine.state.actingPlayerId
+        ? chooseHeuristicAction(engine.state, engine.state.actingPlayerId, samples)
+        : null
+
+    return {
+      state: engine.publicView(undefined, true),
+      analyses,
+      actingDecision,
+    }
   }
 
   async applyBettingAction(playerId: string, action: BettingAction): Promise<PublicGameState> {

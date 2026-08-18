@@ -9,6 +9,12 @@ export const LOAN_VALUE = 200
 export const MAX_LOANS = 2
 export const PRIVATE_CARD_COUNT = 4
 export const COMMUNITY_REVEALS = [4, 2, 2] as const
+export const CHIP_DENOMINATIONS = [5, 10, 20, 50, 100] as const
+export const CHIP_UNIT = CHIP_DENOMINATIONS[0]
+
+export function toChipUnit(amount: number): number {
+  return Math.floor(amount / CHIP_UNIT) * CHIP_UNIT
+}
 
 export function maxHandsFor(playerCount: number): number {
   return playerCount === 2 ? 12 : playerCount * 3

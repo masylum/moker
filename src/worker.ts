@@ -157,6 +157,9 @@ async function handleApi(request: Request, env: Env, url: URL): Promise<Response
       events: await game.getEvents(Number(url.searchParams.get("limit") ?? 500)),
     })
   }
+  if (request.method === "GET" && operation === "debug") {
+    return Response.json(await game.getDebugGame())
+  }
   if (request.method === "GET" && operation === "reasoning") {
     const playerId = url.searchParams.get("player")
     if (!playerId)

@@ -62,6 +62,28 @@ export interface HandScore {
   combinations: ScoredCombination[]
 }
 
+export type HandWinReason = "showdown" | "uncontested"
+
+export interface HandResultPlayer {
+  playerId: string
+  name: string
+  folded: boolean
+  riichi: boolean
+  cards: Card[]
+  score: HandScore
+  committed: number
+  payout: number
+}
+
+export interface HandResult {
+  handNumber: number
+  pot: number
+  community: Card[]
+  winnerIds: string[]
+  reason: HandWinReason
+  players: HandResultPlayer[]
+}
+
 export type PlayerController = "human" | "heuristic" | "llm"
 
 export interface PlayerState {
@@ -131,11 +153,13 @@ export interface GameState {
   pot: number
   centerBlueSticks: number
   currentWager: number
+  minimumRaise: number
   pendingPlayerIds: string[]
   actingPlayerId: string | null
   pendingDiscard: PendingDiscard | null
   blankWindow: PendingBlankWindow | null
   handWinners: string[]
+  handResults: HandResult[]
   finalScores: Record<string, number> | null
   version: number
 }
@@ -177,6 +201,29 @@ export interface HeuristicDecision {
   rationale: string
 }
 
+export interface ClosestSpecialHand {
+  label: string
+  missing: number
+  size: number
+  score: number
+}
+
+export interface PokerMathAnalysis {
+  playerId: string
+  samples: number
+  opponents: number
+  toCall: number
+  potBeforeCall: number
+  potAfterCall: number
+  potOdds: number
+  showdownEquity: number
+  equityEdge: number
+  callExpectedValue: number
+  expectedScore: number
+  improveRate: number
+  closestSpecial: ClosestSpecialHand | null
+}
+
 export interface GameEvent<T = unknown> {
   sequence: number
   gameId: string
@@ -202,6 +249,12 @@ export interface PublicPlayerState extends Omit<PlayerState, "privateCards"> {
 export interface PublicGameState extends Omit<GameState, "players" | "deck"> {
   players: PublicPlayerState[]
   deck: { count: number }
+}
+
+export interface DebugGameView {
+  state: PublicGameState
+  analyses: PokerMathAnalysis[]
+  actingDecision: HeuristicDecision | null
 }
 
 export const DEFAULT_SPECIAL_HANDS: SpecialHandId[] = [

@@ -5,11 +5,11 @@ A deterministic TypeScript implementation of Mahjong Poker for rules testing, ba
 ## What is included
 
 - A framework-independent game library in `src/game` with the 110-card deck, legal transitions, `rand-seed` determinism, exact showdown optimization, all basic combinations, and a declarative catalog for all 15 Special Hand Cards.
-- A statistical player that evaluates draw sources, discards, bets, calls, raises, folds, Riichi, Blank claims, future blue-stick liability, Monte Carlo outcomes, and distance from each active special pattern using the scoring matcher itself.
+- A statistical player that estimates multiway showdown equity, pot odds, call EV, draw sources, discards, legal wagers, Riichi, Blank claims, and distance from each active special pattern using the scoring matcher itself. Aggression is equity-gated before blue-stick strategy is considered.
 - Replayable simulations whose events, decisions, state, and seed can be inspected later.
 - One Cloudflare Durable Object per game session, with SQLite event snapshots and synchronized current state.
 - A Cloudflare Think agent using OpenRouter tools to inspect legal information, compare the heuristic baseline, commit a validated move, and persist model-exposed reasoning/tool/usage artifacts plus a concise strategic summary.
-- A responsive SolidJS SPA and a colored Unicode terminal client for human play against heuristic players.
+- A responsive SolidJS SPA and a colored Unicode terminal client for human play against heuristic players, with complete hand-result reveals and an opt-in debug view of hidden hands and poker math.
 - Oxlint, Oxfmt, and Knip checks, with no-semicolon formatting and unused-code detection.
 - Node unit tests plus Workers-runtime integration tests.
 
@@ -38,7 +38,8 @@ npm run knip
 npm run check              # all static checks and tests
 npm run build
 npm run simulate -- 10 balance-seed
-npm run play -- --seed jade-table --players 4 --samples 12
+npm run play -- --seed jade-table --players 4 --samples 48
+npm run play -- --seed jade-table --debug  # reveal all hands, equity, odds, edge, and EV
 npm run play -- --auto --seed demo  # visible non-interactive heuristic game
 npm run deploy:dry
 npm run deploy

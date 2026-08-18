@@ -4,13 +4,23 @@ import { coloredTile as tile } from "../src/cli/tiles"
 import { stepHeuristic } from "../src/game/automation"
 import { cardLabel } from "../src/game/cards"
 import { GameEngine, type PlayerSetup } from "../src/game/engine"
-import type { BettingAction, CardSource, DiscardPile, LegalAction } from "../src/game/types"
+import { analyzePokerMath } from "../src/game/heuristic"
+import { CHIP_UNIT } from "../src/game/rules"
+import type {
+  BettingAction,
+  CardSource,
+  DiscardPile,
+  HandResult,
+  LegalAction,
+} from "../src/game/types"
 
 const terminal = createInterface({ input: stdin, output: stdout })
 const seed = argument("--seed") ?? "terminal-table"
 const playerCount = boundedInteger(argument("--players") ?? "4", 2, 6)
-const samples = boundedInteger(argument("--samples") ?? "12", 1, 256)
+const samples = boundedInteger(argument("--samples") ?? "48", 1, 256)
 const autoPlay = process.argv.includes("--auto")
+const debug = process.argv.includes("--debug")
+let lastResultRendered = 0
 const players: PlayerSetup[] = [
   { id: "p1", name: autoPlay ? "Bot 1" : "You", controller: autoPlay ? "heuristic" : "human" },
   ...Array.from({ length: playerCount - 1 }, (_, index) => ({
@@ -128,6 +138,7 @@ async function playBettingTurn(game: GameEngine): Promise<void> {
       `${action.type === "bet" ? "Bet" : "Raise"} target (${action.minimum}-${action.maximum})`,
       action.minimum!,
       action.maximum!,
+      CHIP_UNIT,
     )
     const riichi = action.canRiichi ? (await choose("Declare Riichi?", ["No", "Yes"])) === 1 : false
     const wager: BettingAction = { type: action.type, amount, ...(riichi ? { riichi } : {}) }
@@ -186,7 +197,7 @@ function renderTable(game: GameEngine): void {
   const discardB = state.discardB.at(-1)
   stdout.write("\n────────────────────────────────────────────────────────\n")
   stdout.write(
-    `Hand ${state.handNumber}/${state.maxHands} · orbit ${state.orbit} (${state.orbitValue}) · street ${state.street} · ${state.phase} · pot ${state.pot}\n`,
+    `Hand ${state.handNumber}/${state.maxHands} · orbit ${state.orbit} (${state.orbitValue}) · street ${state.street} · ${state.phase} · pot ${state.pot} · wager ${state.currentWager} · min raise ${state.minimumRaise}\n`,
   )
   stdout.write(`Community  ${state.community.map(tile).join(" ") || "—"}\n`)
   stdout.write(
@@ -194,12 +205,62 @@ function renderTable(game: GameEngine): void {
   )
   stdout.write(`Your hand  ${human.privateCards.map(tile).join(" ")}\n`)
   stdout.write(
-    `You        ${human.chips} chips · ${human.blueSticks} blue · ${human.loans} loans${human.riichi ? " · RIICHI" : ""}\n`,
+    `You        ${human.chips} chips · street ${human.roundCommitted} (total ${human.handCommitted}) · ${human.blueSticks} blue · ${human.loans} loans${human.riichi ? " · RIICHI" : ""}\n`,
   )
 
   for (const player of state.players.slice(1)) {
     stdout.write(
-      `${player.name.padEnd(10)} ${player.chips} chips · ${player.blueSticks} blue · ${player.loans} loans${player.folded ? " · folded" : ""}${player.riichi ? " · RIICHI" : ""}\n`,
+      `${player.name.padEnd(10)} ${player.chips} chips · street ${player.roundCommitted} (total ${player.handCommitted}) · ${player.blueSticks} blue · ${player.loans} loans${player.folded ? " · folded" : ""}${player.riichi ? " · RIICHI" : ""}\n`,
+    )
+  }
+
+  const result = state.handResults.at(-1)
+
+  if (result && result.handNumber > lastResultRendered) {
+    renderHandResult(result)
+    lastResultRendered = result.handNumber
+  }
+
+  if (debug && state.phase !== "between-hands" && state.phase !== "finished") {
+    renderDebug(game)
+  }
+}
+
+function renderHandResult(result: HandResult): void {
+  const winners = result.players
+    .filter((player) => result.winnerIds.includes(player.playerId))
+    .map((player) => `${player.name} (+${player.payout})`)
+    .join(", ")
+  stdout.write(
+    `\nResult     ${winners} won ${result.pot} by ${result.reason === "showdown" ? "showdown" : "folds"}\n`,
+  )
+  stdout.write(`Board      ${result.community.map(tile).join(" ")}\n`)
+
+  for (const player of result.players) {
+    const combinations =
+      player.score.combinations.map((combination) => combination.label).join(" + ") || "no hand"
+    stdout.write(
+      `${player.name.padEnd(10)} ${player.cards.map(tile).join(" ")} · ${player.score.total} points (${combinations}) · committed ${player.committed} · payout ${player.payout}${player.folded ? " · folded" : ""}\n`,
+    )
+  }
+}
+
+function renderDebug(game: GameEngine): void {
+  stdout.write("\nDebug · all private hands\n")
+
+  for (const player of game.state.players) {
+    stdout.write(`${player.name.padEnd(10)} ${player.privateCards.map(tile).join(" ")}\n`)
+  }
+
+  stdout.write("Player     Equity  Call  Pot odds  Edge    Call EV  Avg score  Improves  Closest\n")
+
+  for (const player of game.state.players) {
+    const math = analyzePokerMath(game.state, player.id, Math.min(32, samples))
+    const closest = math.closestSpecial
+      ? `${math.closestSpecial.label} (${math.closestSpecial.missing} away)`
+      : "—"
+    stdout.write(
+      `${player.name.padEnd(10)} ${percent(math.showdownEquity).padStart(6)}  ${String(math.toCall).padStart(4)}  ${percent(math.potOdds).padStart(8)}  ${signedPercent(math.equityEdge).padStart(6)}  ${signed(math.callExpectedValue).padStart(7)}  ${math.expectedScore.toFixed(1).padStart(9)}  ${(math.improveRate.toFixed(0) + "%").padStart(8)}  ${closest}\n`,
     )
   }
 }
@@ -257,16 +318,33 @@ async function choose(prompt: string, choices: readonly string[]): Promise<numbe
   }
 }
 
-async function askInteger(prompt: string, minimum: number, maximum: number): Promise<number> {
+async function askInteger(
+  prompt: string,
+  minimum: number,
+  maximum: number,
+  step = 1,
+): Promise<number> {
   while (true) {
     const answer = Number.parseInt(await terminal.question(`${prompt}: `), 10)
 
-    if (Number.isInteger(answer) && answer >= minimum && answer <= maximum) {
+    if (Number.isInteger(answer) && answer >= minimum && answer <= maximum && answer % step === 0) {
       return answer
     }
 
-    stdout.write(`Enter an integer from ${minimum} to ${maximum}.\n`)
+    stdout.write(`Enter a multiple of ${step} from ${minimum} to ${maximum}.\n`)
   }
+}
+
+function percent(value: number): string {
+  return `${Math.round(value * 100)}%`
+}
+
+function signedPercent(value: number): string {
+  return `${value >= 0 ? "+" : ""}${Math.round(value * 100)}%`
+}
+
+function signed(value: number): string {
+  return `${value >= 0 ? "+" : ""}${value.toFixed(1)}`
 }
 
 function argument(name: string): string | undefined {

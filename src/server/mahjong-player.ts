@@ -3,6 +3,7 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider"
 import { tool } from "ai"
 import { z } from "zod"
 import { GameEngine } from "../game/engine"
+import { CHIP_UNIT } from "../game/rules"
 import { chooseBlankClaim, chooseHeuristicAction, chooseHeuristicDiscard } from "../game/heuristic"
 import { evaluateSpecialHands } from "../game/patterns"
 import { agentRulebook } from "../game/rulebook"
@@ -279,7 +280,8 @@ function validateOperation(state: GameState, playerId: string, operation: AgentO
     if (
       (operation.action.type === "bet" || operation.action.type === "raise") &&
       (operation.action.amount < (legal.minimum ?? 0) ||
-        operation.action.amount > (legal.maximum ?? 0))
+        operation.action.amount > (legal.maximum ?? 0) ||
+        operation.action.amount % CHIP_UNIT !== 0)
     ) {
       throw new Error("Committed wager is outside legal bounds")
     }

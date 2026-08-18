@@ -36,5 +36,14 @@ describe("Cloudflare Worker and Durable Object persistence", () => {
     expect(ledger.events.map((event) => event.type)).toEqual(
       expect.arrayContaining(["game-created", "hand-started", "street-opened"]),
     )
+
+    const debug = await SELF.fetch("http://example.com/api/games/worker-persistence/debug")
+    const debugBody = await debug.json<{
+      state: { players: Array<{ privateCards: unknown[] }> }
+      analyses: unknown[]
+    }>()
+    expect(debug.status).toBe(200)
+    expect(debugBody.state.players.every((player) => player.privateCards.length === 4)).toBe(true)
+    expect(debugBody.analyses).toHaveLength(2)
   })
 })

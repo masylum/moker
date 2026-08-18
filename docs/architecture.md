@@ -11,7 +11,7 @@ The library is split by responsibility so rules do not leak into unrelated modul
 - `melds.ts` recognizes basic Eyes, Chows, Pungs, Three Dragons, Four Winds, and Kongs.
 - `scoring.ts` only coordinates scoring: inspect active special patterns from highest to lowest, otherwise optimize disjoint basic melds.
 - `rulebook.ts` renders canonical rules and the pattern catalog for non-code consumers, including the LLM player.
-- `heuristic.ts` performs statistical decisions. It does not contain a second list of special-hand conditions.
+- `heuristic.ts` performs seeded multiway rollouts and exposes the shared showdown-equity, pot-odds, expected-value, and pattern-distance analysis used by decisions and debug clients. It does not contain a second list of special-hand conditions.
 - `automation.ts` applies one heuristic transition. Simulations, the terminal client, and `GameSession` all call it.
 - `engine.ts` owns legal state transitions and invariants.
 
@@ -30,4 +30,4 @@ Cloudflare Think already uses the Agent's local SQLite-backed storage for durabl
 
 ## Clients
 
-The SolidJS client talks to the Worker API, whose `GameSession` applies engine methods. The terminal client runs the same library locally. Both clients render state and collect choices; neither implements scoring or legal transitions.
+The SolidJS client talks to the Worker API, whose `GameSession` applies engine methods. Its opt-in debug endpoint reveals current private hands but not the future deck order, and calculates each seat's view independently from information available to that player. The terminal client runs the same library locally and exposes the equivalent view through `--debug`. Both clients render state and collect choices; neither implements scoring or legal transitions.

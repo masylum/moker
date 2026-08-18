@@ -6,9 +6,10 @@ The source rules leave a few procedural details open. The library makes these de
 
 - A betting street starts with the first active player clockwise after the dealer.
 - A raise reopens action for every other active player. A street closes once every remaining player has matched the current wager or folded.
-- A wager is an integer number of chips and its `amount` is the player's target total for that street.
+- Chips have physical denominations of 5, 10, 20, 50, and 100. Every wager is a multiple of 5, and its `amount` is the player's target total for that street.
+- The minimum opening wager is 5. Raises follow the poker full-raise rule: the increase must be at least the size of the previous opening bet or raise. A new street resets that minimum to 5.
 - A new 110-card deck is shuffled for each hand.
-- An indivisible chip left after a tied pot is awarded clockwise after the dealer among the tied winners.
+- A tied pot is split in 5-chip units. Remaining 5-chip units are awarded clockwise after the dealer among the tied winners, so the engine never creates a chip denomination that does not exist.
 - If the center has no blue stick when a player folds, the donor is the first clockwise player holding one.
 - A Joker in Four Treasures or Heavenly Honors must be part of at least one valid, disjoint scoring combination; it cannot qualify merely as a loose colored card.
 - A player unable to make a payment must take an eligible Loan first. The engine rejects an unaffordable action; automated simulations take opening Loans when needed.
