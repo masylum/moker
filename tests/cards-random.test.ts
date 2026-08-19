@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { coloredTile, tileGlyph } from "../src/cli/tiles"
-import { createDeck, jokerCanRepresent } from "../src/game/cards"
+import { cardLabel, createDeck, jokerCanRepresent } from "../src/game/cards"
 import { SeededRandom } from "../src/game/random"
 
 describe("deck and seeded randomness", () => {
@@ -36,6 +36,14 @@ describe("deck and seeded randomness", () => {
 
     expect(jokerCanRepresent({ kind: "joker", color: "black" }, flower)).toBe(true)
     expect(jokerCanRepresent({ kind: "joker", color: "red" }, flower)).toBe(false)
+  })
+
+  it("uses the table names Bams, Dots, and Cracks", () => {
+    const deck = createDeck()
+
+    expect(cardLabel(deck.find((card) => card.id === "bamboo-1-1")!)).toBe("1 Bams")
+    expect(cardLabel(deck.find((card) => card.id === "dots-1-1")!)).toBe("1 Dots")
+    expect(cardLabel(deck.find((card) => card.id === "characters-1-1")!)).toBe("1 Cracks")
   })
 
   it("can serialize and resume PRNG state", () => {

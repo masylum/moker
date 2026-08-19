@@ -79,6 +79,11 @@ export interface HandResult {
   winnerIds: string[]
   reason: HandWinReason
   flowerBonus: { winnerId: string; perOpponent: number; total: number } | null
+  riichiSettlement: {
+    winnerId: string
+    returnedToCenter: number
+    recipientIds: string[]
+  } | null
   boardResets: number
   players: HandResultPlayer[]
 }

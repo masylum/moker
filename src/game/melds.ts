@@ -5,6 +5,7 @@ import {
   flowerFace,
   jokerCanRepresent,
   numberedFace,
+  suitLabel,
   windFace,
 } from "./cards"
 import { HAND_RANKS } from "./rules"
@@ -168,7 +169,7 @@ function addChow(cards: Card[], mask: number, candidates: HandCandidate[]): void
       cards,
       mask,
       chowTieBreak(chow),
-      `Chow · ${chow.start}-${chow.start + 1}-${chow.start + 2} ${capitalize(chow.suit)}`,
+      `Chow · ${chow.start}-${chow.start + 1}-${chow.start + 2} ${suitLabel(chow.suit)}`,
     ),
   )
 }
@@ -304,7 +305,7 @@ function addPureSuit(cards: Card[], mask: number, candidates: HandCandidate[]): 
       cards,
       mask,
       values,
-      `Pure Suit · ${capitalize(suit)} ${values.join("-")}`,
+      `Pure Suit · ${suitLabel(suit)} ${values.join("-")}`,
     ),
   )
 }
@@ -327,7 +328,7 @@ function addCompoundHands(cards: Card[], mask: number, candidates: HandCandidate
           [...main, ...secondary],
           mask,
           values,
-          `Chow + Eye · ${chow.start}-${chow.start + 1}-${chow.start + 2} ${capitalize(chow.suit)} + ${cardLabel(eye)}`,
+          `Chow + Eye · ${chow.start}-${chow.start + 1}-${chow.start + 2} ${suitLabel(chow.suit)} + ${cardLabel(eye)}`,
         ),
       )
 
@@ -341,7 +342,7 @@ function addCompoundHands(cards: Card[], mask: number, candidates: HandCandidate
             [...main, ...secondary],
             mask,
             values,
-            `Dragon Dancer · ${chow.start}-${chow.start + 1}-${chow.start + 2} ${capitalize(chow.suit)} + ${cardLabel(eye)}`,
+            `Dragon Dancer · ${chow.start}-${chow.start + 1}-${chow.start + 2} ${suitLabel(chow.suit)} + ${cardLabel(eye)}`,
           ),
         )
       }
@@ -572,8 +573,4 @@ function compareTieBreak(left: readonly number[], right: readonly number[]): num
   }
 
   return 0
-}
-
-function capitalize(value: string): string {
-  return value[0]!.toUpperCase() + value.slice(1)
 }

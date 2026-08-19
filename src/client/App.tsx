@@ -1,5 +1,5 @@
 import { For, Show, createEffect, createMemo, createSignal } from "solid-js"
-import { cardLabel, compareCards } from "../game/cards"
+import { cardLabel, compareCards, suitLabel } from "../game/cards"
 import type {
   BettingAction,
   BlankExchange,
@@ -117,8 +117,22 @@ export function App() {
       return { state: result.state }
     }, "Saved table restored.")
 
-  const act = (action: BettingAction) => perform(() => bettingAction(sessionId(), "p1", action))
+  const act = (action: BettingAction) => {
+    setRiichi(false)
+
+    return perform(() => bettingAction(sessionId(), "p1", action))
+  }
   const humanPlayer = () => human()
+  const canHumanRiichi = () => {
+    const game = state()
+
+    return Boolean(
+      game &&
+      game.street < 4 &&
+      !game.players.some((player) => player.riichi) &&
+      humanPlayer()?.privateCards,
+    )
+  }
   const callAmount = () =>
     Math.max(0, (state()?.currentWager ?? 0) - (humanPlayer()?.roundCommitted ?? 0))
   const minimumWager = () => {
@@ -361,7 +375,8 @@ export function App() {
                 </For>
                 <div class="pot-mark">
                   <span>POT</span>
-                  {game.pot}
+                  <strong>{game.pot}</strong>
+                  <span>BLUE {game.centerBlueSticks}</span>
                 </div>
               </div>
             </section>
@@ -519,6 +534,7 @@ export function App() {
                     <input
                       type="checkbox"
                       checked={riichi()}
+                      disabled={!canHumanRiichi()}
                       onChange={(event) => setRiichi(event.currentTarget.checked)}
                     />{" "}
                     Riichi
@@ -534,8 +550,16 @@ export function App() {
                     onClick={() =>
                       act(
                         game.currentWager === 0
-                          ? { type: "bet", amount: wager(), riichi: riichi() }
-                          : { type: "raise", amount: wager(), riichi: riichi() },
+                          ? {
+                              type: "bet",
+                              amount: wager(),
+                              riichi: riichi() && canHumanRiichi(),
+                            }
+                          : {
+                              type: "raise",
+                              amount: wager(),
+                              riichi: riichi() && canHumanRiichi(),
+                            },
                       )
                     }
                   >
@@ -893,6 +917,15 @@ function HandSummary(props: { result: HandResult }) {
           </p>
         )}
       </Show>
+      <Show when={props.result.riichiSettlement}>
+        {(settlement) => (
+          <p class="instruction">
+            Riichi settled: {settlement().returnedToCenter} returned to the center;{" "}
+            {settlement().recipientIds.length} opponent
+            {settlement().recipientIds.length === 1 ? "" : "s"} received a blue stick.
+          </p>
+        )}
+      </Show>
       <div class="revealed-hands">
         <For each={props.result.players}>
           {(player) => (
@@ -943,7 +976,7 @@ function Tile(props: { card: Card; compact?: boolean }) {
       <span>{short()}</span>
       <small>
         {props.card.kind === "numbered"
-          ? props.card.suit
+          ? suitLabel(props.card.suit)
           : props.card.kind === "joker"
             ? props.card.color
             : props.card.kind}

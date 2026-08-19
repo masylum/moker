@@ -666,10 +666,11 @@ export class GameEngine {
     this.state.handWinners = winners.map((player) => player.id)
     const pot = this.state.pot
     const payouts = this.splitPot(winners)
+    let riichiSettlement: HandResult["riichiSettlement"] = null
 
     for (const winner of winners) {
       if (winner.riichi) {
-        this.resolveRiichiWin(winner, contenders)
+        riichiSettlement = this.resolveRiichiWin(winner, contenders)
       }
     }
 
@@ -680,7 +681,7 @@ export class GameEngine {
         .map((player) => player.id),
       scores: Object.fromEntries(contenders.map((player) => [player.id, player.score?.total ?? 0])),
     })
-    this.recordHandResult("showdown", pot, payouts, null)
+    this.recordHandResult("showdown", pot, payouts, null, riichiSettlement)
     this.endHand()
   }
 
@@ -688,10 +689,11 @@ export class GameEngine {
     const pot = this.state.pot
     winner.chips += pot
     const flowerBonus = this.hasSingleFlower(winner) ? this.payFlowerFoldBonus(winner) : null
+    const riichiSettlement = winner.riichi ? this.resolveRiichiWin(winner, [winner]) : null
     this.state.handWinners = [winner.id]
     this.emit("uncontested-win", { winnerId: winner.id, pot, flowerBonus })
     this.state.pot = 0
-    this.recordHandResult("uncontested", pot, { [winner.id]: pot }, flowerBonus)
+    this.recordHandResult("uncontested", pot, { [winner.id]: pot }, flowerBonus, riichiSettlement)
     this.endHand()
   }
 
@@ -752,6 +754,7 @@ export class GameEngine {
     pot: number,
     payouts: Record<string, number>,
     flowerBonus: HandResult["flowerBonus"],
+    riichiSettlement: HandResult["riichiSettlement"],
   ): void {
     this.state.handResults.push({
       handNumber: this.state.handNumber,
@@ -760,6 +763,7 @@ export class GameEngine {
       winnerIds: [...this.state.handWinners],
       reason,
       flowerBonus,
+      riichiSettlement,
       boardResets: this.state.boardResetCount,
       players: this.state.players.map((player) => ({
         playerId: player.id,
@@ -812,20 +816,34 @@ export class GameEngine {
     return bonus
   }
 
-  private resolveRiichiWin(winner: PlayerState, contenders: PlayerState[]): void {
+  private resolveRiichiWin(
+    winner: PlayerState,
+    contenders: PlayerState[],
+  ): NonNullable<HandResult["riichiSettlement"]> {
+    const returnedToCenter = winner.blueSticks
     this.state.centerBlueSticks += winner.blueSticks
     winner.blueSticks = 0
     const winnerIndex = this.state.players.findIndex((player) => player.id === winner.id)
+    const recipientIds: string[] = []
+
     for (const opponent of this.orderedAfter(winnerIndex)) {
       if (
         opponent.id === winner.id ||
         !contenders.includes(opponent) ||
         this.state.centerBlueSticks === 0
-      )
+      ) {
         continue
+      }
+
       opponent.blueSticks += 1
       this.state.centerBlueSticks -= 1
+      recipientIds.push(opponent.id)
     }
+
+    const settlement = { winnerId: winner.id, returnedToCenter, recipientIds }
+    this.emit("riichi-settled", settlement, winner.id)
+
+    return settlement
   }
 
   private returnBlueStick(player: PlayerState): void {
@@ -874,7 +892,9 @@ export class GameEngine {
 
   private canDeclareRiichi(player: PlayerState): boolean {
     return (
-      !player.riichi && this.state.street < 4 && player.privateCards.length === PRIVATE_CARD_COUNT
+      !this.state.players.some((candidate) => candidate.riichi) &&
+      this.state.street < 4 &&
+      player.privateCards.length === PRIVATE_CARD_COUNT
     )
   }
 

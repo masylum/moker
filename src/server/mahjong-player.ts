@@ -314,6 +314,15 @@ function validateOperation(state: GameState, playerId: string, operation: AgentO
     ) {
       throw new Error("Committed wager is outside legal bounds")
     }
+
+    if (
+      (operation.action.type === "bet" || operation.action.type === "raise") &&
+      operation.action.riichi &&
+      !legal.canRiichi
+    ) {
+      throw new Error("Riichi is not available")
+    }
+
     return
   }
   if (

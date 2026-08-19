@@ -23,6 +23,11 @@ describe("game lifecycle", () => {
     expect(rules).toContain("scrap the entire current board")
     expect(rules).toContain("20-chip Flower bluff bonus")
     expect(rules).toContain("never the final street")
+    expect(rules).toContain("Bams")
+    expect(rules).toContain("Dots")
+    expect(rules).toContain("Cracks")
+    expect(rules).toContain("Only one player may declare Riichi")
+    expect(rules).toContain("Whether the win reaches showdown or everyone folds")
   })
 
   it("deals, charges, reveals, and preserves blue-stick conservation", () => {
@@ -104,6 +109,85 @@ describe("game lifecycle", () => {
     const player = engine.state.players.find((candidate) => candidate.id === actor)!
     expect(player.riichi).toBe(true)
     expect(player.privateCards).toHaveLength(3)
+  })
+
+  it("allows only one Riichi declaration in a hand", () => {
+    const engine = GameEngine.create(players, { seed: "single-riichi" })
+    finishSeeding(engine)
+    const declarer = engine.state.actingPlayerId!
+    engine.act(declarer, { type: "bet", amount: 5, riichi: true })
+    const challenger = engine.state.actingPlayerId!
+
+    expect(engine.legalActions(challenger).find((action) => action.type === "raise")).toMatchObject(
+      {
+        canRiichi: false,
+      },
+    )
+    expect(() => engine.act(challenger, { type: "raise", amount: 10, riichi: true })).toThrow(
+      /Riichi is not available/,
+    )
+  })
+
+  it("settles a Riichi win at showdown and records every recipient", () => {
+    const engine = GameEngine.create(players, { seed: "riichi-showdown" })
+    finishSeeding(engine)
+    const winner = engine.state.players[0]!
+    winner.privateCards = [
+      { id: "flower-plum", ...flowerFace("plum") },
+      { id: "flower-orchid", ...flowerFace("orchid") },
+      { id: "flower-bamboo", ...flowerFace("bamboo") },
+    ]
+    engine.state.deck = engine.state.deck.filter(
+      (card) => !winner.privateCards.some((privateCard) => privateCard.id === card.id),
+    )
+    winner.riichi = true
+    winner.blueSticks = 3
+    for (const opponent of engine.state.players.filter((player) => player.id !== winner.id)) {
+      opponent.blueSticks = 1
+    }
+    engine.state.centerBlueSticks = 2
+    engine.state.street = 4
+    engine.state.phase = "betting"
+    engine.state.currentWager = 0
+    engine.state.pendingPlayerIds = engine.state.players.map((player) => player.id)
+    engine.state.actingPlayerId = winner.id
+
+    finishCheckingRound(engine)
+
+    const result = engine.state.handResults.at(-1)!
+    expect(result.winnerIds).toContain(winner.id)
+    expect(result.riichiSettlement).toEqual({
+      winnerId: winner.id,
+      returnedToCenter: 3,
+      recipientIds: ["p2", "p3", "p4"],
+    })
+    expect(winner.blueSticks).toBe(0)
+    expect(engine.state.players.slice(1).every((player) => player.blueSticks === 2)).toBe(true)
+    expect(engine.state.centerBlueSticks).toBe(2)
+    expect(totalBlue(engine)).toBe(8)
+  })
+
+  it("returns remaining Riichi sticks after an uncontested win", () => {
+    const engine = GameEngine.create(players.slice(0, 2), { seed: "riichi-foldout" })
+    finishSeeding(engine)
+    const winnerId = engine.state.actingPlayerId!
+    const winner = engine.state.players.find((player) => player.id === winnerId)!
+    const opponent = engine.state.players.find((player) => player.id !== winnerId)!
+    winner.blueSticks = 3
+    opponent.blueSticks = 0
+    engine.state.centerBlueSticks = 1
+
+    engine.act(winnerId, { type: "bet", amount: 5, riichi: true })
+    engine.act(opponent.id, { type: "fold" })
+
+    expect(engine.state.handResults.at(-1)?.riichiSettlement).toEqual({
+      winnerId,
+      returnedToCenter: 2,
+      recipientIds: [],
+    })
+    expect(winner.blueSticks).toBe(0)
+    expect(engine.state.centerBlueSticks).toBe(2)
+    expect(totalBlue(engine)).toBe(4)
   })
 
   it("reveals 3-1-1 community cards and forbids Riichi on the final street", () => {

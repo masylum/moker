@@ -392,6 +392,9 @@ button.ghost {
   font: 0.52rem DM Mono;
   color: #9fb0a7;
 }
+.pot-mark strong {
+  font: inherit;
+}
 .seat {
   position: absolute;
   display: flex;

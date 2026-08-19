@@ -4,6 +4,7 @@ The engine follows the revised Mahjong Poker rules: 114 tiles including four Flo
 
 The source rules leave a few procedural details open. The library makes these deterministic choices:
 
+- Numbered suits are presented to players and the LLM as Cracks, Bams, and Dots. The serialized values remain `characters`, `bamboo`, and `dots` so existing saved sessions can still be restored.
 - A betting street starts with the first active player clockwise after the dealer.
 - A raise reopens action for every other active player. A street closes once every remaining player has matched the current wager or folded.
 - Chips have physical denominations of 5, 10, 20, 50, and 100. Every wager is a multiple of 5, and its `amount` is the player's target total for that street.
@@ -15,6 +16,7 @@ The source rules leave a few procedural details open. The library makes these de
 - Exactly one natural private Flower disqualifies a player at showdown, even alongside the Black Joker. If all contenders are disqualified, they split the pot as a dead heat. An uncontested winner with exactly one natural private Flower instead receives 20 chips directly from every opponent.
 - A tied pot is split in 5-chip units. Remaining 5-chip units are awarded clockwise after the dealer among the tied winners, so the engine never creates a chip denomination that does not exist.
 - Folding gives the player two penalty blue sticks. If the center runs out while paying either stick, the donor is the first clockwise player holding one.
+- Only the first Riichi declaration in a hand is legal. If that player wins, their remaining blue sticks return to the center before one stick is paid clockwise to each opponent still in the hand. This settlement also runs after an uncontested win, when there are no remaining opponents to receive a stick.
 - Publicly Fished tiles and buried tiles claimed with a Blank remain attached to that opponent's public range until visibly discarded. Equity rollouts pin those tiles to that opponent and weight the remaining range by their public calls, bets, and raises.
 - A Joker only takes an identity in a Hand of at least three cards. It cannot form natural Eyes, the natural Dragon Eye in Dragon Dancer, or Crosswinds. A Kong must contain its matching Joker because only three natural copies exist.
 - A player unable to make a payment must take an eligible Loan first. Optional wagers remain capped by available chips. Once both Loans are already held, mandatory opening charges may make the chip balance negative so a heavily penalized player cannot halt the game.

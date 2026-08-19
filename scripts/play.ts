@@ -229,7 +229,7 @@ function renderTable(game: GameEngine): void {
   const knownPrivateCards = publicKnownPrivateCards(state)
   stdout.write("\n────────────────────────────────────────────────────────\n")
   stdout.write(
-    `Hand ${state.handNumber}/${state.maxHands} · orbit ${state.orbit} (${state.orbitValue}) · street ${state.street} · ${state.phase} · pot ${state.pot} · wager ${state.currentWager} · min raise ${state.minimumRaise}\n`,
+    `Hand ${state.handNumber}/${state.maxHands} · orbit ${state.orbit} (${state.orbitValue}) · street ${state.street} · ${state.phase} · pot ${state.pot} · blue center ${state.centerBlueSticks} · wager ${state.currentWager} · min raise ${state.minimumRaise}\n`,
   )
   stdout.write(`Community  ${[...state.community].sort(compareCards).map(tile).join(" ") || "—"}\n`)
   stdout.write(`Discard A  ${state.discardA.map(tile).join(" ") || "—"}\n`)
@@ -317,6 +317,16 @@ function renderHandResult(result: HandResult): void {
 
   if (result.boardResets > 0) {
     stdout.write(`Resets     ${result.boardResets} Flower board reset(s)\n`)
+  }
+
+  if (result.riichiSettlement) {
+    const recipients = result.riichiSettlement.recipientIds
+      .map((playerId) => result.players.find((player) => player.playerId === playerId)?.name)
+      .filter(Boolean)
+      .join(", ")
+    stdout.write(
+      `Riichi     returned ${result.riichiSettlement.returnedToCenter} to center · recipients ${recipients || "none"}\n`,
+    )
   }
 
   for (const player of result.players) {

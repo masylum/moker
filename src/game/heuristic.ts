@@ -563,7 +563,7 @@ function shouldDeclareRiichi(
 ): boolean {
   return (
     state.street < 4 &&
-    !player.riichi &&
+    !state.players.some((candidate) => candidate.riichi) &&
     player.blueSticks > 0 &&
     currentScore >= 3 &&
     winRate >= 0.4

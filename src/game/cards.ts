@@ -79,7 +79,7 @@ export function faceKey(card: CardFace): string {
 export function cardLabel(card: CardFace): string {
   switch (card.kind) {
     case "numbered":
-      return `${card.rank} ${capitalize(card.suit)}`
+      return `${card.rank} ${suitLabel(card.suit)}`
     case "dragon":
       return `${capitalize(card.dragon)} Dragon`
     case "wind":
@@ -129,6 +129,10 @@ export function blankFace(): CardFace {
 
 export function suitColor(suit: Suit): CardColor {
   return suit === "bamboo" ? "green" : suit === "dots" ? "blue" : "red"
+}
+
+export function suitLabel(suit: Suit): "Bams" | "Dots" | "Cracks" {
+  return suit === "bamboo" ? "Bams" : suit === "dots" ? "Dots" : "Cracks"
 }
 
 export function sameNaturalFace(left: CardFace, right: CardFace): boolean {

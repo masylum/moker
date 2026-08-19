@@ -99,7 +99,7 @@ describe("fixed five-card ladder", () => {
   it("describes the defining cards of the winning Hand", () => {
     const cards = [...n("bamboo", 3), ...n("bamboo", 4), ...n("bamboo", 5)]
 
-    expect(describeScore(scoreHand(cards), cards)).toBe("Chow · 3-4-5 Bamboo (rank 3)")
+    expect(describeScore(scoreHand(cards), cards)).toBe("Chow · 3-4-5 Bams (rank 3)")
   })
 })
 
