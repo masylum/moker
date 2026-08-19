@@ -3,7 +3,8 @@ import { summarizeHandProgress } from "./hand-progress"
 import { publicKnownPrivateCards } from "./information"
 import { SeededRandom } from "./random"
 import { CHIP_UNIT, ORBIT_VALUES, PRIVATE_CARD_COUNT, toChipUnit } from "./rules"
-import { compareHandScores, scoreHand } from "./scoring"
+import { compareHandStrengths, scoreHandStrength } from "./scoring"
+import { clearStrengthCache, summarizeHandPotential } from "./strength"
 import type {
   BettingAction,
   BlankExchange,
@@ -30,6 +31,14 @@ interface DrawPlan {
   source: CardSource
   blankExchange?: BlankExchange
   value: number
+}
+
+const privatePotentialCache = new Map<string, number>()
+const PRIVATE_POTENTIAL_CACHE_LIMIT = 100_000
+
+export function clearHeuristicCaches(): void {
+  privatePotentialCache.clear()
+  clearStrengthCache()
 }
 
 export function chooseHeuristicAction(
@@ -61,7 +70,10 @@ export function chooseHeuristicAction(
     const expectedOpponentContribution =
       aggressive && (action.type === "bet" || action.type === "raise")
         ? state.players
-            .filter((candidate) => !candidate.folded && candidate.id !== playerId)
+            .filter(
+              (candidate) =>
+                !candidate.eliminated && !candidate.folded && candidate.id !== playerId,
+            )
             .reduce(
               (total, candidate) =>
                 total + Math.max(0, action.amount - candidate.roundCommitted) * responseRate,
@@ -194,7 +206,9 @@ export function analyzePokerMath(
   const progress = summarizeHandProgress([...player.privateCards, ...state.community])
   const activeOpponentIds = new Set(
     state.players
-      .filter((candidate) => !candidate.folded && candidate.id !== playerId)
+      .filter(
+        (candidate) => !candidate.eliminated && !candidate.folded && candidate.id !== playerId,
+      )
       .map((candidate) => candidate.id),
   )
   const publicCards = publicKnownPrivateCards(state)
@@ -370,10 +384,43 @@ function bestImmediatePrivatePotential(candidateCards: Card[], state: GameState)
 }
 
 function privatePotential(privateCards: Card[], state: GameState): number {
-  const progress = summarizeHandProgress([...privateCards, ...state.community])
-  const next = progress.nextClosest
+  const cacheKey = [...privateCards, ...state.community]
+    .map((card) =>
+      card.kind === "numbered"
+        ? `${card.suit}-${card.rank}`
+        : card.kind === "dragon"
+          ? `dragon-${card.dragon}`
+          : card.kind === "wind"
+            ? `wind-${card.wind}`
+            : card.kind === "flower"
+              ? `flower-${card.flower}`
+              : card.kind === "joker"
+                ? `joker-${card.color}`
+                : "blank",
+    )
+    .sort()
+    .join("|")
+  const cached = privatePotentialCache.get(cacheKey)
 
-  return progress.currentBest.rank * 100 + (next ? (10 - next.missing) * 2 + next.rank / 100 : 0)
+  if (cached !== undefined) {
+    return cached
+  }
+
+  const progress = summarizeHandPotential([...privateCards, ...state.community])
+
+  const potential =
+    progress.currentRank * 100 +
+    (progress.nextMissing !== null && progress.nextRank !== null
+      ? (10 - progress.nextMissing) * 2 + progress.nextRank / 100
+      : 0)
+
+  if (privatePotentialCache.size >= PRIVATE_POTENTIAL_CACHE_LIMIT) {
+    privatePotentialCache.clear()
+  }
+
+  privatePotentialCache.set(cacheKey, potential)
+
+  return potential
 }
 
 function analyzePrivateFuture(
@@ -392,7 +439,7 @@ function analyzePrivateFuture(
   let equityWeight = 0
   const trials = Math.max(1, samples)
   const opponents = state.players.filter(
-    (candidate) => !candidate.folded && candidate.id !== playerId,
+    (candidate) => !candidate.eliminated && !candidate.folded && candidate.id !== playerId,
   )
   const publicCards = publicKnownPrivateCards(state)
   const knownOpponentCards = opponents.flatMap((opponent) => publicCards[opponent.id] ?? [])
@@ -408,7 +455,7 @@ function analyzePrivateFuture(
     const completionIds = new Set(completion.map((card) => card.id))
     const remaining = shuffled.filter((card) => !completionIds.has(card.id))
     const completed = [...privateCards, ...state.community, ...completion]
-    const score = scoreHand(completed)
+    const score = scoreHandStrength(completed)
     total += score.total
 
     if (score.total > current) {
@@ -421,7 +468,7 @@ function analyzePrivateFuture(
       const hiddenCount = Math.max(0, PRIVATE_CARD_COUNT - known.length)
       const cards = [...known, ...remaining.slice(cursor, cursor + hiddenCount)]
       cursor += hiddenCount
-      const opponentScore = scoreHand([...cards, ...state.community, ...completion])
+      const opponentScore = scoreHandStrength([...cards, ...state.community, ...completion])
 
       return {
         eligible: !hasSingleFlower(cards),
@@ -442,14 +489,14 @@ function analyzePrivateFuture(
       continue
     }
 
-    const bestScore = eligibleScores.sort((left, right) => compareHandScores(right, left))[0]!
+    const bestScore = eligibleScores.sort((left, right) => compareHandStrengths(right, left))[0]!
 
-    if (ownEligible && compareHandScores(score, bestScore) === 0) {
+    if (ownEligible && compareHandStrengths(score, bestScore) === 0) {
       equity +=
         (sampleWeight * 1) /
         (1 +
           opponentResults.filter(
-            (opponent) => opponent.eligible && compareHandScores(opponent.score, score) === 0,
+            (opponent) => opponent.eligible && compareHandStrengths(opponent.score, score) === 0,
           ).length)
     }
   }
@@ -506,7 +553,7 @@ function unknownCards(state: GameState, privateCards: Card[]): Card[] {
 function currentStrength(privateCards: Card[], state: GameState): number {
   const cards = [...privateCards, ...state.community]
 
-  return scoreHand(cards).total
+  return scoreHandStrength(cards).total
 }
 
 function chooseDiscardPile(state: GameState, discarded: Card): DiscardPile {

@@ -63,18 +63,31 @@ export type HandWinReason = "showdown" | "uncontested"
 export interface HandResultPlayer {
   playerId: string
   name: string
+  participated: boolean
+  eliminated: boolean
   folded: boolean
   riichi: boolean
   flowerDisqualified: boolean
+  openingCards: Card[]
+  acquiredCards: Card[]
   cards: Card[]
   score: HandScore
+  chips: number
+  blueSticks: number
+  loans: number
   committed: number
   payout: number
 }
 
 export interface HandResult {
   handNumber: number
+  openingPot: number
+  openingBlueCharge: number
+  openingLoanCharge: number
   pot: number
+  openingCenterBlueSticks: number
+  centerBlueSticks: number
+  participantIds: string[]
   community: Card[]
   winnerIds: string[]
   reason: HandWinReason
@@ -95,6 +108,8 @@ export interface PlayerState {
   name: string
   controller: PlayerController
   chips: number
+  eliminated: boolean
+  eliminatedAtHand: number | null
   blueSticks: number
   loans: number
   loansCharged: number[]
@@ -175,7 +190,12 @@ export interface GameState {
   discardB: Card[]
   removedCards: Card[]
   scrappedCommunity: Card[]
+  openingPrivateCards: Record<string, Card[]>
+  openingPot: number
+  openingBlueCharge: number
+  openingLoanCharge: number
   pot: number
+  openingCenterBlueSticks: number
   centerBlueSticks: number
   currentWager: number
   minimumRaise: number
@@ -282,7 +302,7 @@ export interface PublicPlayerState extends Omit<PlayerState, "privateCards"> {
 
 export interface PublicGameState extends Omit<
   GameState,
-  "players" | "deck" | "drawDiscardHistory"
+  "players" | "deck" | "drawDiscardHistory" | "openingPrivateCards"
 > {
   players: PublicPlayerState[]
   deck: { count: number }

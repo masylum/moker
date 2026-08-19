@@ -4,7 +4,7 @@ import {
   chooseHeuristicDiscard,
   chooseHeuristicSeedDiscard,
 } from "./heuristic"
-import { MAX_LOANS, ORBIT_VALUES } from "./rules"
+import { LOAN_VALUE, MAX_LOANS, ORBIT_VALUES } from "./rules"
 import type { DiscardChoice, SeedDiscardChoice } from "./heuristic"
 import type { DrawDiscardRecord, HeuristicDecision } from "./types"
 
@@ -94,7 +94,14 @@ export function ensureOpeningLiquidity(engine: GameEngine): void {
   const orbit = Math.min(2, Math.floor((nextHand - 1) / handsPerOrbit))
   const orbitValue = ORBIT_VALUES[orbit]!
 
-  for (const player of engine.state.players) {
+  for (const player of engine.state.players.filter((candidate) => !candidate.eliminated)) {
+    while (
+      player.loansCharged.some((charges) => charges >= 1) &&
+      player.chips >= LOAN_VALUE + orbitValue * (player.blueSticks + player.loans - 1)
+    ) {
+      engine.repayLoan(player.id)
+    }
+
     const charge = orbitValue * (player.blueSticks + player.loans)
 
     while (player.chips < charge && player.loans < MAX_LOANS) {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   blankFace,
+  createDeck,
   dragonFace,
   flowerFace,
   jokerFace,
@@ -8,7 +9,9 @@ import {
   windFace,
 } from "../src/game/cards"
 import { analyzeHandProgress, summarizeHandProgress } from "../src/game/hand-progress"
-import { compareHandScores, describeScore, scoreHand } from "../src/game/scoring"
+import { SeededRandom } from "../src/game/random"
+import { compareHandScores, describeScore, scoreHand, scoreHandStrength } from "../src/game/scoring"
+import { summarizeHandPotential } from "../src/game/strength"
 import type {
   Card,
   Dragon,
@@ -37,6 +40,25 @@ function kind(cards: Card[]): HandKind {
 }
 
 describe("fixed five-card ladder", () => {
+  it("keeps the rollout scorer equivalent across random hands", () => {
+    const random = new SeededRandom("strength-equivalence")
+    const deck = createDeck()
+
+    for (let sample = 0; sample < 1_000; sample += 1) {
+      const size = 2 + Math.floor(random.next() * 7)
+      const cards = random.shuffle(deck).slice(0, size)
+      const full = scoreHand(cards)
+      const progress = summarizeHandProgress(cards)
+
+      expect(scoreHandStrength(cards)).toEqual({ total: full.total, tieBreak: full.tieBreak })
+      expect(summarizeHandPotential(cards)).toEqual({
+        currentRank: progress.currentBest.rank,
+        nextRank: progress.nextClosest?.rank ?? null,
+        nextMissing: progress.nextClosest?.missing ?? null,
+      })
+    }
+  })
+
   const fixtures: Array<[number, HandKind, Card[]]> = [
     [1, "high-card", [...n("bamboo", 1), ...blanks(1)]],
     [2, "eye", n("bamboo", 7, 2)],

@@ -6,7 +6,7 @@ import { cardLabel, compareCards } from "../src/game/cards"
 import { GameEngine, type PlayerSetup } from "../src/game/engine"
 import { analyzePokerMath } from "../src/game/heuristic"
 import { publicKnownPrivateCards } from "../src/game/information"
-import { CHIP_UNIT } from "../src/game/rules"
+import { CHIP_UNIT, MAX_LOANS } from "../src/game/rules"
 import type {
   BettingAction,
   BlankExchange,
@@ -112,7 +112,7 @@ async function playBettingTurn(game: GameEngine): Promise<void> {
   const player = game.state.players.find((candidate) => candidate.id === "p1")!
   const labels = legal.map(actionLabel)
 
-  if (player.loans < 2) {
+  if (!player.eliminated && player.loans < MAX_LOANS) {
     labels.push("Take a 200-chip Loan")
   }
 
@@ -262,7 +262,7 @@ function renderTable(game: GameEngine): void {
           ].join(" "),
     ]
 
-    if (debug) {
+    if (debug && !player.eliminated) {
       const math = analyzePokerMath(state, player.id, Math.min(32, samples))
       const draw = state.drawDiscardHistory.filter((record) => record.playerId === player.id).at(-1)
       row.push(
@@ -275,11 +275,14 @@ function renderTable(game: GameEngine): void {
           ? `${tile(draw.drawnCard)} → ${tile(draw.discardedCard)} ${draw.discardPile.toUpperCase()}`
           : "—",
       )
+    } else if (debug) {
+      row.push("—", "—", "—", "—", "—", "—")
     }
 
     row.push(
       [
         player.id === state.actingPlayerId ? "acting" : "",
+        player.eliminated ? "ELIMINATED" : "",
         player.folded ? "folded" : "",
         player.riichi ? "RIICHI" : "",
       ]

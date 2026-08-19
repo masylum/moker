@@ -1,5 +1,6 @@
 import { For, Show, createEffect, createMemo, createSignal } from "solid-js"
 import { cardLabel, compareCards, suitLabel } from "../game/cards"
+import { MAX_LOANS } from "../game/rules"
 import type {
   BettingAction,
   BlankExchange,
@@ -644,7 +645,9 @@ export function App() {
                 </Show>
                 <button
                   class="ghost"
-                  disabled={busy() || (human()?.loans ?? 0) >= 2}
+                  disabled={
+                    busy() || Boolean(human()?.eliminated) || (human()?.loans ?? 0) >= MAX_LOANS
+                  }
                   onClick={() =>
                     perform(() => gameAction(sessionId(), { kind: "take-loan", playerId: "p1" }))
                   }
@@ -771,6 +774,7 @@ function Seat(props: {
         <small>
           <b class="blue">● {props.player.blueSticks}</b> <b class="red">● {props.player.loans}</b>
           {props.player.riichi ? " · RIICHI" : ""}
+          {props.player.eliminated ? " · ELIMINATED" : ""}
         </small>
         <small class="seat-bet">
           Street {props.player.roundCommitted} · total {props.player.handCommitted}

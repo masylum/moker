@@ -51,6 +51,15 @@ export class GameEngine {
     this.state.bettingHistory ??= []
     this.state.boardResetCount ??= 0
     this.state.scrappedCommunity ??= []
+    this.state.openingPrivateCards ??= {}
+    this.state.openingPot ??= 0
+    this.state.openingBlueCharge ??= 0
+    this.state.openingLoanCharge ??= 0
+    this.state.openingCenterBlueSticks ??= this.state.centerBlueSticks
+    for (const player of this.state.players) {
+      player.eliminated ??= false
+      player.eliminatedAtHand ??= null
+    }
     this.events = events
     this.random = new SeededRandom(state.config.seed, state.rngState)
   }
@@ -77,6 +86,8 @@ export class GameEngine {
         name: player.name,
         controller: player.controller,
         chips: config.startingChips,
+        eliminated: false,
+        eliminatedAtHand: null,
         blueSticks: 1,
         loans: 0,
         loansCharged: [],
@@ -92,7 +103,12 @@ export class GameEngine {
       discardB: [],
       removedCards: [],
       scrappedCommunity: [],
+      openingPrivateCards: {},
+      openingPot: 0,
+      openingBlueCharge: 0,
+      openingLoanCharge: 0,
       pot: 0,
+      openingCenterBlueSticks: config.playerCount,
       centerBlueSticks: config.playerCount,
       currentWager: 0,
       minimumRaise: CHIP_UNIT,
@@ -122,19 +138,57 @@ export class GameEngine {
     this.assertPhase("between-hands")
     if (this.state.handNumber >= this.state.maxHands) {
       this.finishGame()
+
       return
     }
+
+    const nextHand = this.state.handNumber + 1
+    const nextOrbit = orbitFor(nextHand, this.state.config.playerCount)
+    const nextOrbitValue = ORBIT_VALUES[nextOrbit - 1]!
+    const needsLoan = this.participatingPlayers().find(
+      (player) =>
+        player.chips < nextOrbitValue * (player.blueSticks + player.loans) &&
+        player.loans < MAX_LOANS,
+    )
+
+    if (needsLoan) {
+      throw new Error(`${needsLoan.name} needs a Loan before starting hand ${nextHand}`)
+    }
+
+    for (const player of this.participatingPlayers()) {
+      const charge = nextOrbitValue * (player.blueSticks + player.loans)
+
+      if (player.chips < charge) {
+        this.eliminatePlayer(player, nextHand, charge)
+      }
+    }
+
+    if (this.participatingPlayers().length < 2) {
+      this.finishGame()
+
+      return
+    }
+
+    if (this.playerAt(this.state.dealerIndex).eliminated) {
+      this.state.dealerIndex = this.nextParticipatingIndex(this.state.dealerIndex)
+    }
+
     this.state.handNumber += 1
-    this.state.orbit = orbitFor(this.state.handNumber, this.state.config.playerCount)
-    this.state.orbitValue = ORBIT_VALUES[this.state.orbit - 1]!
+    this.state.orbit = nextOrbit
+    this.state.orbitValue = nextOrbitValue
     this.state.street = 0
     this.state.phase = "betting"
+    this.state.openingPot = 0
+    this.state.openingBlueCharge = 0
+    this.state.openingLoanCharge = 0
     this.state.pot = 0
+    this.state.openingCenterBlueSticks = this.state.centerBlueSticks
     this.state.community = []
     this.state.discardA = []
     this.state.discardB = []
     this.state.removedCards = []
     this.state.scrappedCommunity = []
+    this.state.openingPrivateCards = {}
     this.state.drawDiscardHistory = []
     this.state.seedDiscardHistory = []
     this.state.bettingHistory = []
@@ -145,7 +199,7 @@ export class GameEngine {
     this.state.minimumRaise = CHIP_UNIT
     this.state.deck = this.random.shuffle(createDeck())
 
-    for (const player of this.state.players) {
+    for (const player of this.participatingPlayers()) {
       player.privateCards = []
       player.folded = false
       player.riichi = false
@@ -153,15 +207,26 @@ export class GameEngine {
       player.handCommitted = 0
       player.score = undefined
       player.loansCharged = player.loansCharged.map((charges) => charges + 1)
+      this.state.openingBlueCharge += this.state.orbitValue * player.blueSticks
+      this.state.openingLoanCharge += this.state.orbitValue * player.loans
       const charge = this.state.orbitValue * (player.blueSticks + player.loans)
       this.payOpeningCharge(player, charge)
     }
 
+    this.state.openingPot = this.state.pot
+
+    const dealOrder = this.orderedAfter(this.state.dealerIndex).filter(
+      (player) => !player.eliminated,
+    )
     for (let cardIndex = 0; cardIndex < OPENING_PRIVATE_CARD_COUNT; cardIndex += 1) {
-      for (let offset = 1; offset <= this.state.players.length; offset += 1) {
-        this.playerAt(this.state.dealerIndex + offset).privateCards.push(this.drawDeck())
+      for (const player of dealOrder) {
+        player.privateCards.push(this.drawDeck())
       }
     }
+
+    this.state.openingPrivateCards = Object.fromEntries(
+      dealOrder.map((player) => [player.id, structuredClone(player.privateCards)]),
+    )
     this.state.rngState = this.random.state
     this.emit("hand-started", {
       dealerId: this.playerAt(this.state.dealerIndex).id,
@@ -227,7 +292,7 @@ export class GameEngine {
 
     const player = this.getPlayer(playerId)
 
-    if (player.folded) {
+    if (player.folded || player.eliminated) {
       return []
     }
 
@@ -414,8 +479,12 @@ export class GameEngine {
 
     const player = this.getPlayer(playerId)
 
+    if (player.eliminated) {
+      throw new Error("An eliminated player cannot take a Loan")
+    }
+
     if (player.loans >= MAX_LOANS) {
-      throw new Error("A player may hold at most two Loans")
+      throw new Error(`A player may hold at most ${MAX_LOANS} Loans`)
     }
 
     player.loans += 1
@@ -442,7 +511,11 @@ export class GameEngine {
   }
 
   publicView(viewerId?: string, revealAll = false): PublicGameState {
-    const { drawDiscardHistory: _drawDiscardHistory, ...publicState } = structuredClone(this.state)
+    const {
+      drawDiscardHistory: _drawDiscardHistory,
+      openingPrivateCards: _openingPrivateCards,
+      ...publicState
+    } = structuredClone(this.state)
     const knownPrivateCards = publicKnownPrivateCards(this.state)
 
     return {
@@ -471,7 +544,7 @@ export class GameEngine {
 
   private beginSeedDiscards(): void {
     this.state.phase = "seeding"
-    const ordered = this.orderedAfter(this.state.dealerIndex)
+    const ordered = this.orderedAfter(this.state.dealerIndex).filter((player) => !player.eliminated)
     this.state.pendingPlayerIds = ordered.map((player) => player.id)
     this.state.actingPlayerId = this.state.pendingPlayerIds[0] ?? null
     this.emit("seed-discard-started", {
@@ -529,7 +602,7 @@ export class GameEngine {
     this.state.currentWager = 0
     this.state.minimumRaise = CHIP_UNIT
 
-    for (const player of this.state.players) {
+    for (const player of this.participatingPlayers()) {
       player.roundCommitted = 0
     }
 
@@ -701,7 +774,7 @@ export class GameEngine {
     this.state.phase = "between-hands"
     this.state.actingPlayerId = null
     this.state.pendingPlayerIds = []
-    this.state.dealerIndex = (this.state.dealerIndex + 1) % this.state.players.length
+    this.state.dealerIndex = this.nextParticipatingIndex(this.state.dealerIndex)
 
     if (this.state.handNumber >= this.state.maxHands) {
       this.finishGame()
@@ -713,7 +786,7 @@ export class GameEngine {
       return
     }
 
-    for (const player of this.state.players) {
+    for (const player of this.participatingPlayers()) {
       const charge = 15 * (player.blueSticks + player.loans)
       player.chips -= charge
     }
@@ -758,7 +831,13 @@ export class GameEngine {
   ): void {
     this.state.handResults.push({
       handNumber: this.state.handNumber,
+      openingPot: this.state.openingPot,
+      openingBlueCharge: this.state.openingBlueCharge,
+      openingLoanCharge: this.state.openingLoanCharge,
       pot,
+      openingCenterBlueSticks: this.state.openingCenterBlueSticks,
+      centerBlueSticks: this.state.centerBlueSticks,
+      participantIds: this.participatingPlayers().map((player) => player.id),
       community: structuredClone(this.state.community),
       winnerIds: [...this.state.handWinners],
       reason,
@@ -768,11 +847,23 @@ export class GameEngine {
       players: this.state.players.map((player) => ({
         playerId: player.id,
         name: player.name,
+        participated: !player.eliminated,
+        eliminated: player.eliminated,
         folded: player.folded,
         riichi: player.riichi,
         flowerDisqualified: reason === "showdown" && this.hasSingleFlower(player),
+        openingCards: structuredClone(this.state.openingPrivateCards[player.id] ?? []),
+        acquiredCards: uniqueCards([
+          ...(this.state.openingPrivateCards[player.id] ?? []),
+          ...this.state.drawDiscardHistory
+            .filter((record) => record.playerId === player.id)
+            .map((record) => record.drawnCard),
+        ]),
         cards: structuredClone(player.privateCards),
         score: player.score ?? scoreHand([...player.privateCards, ...this.state.community]),
+        chips: player.chips,
+        blueSticks: player.blueSticks,
+        loans: player.loans,
         committed: player.handCommitted,
         payout: payouts[player.id] ?? 0,
       })),
@@ -796,7 +887,7 @@ export class GameEngine {
   private payFlowerFoldBonus(winner: PlayerState): HandResult["flowerBonus"] {
     let total = 0
 
-    for (const opponent of this.state.players) {
+    for (const opponent of this.participatingPlayers()) {
       if (opponent.id === winner.id) {
         continue
       }
@@ -881,7 +972,7 @@ export class GameEngine {
   }
 
   private payOpeningCharge(player: PlayerState, amount: number): void {
-    if (player.chips < amount && player.loans < MAX_LOANS) {
+    if (player.chips < amount) {
       throw new Error(`${player.name} needs a Loan before paying ${amount}`)
     }
 
@@ -899,11 +990,42 @@ export class GameEngine {
   }
 
   private activePlayers(): PlayerState[] {
-    return this.state.players.filter((player) => !player.folded)
+    return this.state.players.filter((player) => !player.eliminated && !player.folded)
   }
 
   private orderedActiveAfter(index: number): PlayerState[] {
-    return this.orderedAfter(index).filter((player) => !player.folded)
+    return this.orderedAfter(index).filter((player) => !player.eliminated && !player.folded)
+  }
+
+  private participatingPlayers(): PlayerState[] {
+    return this.state.players.filter((player) => !player.eliminated)
+  }
+
+  private nextParticipatingIndex(index: number): number {
+    const next = this.orderedAfter(index).find((player) => !player.eliminated)
+
+    return next ? this.state.players.indexOf(next) : index
+  }
+
+  private eliminatePlayer(player: PlayerState, beforeHand: number, requiredCharge: number): void {
+    const returnedBlueSticks = player.blueSticks
+    this.state.centerBlueSticks += returnedBlueSticks
+    player.blueSticks = 0
+    player.eliminated = true
+    player.eliminatedAtHand = beforeHand
+    player.folded = true
+    player.privateCards = []
+    this.emit(
+      "player-eliminated",
+      {
+        beforeHand,
+        chips: player.chips,
+        loans: player.loans,
+        requiredCharge,
+        returnedBlueSticks,
+      },
+      player.id,
+    )
   }
 
   private orderedAfter(index: number): PlayerState[] {
@@ -958,4 +1080,8 @@ export class GameEngine {
       throw new Error(`Expected ${phase}, got ${this.state.phase}`)
     }
   }
+}
+
+function uniqueCards(cards: readonly Card[]): Card[] {
+  return [...new Map(cards.map((card) => [card.id, structuredClone(card)])).values()]
 }

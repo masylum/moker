@@ -415,14 +415,24 @@ function naturalPairFaces(cards: readonly Card[]): CardFace[] {
 
 function chowIdentity(cards: readonly Card[]): ChowIdentity | null {
   for (const suit of SUITS) {
-    for (let start = 7; start >= 1; start -= 1) {
-      const targets = [
-        numberedFace(suit, start as 1 | 2 | 3 | 4 | 5 | 6 | 7),
-        numberedFace(suit, (start + 1) as 2 | 3 | 4 | 5 | 6 | 7 | 8),
-        numberedFace(suit, (start + 2) as 3 | 4 | 5 | 6 | 7 | 8 | 9),
-      ]
+    const ranks: number[] = []
+    let compatible = true
 
-      if (matchesTargets(cards, targets)) {
+    for (const card of cards) {
+      if (card.kind === "numbered" && card.suit === suit) {
+        ranks.push(card.rank)
+      } else if (card.kind !== "joker" || !jokerCanRepresent(card, numberedFace(suit, 1))) {
+        compatible = false
+        break
+      }
+    }
+
+    if (!compatible || new Set(ranks).size !== ranks.length) {
+      continue
+    }
+
+    for (let start = 7; start >= 1; start -= 1) {
+      if (ranks.every((rank) => rank >= start && rank <= start + 2)) {
         return { suit, start }
       }
     }

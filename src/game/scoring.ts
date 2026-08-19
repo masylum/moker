@@ -1,7 +1,10 @@
 import { cardLabel } from "./cards"
 import { generateHandCandidates, type HandCandidate } from "./melds"
 import { HAND_RANKS } from "./rules"
-import type { Card, HandScore } from "./types"
+import { compareHandStrengths, scoreHandStrength, type HandStrength } from "./strength"
+import type { Card, CardFace, HandScore } from "./types"
+
+export { compareHandStrengths, scoreHandStrength, type HandStrength }
 
 export function scoreHand(cards: readonly Card[]): HandScore {
   const candidates = generateHandCandidates(cards)
@@ -37,21 +40,7 @@ export function scoreHand(cards: readonly Card[]): HandScore {
 }
 
 export function compareHandScores(left: HandScore, right: HandScore): number {
-  if (left.total !== right.total) {
-    return left.total - right.total
-  }
-
-  const length = Math.max(left.tieBreak.length, right.tieBreak.length)
-
-  for (let index = 0; index < length; index += 1) {
-    const difference = (left.tieBreak[index] ?? 0) - (right.tieBreak[index] ?? 0)
-
-    if (difference !== 0) {
-      return difference
-    }
-  }
-
-  return 0
+  return compareHandStrengths(left, right)
 }
 
 export function describeScore(score: HandScore, cards: readonly Card[]): string {
@@ -83,7 +72,7 @@ function compareCandidates(left: HandCandidate, right: HandCandidate): number {
   return left.cardIds.join(":").localeCompare(right.cardIds.join(":"))
 }
 
-function tieValue(card: Card): number {
+function tieValue(card: CardFace): number {
   if (card.kind === "numbered") {
     return card.rank
   }

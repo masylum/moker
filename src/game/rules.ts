@@ -5,7 +5,7 @@ import type { GameConfig, HandKind } from "./types"
 export const ORBIT_VALUES = [5, 10, 15] as const
 export const STARTING_CHIPS = 510
 export const LOAN_VALUE = 200
-export const MAX_LOANS = 2
+export const MAX_LOANS = 3
 export const PRIVATE_CARD_COUNT = 3
 export const OPENING_PRIVATE_CARD_COUNT = 4
 export const FLOWER_FOLD_BONUS = 20

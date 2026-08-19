@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { ensureOpeningLiquidity } from "../src/game/automation"
 import { GameEngine } from "../src/game/engine"
 import { blankFace, flowerFace, jokerFace, numberedFace } from "../src/game/cards"
 import { agentRulebook } from "../src/game/rulebook"
@@ -73,6 +74,19 @@ describe("game lifecycle", () => {
     engine.act(folder, { type: "fold" })
     expect(engine.state.players.find((player) => player.id === folder)?.blueSticks).toBe(before + 2)
     expect(totalBlue(engine)).toBe(8)
+  })
+
+  it("repays a seasoned Loan while preserving the next opening charge", () => {
+    const engine = GameEngine.create(players, { seed: "loan-repayment" })
+    const player = engine.state.players[0]!
+    engine.takeLoan(player.id)
+    player.loansCharged[0] = 1
+
+    ensureOpeningLiquidity(engine)
+
+    expect(player.loans).toBe(0)
+    expect(player.chips).toBe(505)
+    expect(engine.events.at(-1)).toMatchObject({ type: "loan-repaid", actorId: player.id })
   })
 
   it("enforces chip denominations and poker-style minimum raises", () => {
@@ -220,25 +234,30 @@ describe("game lifecycle", () => {
     engine.takeLoan("p1")
     expect(() => engine.repayLoan("p1")).toThrow(/interest/)
     engine.takeLoan("p1")
-    expect(() => engine.takeLoan("p1")).toThrow(/at most two/)
+    engine.takeLoan("p1")
+    expect(() => engine.takeLoan("p1")).toThrow(/at most 3/)
     engine.state.players.find((player) => player.id === "p1")!.loansCharged[0] = 1
     const chips = engine.state.players.find((player) => player.id === "p1")!.chips
     engine.repayLoan("p1")
     expect(engine.state.players.find((player) => player.id === "p1")!.chips).toBe(chips - 200)
   })
 
-  it("lets a fully loaned player survive a mandatory opening charge", () => {
+  it("eliminates a fully loaned player who cannot pay the next opening charge", () => {
     const engine = GameEngine.create(players, { seed: "mandatory-debt" })
     engine.state.phase = "between-hands"
     const player = engine.state.players[0]!
     player.chips = 0
-    player.loans = 2
-    player.loansCharged = [1, 1]
+    player.loans = 3
+    player.loansCharged = [1, 1, 1]
     player.blueSticks = 3
 
     engine.startNextHand()
 
-    expect(player.chips).toBe(-25)
+    expect(player.eliminated).toBe(true)
+    expect(player.eliminatedAtHand).toBe(2)
+    expect(player.blueSticks).toBe(0)
+    expect(engine.state.centerBlueSticks).toBe(7)
+    expect(engine.state.players.filter((candidate) => !candidate.eliminated)).toHaveLength(3)
     expect(engine.state.phase).toBe("seeding")
   })
 

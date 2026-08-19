@@ -23,7 +23,13 @@ import {
 
 interface Requirement {
   face: CardFace
+  key: string
   naturalOnly: boolean
+}
+
+interface PreparedCards {
+  natural: Array<{ card: Card; key: string }>
+  jokers: Card[]
 }
 
 interface HandDefinition {
@@ -147,7 +153,7 @@ function exactDefinition(
 }
 
 function requirement(face: CardFace, naturalOnly: boolean): Requirement {
-  return { face, naturalOnly }
+  return { face, key: faceKey(face), naturalOnly }
 }
 
 function repeat(face: CardFace, count: number, naturalOnly: boolean): Requirement[] {
@@ -235,54 +241,123 @@ function bestAlternativeMatch(
   cards: readonly Card[],
   alternatives: readonly Requirement[][],
 ): string[] {
-  let best: string[] = []
+  const prepared = prepareCards(cards)
+  let bestTargets: readonly Requirement[] | null = null
+  let bestCount = 0
 
   for (const targets of alternatives) {
-    const matched = bestTargetMatch(cards, targets)
+    const count = targetMatchCount(prepared, targets)
 
-    if (matched.length > best.length) {
-      best = matched
+    if (count > bestCount) {
+      bestTargets = targets
+      bestCount = count
     }
   }
 
-  return best
+  return bestTargets ? targetMatchedIds(prepared, bestTargets) : []
 }
 
-function bestTargetMatch(cards: readonly Card[], targets: readonly Requirement[]): string[] {
-  const available = targets.map((target, index) => ({ ...target, index }))
-  const matched: string[] = []
-  const naturalCards = cards.filter((card) => card.kind !== "blank" && card.kind !== "joker")
+function prepareCards(cards: readonly Card[]): PreparedCards {
+  return {
+    natural: cards
+      .filter((card) => card.kind !== "blank" && card.kind !== "joker")
+      .map((card) => ({ card, key: faceKey(card) })),
+    jokers: cards.filter((card) => card.kind === "joker"),
+  }
+}
 
-  for (const card of naturalCards) {
-    const matching = available
-      .filter((target) => faceKey(card) === faceKey(target.face))
-      .sort((left, right) => Number(right.naturalOnly) - Number(left.naturalOnly))[0]
+function targetMatchCount(prepared: PreparedCards, targets: readonly Requirement[]): number {
+  let usedTargets = 0
+  let matched = 0
 
-    if (!matching) {
-      continue
+  for (const card of prepared.natural) {
+    const targetIndex = findNaturalTarget(card.key, targets, usedTargets)
+
+    if (targetIndex >= 0) {
+      usedTargets |= 1 << targetIndex
+      matched += 1
     }
-
-    available.splice(
-      available.findIndex((target) => target.index === matching.index),
-      1,
-    )
-    matched.push(card.id)
   }
 
-  for (const joker of cards.filter((card) => card.kind === "joker")) {
-    const targetIndex = available.findIndex(
-      (target) => !target.naturalOnly && jokerCanRepresent(joker, target.face),
-    )
+  for (const joker of prepared.jokers) {
+    const targetIndex = findJokerTarget(joker, targets, usedTargets)
 
-    if (targetIndex < 0) {
-      continue
+    if (targetIndex >= 0) {
+      usedTargets |= 1 << targetIndex
+      matched += 1
     }
-
-    available.splice(targetIndex, 1)
-    matched.push(joker.id)
   }
 
   return matched
+}
+
+function targetMatchedIds(prepared: PreparedCards, targets: readonly Requirement[]): string[] {
+  let usedTargets = 0
+  const matched: string[] = []
+
+  for (const natural of prepared.natural) {
+    const targetIndex = findNaturalTarget(natural.key, targets, usedTargets)
+
+    if (targetIndex >= 0) {
+      usedTargets |= 1 << targetIndex
+      matched.push(natural.card.id)
+    }
+  }
+
+  for (const joker of prepared.jokers) {
+    const targetIndex = findJokerTarget(joker, targets, usedTargets)
+
+    if (targetIndex >= 0) {
+      usedTargets |= 1 << targetIndex
+      matched.push(joker.id)
+    }
+  }
+
+  return matched
+}
+
+function findNaturalTarget(
+  cardKey: string,
+  targets: readonly Requirement[],
+  usedTargets: number,
+): number {
+  for (let pass = 0; pass < 2; pass += 1) {
+    const naturalOnly = pass === 0
+
+    for (let index = 0; index < targets.length; index += 1) {
+      const target = targets[index]!
+
+      if (
+        (usedTargets & (1 << index)) === 0 &&
+        target.naturalOnly === naturalOnly &&
+        target.key === cardKey
+      ) {
+        return index
+      }
+    }
+  }
+
+  return -1
+}
+
+function findJokerTarget(
+  joker: Card,
+  targets: readonly Requirement[],
+  usedTargets: number,
+): number {
+  for (let index = 0; index < targets.length; index += 1) {
+    const target = targets[index]!
+
+    if (
+      (usedTargets & (1 << index)) === 0 &&
+      !target.naturalOnly &&
+      target.face.color === joker.color
+    ) {
+      return index
+    }
+  }
+
+  return -1
 }
 
 function bestPureSuitMatch(cards: readonly Card[]): string[] {

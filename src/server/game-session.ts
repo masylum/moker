@@ -53,9 +53,9 @@ export class GameSession extends Agent<Env, SessionState> {
   async getDebugGame(): Promise<DebugGameView> {
     const engine = this.engine()
     const samples = engine.state.config.heuristicSamples
-    const analyses = engine.state.players.map((player) =>
-      analyzePokerMath(engine.state, player.id, samples),
-    )
+    const analyses = engine.state.players
+      .filter((player) => !player.eliminated)
+      .map((player) => analyzePokerMath(engine.state, player.id, samples))
     const actingDecision =
       engine.state.phase === "betting" && engine.state.actingPlayerId
         ? chooseHeuristicAction(engine.state, engine.state.actingPlayerId, samples)

@@ -37,7 +37,7 @@ npm run format:check
 npm run knip
 npm run check              # all static checks and tests
 npm run build
-npm run simulate -- 10 balance-seed
+npm run simulate -- 1000 balance-seed --samples 64 --workers 9
 npm run play -- --seed jade-table --players 4 --samples 48
 npm run play -- --seed jade-table --debug  # reveal all hands, equity, odds, edge, and EV
 npm run play -- --auto --seed demo  # visible non-interactive heuristic game

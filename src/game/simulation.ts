@@ -1,5 +1,6 @@
 import { GameEngine, type PlayerSetup } from "./engine"
 import { stepHeuristic } from "./automation"
+import { clearHeuristicCaches } from "./heuristic"
 import type { GameConfig, HeuristicDecision, SimulationResult } from "./types"
 
 export interface SimulationOptions extends Partial<GameConfig> {
@@ -9,6 +10,8 @@ export interface SimulationOptions extends Partial<GameConfig> {
 }
 
 export function simulateGame(options: SimulationOptions): SimulationResult {
+  clearHeuristicCaches()
+
   const playerCount = options.players?.length ?? options.playerCount ?? 4
   const players =
     options.players ??
