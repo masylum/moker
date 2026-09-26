@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest"
 import {
-  blankFace,
   createDeck,
   dragonFace,
   flowerFace,
@@ -8,10 +7,9 @@ import {
   numberedFace,
   windFace,
 } from "../src/game/cards"
-import { analyzeHandProgress, summarizeHandProgress } from "../src/game/hand-progress"
+import { HAND_RANKS } from "../src/game/hand-ranks"
 import { SeededRandom } from "../src/game/random"
-import { compareHandScores, describeScore, scoreHand, scoreHandStrength } from "../src/game/scoring"
-import { summarizeHandPotential } from "../src/game/strength"
+import { compareHandScores, scoreHand, scoreHandStrength } from "../src/game/scoring"
 import type {
   Card,
   Dragon,
@@ -32,208 +30,166 @@ const w = (wind: Wind, count = 1): Card[] =>
   Array.from({ length: count }, () => ({ id: `c${serial++}`, ...windFace(wind) }))
 const j = (color: JokerColor): Card => ({ id: `c${serial++}`, ...jokerFace(color) })
 const f = (flower: Flower): Card => ({ id: `c${serial++}`, ...flowerFace(flower) })
-const blanks = (count: number): Card[] =>
-  Array.from({ length: count }, () => ({ id: `c${serial++}`, ...blankFace() }))
 
 function kind(cards: Card[]): HandKind {
   return scoreHand(cards).combinations[0]?.kind ?? "high-card"
 }
 
-describe("fixed five-card ladder", () => {
-  it("keeps the rollout scorer equivalent across random hands", () => {
-    const random = new SeededRandom("strength-equivalence")
-    const deck = createDeck()
+const fixtures: Array<[number, HandKind, Card[]]> = [
+  [1, "high-card", n("bamboo", 1)],
+  [2, "eye", n("dots", 2, 2)],
+  [3, "chow", [...n("bamboo", 3), ...n("bamboo", 4), ...n("bamboo", 5)]],
+  [4, "two-eyes", [...n("dots", 2, 2), ...n("bamboo", 8, 2)]],
+  [5, "chow-eye", [...n("bamboo", 3), ...n("bamboo", 4), ...n("bamboo", 5), ...d("red", 2)]],
+  [6, "pung", n("dots", 8, 3)],
+  [7, "three-winds", [...w("east"), ...w("west"), ...w("north")]],
+  [8, "pung-eye", [...n("dots", 5, 3), ...n("bamboo", 8, 2)]],
+  [9, "three-dragons", [...d("red"), ...d("green"), ...d("white")]],
+  [10, "long-chow", [5, 6, 7, 8, 9].flatMap((rank) => n("dots", rank as NumberedRank))],
+  [11, "three-dragons-eye", [...d("red"), ...d("green"), ...d("white"), ...n("dots", 9, 2)]],
+  [12, "four-winds", [...w("east"), ...w("west"), ...w("south"), ...w("north")]],
+  [13, "kong", [...n("bamboo", 7, 3), j("green")]],
+]
 
-    for (let sample = 0; sample < 1_000; sample += 1) {
-      const size = 2 + Math.floor(random.next() * 7)
-      const cards = random.shuffle(deck).slice(0, size)
-      const full = scoreHand(cards)
-      const progress = summarizeHandProgress(cards)
+describe("canonical 13-rank Advanced ladder", () => {
+  it.each(fixtures)("scores rank %i %s", (rank, hand, cards) => {
+    expect(HAND_RANKS[hand]).toBe(rank)
+    expect(scoreHand(cards).total).toBe(rank)
+    expect(kind(cards)).toBe(hand)
+  })
 
-      expect(scoreHandStrength(cards)).toEqual({ total: full.total, tieBreak: full.tieBreak })
-      expect(summarizeHandPotential(cards)).toEqual({
-        currentRank: progress.currentBest.rank,
-        nextRank: progress.nextClosest?.rank ?? null,
-        nextMissing: progress.nextClosest?.missing ?? null,
-      })
+  it("orders every rank above every lower rank", () => {
+    const scores = fixtures.map(([, , cards]) => scoreHand(cards))
+    for (let high = 1; high < scores.length; high += 1) {
+      for (let low = 0; low < high; low += 1) {
+        expect(compareHandScores(scores[high]!, scores[low]!)).toBeGreaterThan(0)
+      }
     }
   })
 
-  const fixtures: Array<[number, HandKind, Card[]]> = [
-    [1, "high-card", [...n("bamboo", 1), ...blanks(1)]],
-    [2, "eye", n("bamboo", 7, 2)],
-    [3, "chow", [...n("bamboo", 3), ...n("bamboo", 4), ...n("bamboo", 5)]],
-    [
-      4,
-      "pure-suit",
-      [...n("dots", 1), ...n("dots", 3), ...n("dots", 5), ...n("dots", 6), ...n("dots", 9)],
-    ],
-    [5, "two-eyes", [...n("bamboo", 3, 2), ...d("red", 2)]],
-    [
-      6,
-      "chow-eye",
-      [...n("characters", 2), ...n("characters", 3), ...n("characters", 4), ...d("white", 2)],
-    ],
-    [7, "pung", n("dots", 8, 3)],
-    [8, "three-dragons", [...d("red"), ...d("green"), ...d("white")]],
-    [9, "pung-eye", [...n("dots", 5, 3), ...n("bamboo", 8, 2)]],
-    [10, "three-dragons-eye", [...d("red"), ...d("green"), ...d("white"), ...d("red", 2)]],
-    [11, "four-winds", [...w("east"), ...w("south"), ...w("west"), ...w("north")]],
-    [
-      12,
-      "dragon-dancer",
-      [...n("bamboo", 3), ...n("bamboo", 4), ...n("bamboo", 5), ...d("green", 2)],
-    ],
-    [13, "kong", [...n("bamboo", 7, 3), j("green")]],
-    [14, "crosswinds", [...w("east", 2), ...w("west", 2)]],
-    [15, "bouquet", [f("plum"), f("orchid"), ...n("dots", 8, 2)]],
-    [16, "imperial-garden", [f("plum"), f("orchid"), f("bamboo")]],
-  ]
-
-  it.each(fixtures)("scores rank %i %s", (rank, hand, cards) => {
-    const score = scoreHand(cards)
-
-    expect(score.total).toBe(rank)
-    expect(kind(cards)).toBe(hand)
-    expect(new Set(score.selectedCardIds).size).toBe(score.selectedCardIds.length)
-  })
-
-  it("returns only the highest available Hand", () => {
-    const cards = [
-      ...n("bamboo", 3),
-      ...n("bamboo", 4),
-      ...n("bamboo", 5),
-      ...d("green", 2),
-      ...n("dots", 9, 3),
-    ]
-    const score = scoreHand(cards)
-
-    expect(score.total).toBe(12)
-    expect(score.combinations.map((combination) => combination.kind)).toEqual(["dragon-dancer"])
-  })
-
-  it("does not reuse one physical card in a compound Hand", () => {
-    const cards = [...n("bamboo", 3, 2), ...n("bamboo", 4), ...n("bamboo", 5), ...blanks(4)]
-
-    expect(kind(cards)).toBe("chow")
-  })
-
-  it("describes the defining cards of the winning Hand", () => {
-    const cards = [...n("bamboo", 3), ...n("bamboo", 4), ...n("bamboo", 5)]
-
-    expect(describeScore(scoreHand(cards), cards)).toBe("Chow · 3-4-5 Bams (rank 3)")
+  it("keeps the optimized scorer identical on random seven-card hands", () => {
+    const random = new SeededRandom("canonical-strength-equivalence")
+    const deck = createDeck()
+    for (let sample = 0; sample < 5_000; sample += 1) {
+      const cards = random.shuffle(deck).slice(0, 7)
+      const full = scoreHand(cards)
+      expect(scoreHandStrength(cards)).toEqual({ total: full.total, tieBreak: full.tieBreak })
+    }
   })
 })
 
-describe("Jokers", () => {
-  it("completes eligible Hands of three or more cards", () => {
+describe("special-tile and natural-tile restrictions", () => {
+  it("uses Jokers only in combinations of at least three cards", () => {
     expect(kind([...n("bamboo", 3), ...n("bamboo", 4), j("green")])).toBe("chow")
-    expect(kind([...d("red"), ...d("green"), j("blue")])).toBe("three-dragons")
-    expect(kind([...w("east"), ...w("south"), ...w("west"), j("black")])).toBe("four-winds")
-  })
-
-  it("never forms an Eye, Two Eyes, Dragon Eye, or Crosswinds", () => {
-    expect(kind([...n("bamboo", 3), j("green")])).toBe("high-card")
-    expect(kind([...n("bamboo", 3, 2), ...n("dots", 4), j("blue")])).toBe("eye")
+    expect(kind([...n("bamboo", 3), ...n("bamboo", 4), ...n("bamboo", 5), j("green")])).toBe("chow")
     expect(
-      kind([...n("bamboo", 3), ...n("bamboo", 4), ...n("bamboo", 5), ...d("green"), j("green")]),
-    ).toBe("chow")
-    expect(kind([...w("east", 2), ...w("west"), j("black")])).not.toBe("crosswinds")
-  })
-
-  it("requires an appropriately colored Joker for a Kong", () => {
+      kind([
+        ...n("characters", 3),
+        ...n("characters", 4),
+        ...n("characters", 5),
+        ...n("characters", 6),
+        j("red"),
+      ]),
+    ).toBe("long-chow")
+    expect(kind([...n("bamboo", 3), j("green")])).toBe("high-card")
     expect(kind([...n("characters", 9, 3), j("red")])).toBe("kong")
     expect(kind([...n("characters", 9, 3), j("green")])).toBe("pung")
   })
 
-  it("lets only the Black Joker complete Imperial Garden", () => {
-    expect(kind([f("plum"), f("orchid"), j("black")])).toBe("imperial-garden")
-    expect(kind([f("plum"), f("orchid"), j("red")])).toBe("high-card")
-    expect(kind([f("plum"), j("black")])).toBe("high-card")
+  it("requires three distinct Winds, with no bird requirement", () => {
+    expect(kind([...n("bamboo", 7), j("green")])).toBe("high-card")
+    expect(kind([...w("east"), ...w("south"), ...w("west"), ...n("bamboo", 1)])).toBe("three-winds")
+    expect(kind([...w("east"), ...w("south"), j("black"), ...n("bamboo", 1)])).toBe("three-winds")
+    expect(kind([...w("north", 2), ...w("south"), ...n("bamboo", 1)])).not.toBe("three-winds")
+    expect(kind([...w("east"), ...w("south"), ...w("west"), j("green")])).toBe("three-winds")
+    expect(kind([...w("east"), ...w("south"), j("red"), ...n("bamboo", 1)])).not.toBe("three-winds")
   })
 
-  it("gives a lone Flower no ordinary Hand value", () => {
-    const numberedHigh = scoreHand([...n("dots", 9), f("chrysanthemum")])
-    const onlyFlower = scoreHand([f("chrysanthemum")])
+  it("allows the deck's black Joker in Four Winds", () => {
+    expect(kind([...w("east"), ...w("south"), ...w("west"), j("black")])).toBe("four-winds")
+    expect(kind([...w("east"), ...w("south"), ...w("west"), j("red")])).not.toBe("four-winds")
+  })
 
-    expect(numberedHigh.total).toBe(1)
-    expect(numberedHigh.selectedCardIds).toHaveLength(1)
-    expect(onlyFlower.selectedCardIds).toHaveLength(0)
+  it("excludes Lotuses from the hand ladder (automatic wins are resolved by the engine)", () => {
+    expect(kind([f("white-lotus"), j("black")])).toBe("high-card")
+    expect(kind([f("white-lotus"), f("black-lotus")])).toBe("high-card")
+    expect(kind([...n("dots", 2), f("white-lotus"), f("black-lotus"), ...n("bamboo", 9)])).toBe(
+      "high-card",
+    )
   })
 })
 
 describe("tie breakers", () => {
-  it("compares numbered values while treating suits as equal", () => {
-    const low = scoreHand(n("bamboo", 2, 2))
-    const equal = scoreHand(n("dots", 2, 2))
-    const high = scoreHand(n("characters", 9, 2))
-
-    expect(compareHandScores(low, equal)).toBe(0)
-    expect(compareHandScores(high, low)).toBeGreaterThan(0)
+  it("orders Winds above Dragons above numbered 9 through 1", () => {
+    expect(compareHandScores(scoreHand(w("east", 2)), scoreHand(d("red", 2)))).toBeGreaterThan(0)
+    expect(
+      compareHandScores(scoreHand(d("red", 2)), scoreHand(n("characters", 9, 2))),
+    ).toBeGreaterThan(0)
+    expect(
+      compareHandScores(scoreHand(n("bamboo", 9, 2)), scoreHand(n("dots", 8, 2))),
+    ).toBeGreaterThan(0)
   })
 
-  it("compares a compound Hand's main meld before its Eye", () => {
-    const highMain = scoreHand([
-      ...n("bamboo", 7),
-      ...n("bamboo", 8),
-      ...n("bamboo", 9),
-      ...n("dots", 1, 2),
-    ])
-    const highEye = scoreHand([
-      ...n("characters", 1),
-      ...n("characters", 2),
-      ...n("characters", 3),
-      ...w("east", 2),
-    ])
-
-    expect(compareHandScores(highMain, highEye)).toBeGreaterThan(0)
+  it("compares all defining cards high to low", () => {
+    expect(
+      compareHandScores(
+        scoreHand([...n("bamboo", 7, 3), ...n("dots", 9, 2)]),
+        scoreHand([...n("bamboo", 7, 3), ...n("dots", 8, 2)]),
+      ),
+    ).toBeGreaterThan(0)
   })
 
-  it("treats all Dragons and all Winds as equal", () => {
-    expect(compareHandScores(scoreHand(d("red", 2)), scoreHand(d("white", 2)))).toBe(0)
+  it("treats suits and honors within a tier equally", () => {
+    expect(compareHandScores(scoreHand(n("bamboo", 2, 2)), scoreHand(n("dots", 2, 2)))).toBe(0)
     expect(compareHandScores(scoreHand(w("east", 2)), scoreHand(w("north", 2)))).toBe(0)
-  })
-
-  it("uses Flower identities above Winds to break Flower-hand ties", () => {
-    const low = scoreHand([f("plum"), f("orchid"), ...n("dots", 2, 2)])
-    const high = scoreHand([f("bamboo"), f("chrysanthemum"), ...n("dots", 2, 2)])
-
-    expect(compareHandScores(high, low)).toBeGreaterThan(0)
+    expect(compareHandScores(scoreHand(d("red", 2)), scoreHand(d("white", 2)))).toBe(0)
   })
 })
 
-describe("hand progress", () => {
-  it("reports current best and the closest stronger Hand from the ladder definitions", () => {
-    const cards = [...n("bamboo", 3), ...n("bamboo", 4), ...n("dots", 7)]
-    const summary = summarizeHandProgress(cards)
+describe("Basic ladder and combination-first tie breaks", () => {
+  it("omits expansion-only combinations and ranks Four Winds ninth", () => {
+    expect(
+      scoreHand([...w("east"), ...w("west"), ...w("south"), ...w("north")], "basic").total,
+    ).toBe(9)
+    expect(scoreHand([...n("dots", 5, 3), ...n("bamboo", 8, 2)], "basic").total).toBe(7)
+  })
+  it("compares the Chow before the pair, even when a lower Chow has Wind eyes", () => {
+    const higher = scoreHand([
+      ...n("bamboo", 6),
+      ...n("bamboo", 7),
+      ...n("bamboo", 8),
+      ...n("dots", 1, 2),
+    ])
+    const lower = scoreHand([...n("dots", 2), ...n("dots", 3), ...n("dots", 4), ...w("east", 2)])
+    expect(compareHandScores(higher, lower)).toBeGreaterThan(0)
+  })
+  it("ignores all unused high cards", () => {
+    expect(
+      compareHandScores(
+        scoreHand([...w("east"), ...n("dots", 9)]),
+        scoreHand([...w("north"), ...n("bamboo", 1)]),
+      ),
+    ).toBe(0)
+  })
+})
 
-    expect(summary.currentBest).toMatchObject({ kind: "high-card", rank: 1, missing: 0 })
-    expect(summary.nextClosest).toMatchObject({ kind: "chow", rank: 3, missing: 1 })
+describe("calibrated mode-specific ladder", () => {
+  it.each(["basic", "riichi"] as const)("uses Wind > Dragon > 9 > 1 for %s Pungs", (mode) => {
+    const pungs = [w("east", 3), d("red", 3), n("dots", 9, 3), n("dots", 1, 3)]
+    for (let i = 1; i < pungs.length; i++) {
+      expect(
+        compareHandScores(scoreHand(pungs[i - 1]!, mode), scoreHand(pungs[i]!, mode)),
+      ).toBeGreaterThan(0)
+    }
+    expect(compareHandScores(scoreHand(w("east", 3), mode), scoreHand(w("north", 3), mode))).toBe(0)
   })
 
-  it("uses the same Joker restrictions when measuring cards away", () => {
-    const cards = [...w("east", 2), ...w("west"), j("black")]
-    const crosswinds = analyzeHandProgress(cards).find((hand) => hand.kind === "crosswinds")
-    const fourWinds = analyzeHandProgress(cards).find((hand) => hand.kind === "four-winds")
-
-    expect(crosswinds).toMatchObject({ missing: 1 })
-    expect(fourWinds).toMatchObject({ missing: 1 })
-  })
-
-  it("recognizes that a natural Pung is one card away from Kong", () => {
-    const summary = summarizeHandProgress(n("dots", 6, 3))
-
-    expect(summary.currentBest).toMatchObject({ kind: "pung", rank: 7 })
-    expect(summary.nextClosest).toMatchObject({ kind: "kong", rank: 13, missing: 1 })
-  })
-
-  it("derives Flower-hand distance from the same pattern definitions", () => {
-    const progress = analyzeHandProgress([f("plum"), f("orchid")])
-
-    expect(progress.find((hand) => hand.kind === "bouquet")).toMatchObject({ missing: 2 })
-    expect(progress.find((hand) => hand.kind === "imperial-garden")).toMatchObject({ missing: 1 })
-
-    const completed = analyzeHandProgress([f("plum"), f("orchid"), ...n("dots", 4, 2)])
-    expect(completed.find((hand) => hand.kind === "bouquet")).toMatchObject({ missing: 0 })
+  it("keeps Basic Pung above Three Winds but reverses them in Riichi", () => {
+    const pung = n("dots", 8, 3),
+      winds = [...w("east"), ...w("south"), ...w("west")]
+    expect(compareHandScores(scoreHand(pung, "basic"), scoreHand(winds, "basic"))).toBeGreaterThan(
+      0,
+    )
+    expect(compareHandScores(scoreHand(pung, "riichi"), scoreHand(winds, "riichi"))).toBeLessThan(0)
   })
 })

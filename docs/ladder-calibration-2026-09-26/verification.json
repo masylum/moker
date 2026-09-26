@@ -1,0 +1,45 @@
+{
+  "original": {
+    "runs": 928,
+    "games": 1888,
+    "hands": 14008,
+    "sourceParity": true,
+    "sourceFreezeIntact": true,
+    "uniqueIndices": true,
+    "sampleBudget": 24,
+    "selectionValidationSeedsDisjoint": true,
+    "carryoverGameLedgers": 0
+  },
+  "current": {
+    "runs": 240,
+    "games": 576,
+    "hands": 3456,
+    "sourceParity": true,
+    "sourceFreezeIntact": true,
+    "uniqueIndices": true,
+    "sampleBudget": 24,
+    "selectionValidationSeedsDisjoint": true,
+    "carryoverGameLedgers": 576
+  },
+  "liveGameSourceMatchesCurrentSnapshot": true,
+  "tests": {
+    "unitTests": 200,
+    "files": 20,
+    "passed": true,
+    "command": "npm test -- --reporter=dot --maxWorkers=2 --testTimeout=30000",
+    "note": "An initial run alongside ten simulation workers hit two 5-second test timeouts. The bounded-concurrency rerun passed all 200 current tests. No assertion failures were observed."
+  },
+  "checks": {
+    "typecheck": true,
+    "lint": true,
+    "knip": true,
+    "baselineProductionReplay": true
+  },
+  "oracle": {
+    "holdings": 1792,
+    "scoreChecks": 361,
+    "pots": 70,
+    "traces": 14
+  },
+  "simulationMinutes": 42.00974487710434
+}

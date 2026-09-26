@@ -1,0 +1,1417 @@
+{
+  "mode": "riichi",
+  "variant": "current",
+  "games": 5,
+  "offset": 58,
+  "prefix": "fishing-long-20260925",
+  "samples": 24,
+  "orbits": 4,
+  "startingChips": 200,
+  "sourceHashes": {
+    "automation.ts": "96371c37293225fa0e1a2e28f08074d546c895dcccfc0bfccebb8e18299e6dc8",
+    "cards.ts": "5e784696eca1c83a24127166158f906404c4a30c94fb2c3ab202f90dece8316b",
+    "engine.ts": "1a5f422e79603cb622db36870393225ec6f309bf4679ff3fb4166de8e53e4a6b",
+    "hand-progress.ts": "d8fecf1f1bb825f3b8d163c8fafbaf5291c4894eb09802f5a4f78d198d88109b",
+    "hand-ranks.ts": "2212a6866c604d3ba1e03b252ed2cfe9ff4145dd3b3e96afcf10f1b61ec24636",
+    "heuristic.ts": "76c03010d013f14742de679bd5dd5bba5bb50e79895a821dd6d4e6a0cb78f739",
+    "index.ts": "9000faaa79631db261aaa4642982ea0f5a12f98cf1e2426ff6eb9ffbafca2823",
+    "information.ts": "10db4135b72ec7e8c724847b95b854326d75de2835ce59866a9a828bb504ed44",
+    "melds.ts": "f5cca05ef5ebacefc8f438ef71faf1aba5ba7eb12caec2be3a85e3de9befba49",
+    "random.ts": "762d9e84062490b79439706cbe7c377d67ccaf8d737efd9146b0bf8b144c85a3",
+    "rulebook.ts": "087ed6a37675c24875380600017364c3908a951e3046404132637ce3af6c25ec",
+    "rules.ts": "37fab3c16810e2f3da31a6cdb1ef017983d0dd4bc9cad1362a8e999188c49a69",
+    "scoring.ts": "8783283c9725e16c601c3955ab00996e26c25173ea47f8cbce225b6808df5154",
+    "simulation.ts": "41a95c940ddbf5cf6e5e0456e0fe6c2b826f6cacc263dee1ee16916d8829c8d1",
+    "strength.ts": "474045cced11af5686caa8ec231b79d524f2ba9616ccab734991cf4a7b592391",
+    "types.ts": "c3f6c4820b9b8c6efa35825bbd9945fd4d05925167d8670e3ce327971d5ab42d"
+  },
+  "rows": [
+    {
+      "index": 58,
+      "hands": 16,
+      "street4": 6,
+      "showdowns": 12,
+      "street1Ends": 1,
+      "street0Ends": 4,
+      "uncontested": 4,
+      "allInHands": 6,
+      "actions": 198,
+      "checks": 58,
+      "calls": 24,
+      "bets": 93,
+      "folds": 23,
+      "facingWager": 118,
+      "foldToWager": 22,
+      "draws": 76,
+      "deckDraws": 59,
+      "laneDraws": 17,
+      "blanks": 2,
+      "freeCheck": 58,
+      "freeCall": 0,
+      "freeBet": 0,
+      "stickCheck": 1,
+      "stickCall": 3,
+      "stickBet": 14,
+      "sticksSpent": 18,
+      "sticksAwarded": 8,
+      "loans": 4,
+      "laneOccupancy": 1045,
+      "laneObservations": 198,
+      "showdownPlayers": 37,
+      "improvedShowdownPlayers": 17,
+      "openingLeaderWinCredit": 11,
+      "showdownRankSum": 166,
+      "decisions": 198,
+      "decisionsMs": 24924.18059600001,
+      "eliminations": 0,
+      "negativeFinishes": 2,
+      "minDeck": 69,
+      "scores": {
+        "p1": 1140,
+        "p2": -285,
+        "p3": -255,
+        "p4": 0
+      },
+      "showdownRanks": {
+        "1": 5,
+        "2": 7,
+        "3": 4,
+        "4": 4,
+        "5": 3,
+        "6": 1,
+        "7": 1,
+        "8": 1,
+        "9": 8,
+        "13": 1,
+        "-1": 2
+      },
+      "orbits": [
+        {
+          "orbit": 1,
+          "hands": 4,
+          "startChips": {
+            "p1": 200,
+            "p2": 200,
+            "p3": 200,
+            "p4": 200
+          },
+          "startScores": {
+            "p1": 200,
+            "p2": 200,
+            "p3": 200,
+            "p4": 200
+          },
+          "endChips": {
+            "p1": 190,
+            "p2": 15,
+            "p3": 5,
+            "p4": 590
+          },
+          "endScores": {
+            "p1": 190,
+            "p2": 15,
+            "p3": 5,
+            "p4": 590
+          },
+          "handScores": [
+            {
+              "p1": 170,
+              "p2": 265,
+              "p3": 170,
+              "p4": 195
+            },
+            {
+              "p1": 165,
+              "p2": 260,
+              "p3": 15,
+              "p4": 360
+            },
+            {
+              "p1": 160,
+              "p2": 20,
+              "p3": 10,
+              "p4": 610
+            },
+            {
+              "p1": 190,
+              "p2": 15,
+              "p3": 5,
+              "p4": 590
+            }
+          ]
+        },
+        {
+          "orbit": 2,
+          "hands": 4,
+          "startChips": {
+            "p1": 190,
+            "p2": 15,
+            "p3": 5,
+            "p4": 590
+          },
+          "startScores": {
+            "p1": 190,
+            "p2": 15,
+            "p3": 5,
+            "p4": 590
+          },
+          "endChips": {
+            "p1": 610,
+            "p2": 15,
+            "p3": 5,
+            "p4": 570
+          },
+          "endScores": {
+            "p1": 610,
+            "p2": -235,
+            "p3": -245,
+            "p4": 570
+          },
+          "handScores": [
+            {
+              "p1": 205,
+              "p2": 10,
+              "p3": 0,
+              "p4": 585
+            },
+            {
+              "p1": 220,
+              "p2": 5,
+              "p3": -55,
+              "p4": 580
+            },
+            {
+              "p1": 235,
+              "p2": 0,
+              "p3": -60,
+              "p4": 575
+            },
+            {
+              "p1": 610,
+              "p2": -235,
+              "p3": -245,
+              "p4": 570
+            }
+          ]
+        },
+        {
+          "orbit": 3,
+          "hands": 4,
+          "startChips": {
+            "p1": 610,
+            "p2": 15,
+            "p3": 5,
+            "p4": 570
+          },
+          "startScores": {
+            "p1": 610,
+            "p2": -235,
+            "p3": -245,
+            "p4": 570
+          },
+          "endChips": {
+            "p1": 1140,
+            "p2": 15,
+            "p3": 5,
+            "p4": 40
+          },
+          "endScores": {
+            "p1": 1140,
+            "p2": -235,
+            "p3": -245,
+            "p4": 40
+          },
+          "handScores": [
+            {
+              "p1": 605,
+              "p2": -240,
+              "p3": -230,
+              "p4": 565
+            },
+            {
+              "p1": 600,
+              "p2": -225,
+              "p3": -235,
+              "p4": 560
+            },
+            {
+              "p1": 1145,
+              "p2": -230,
+              "p3": -240,
+              "p4": 25
+            },
+            {
+              "p1": 1140,
+              "p2": -235,
+              "p3": -245,
+              "p4": 40
+            }
+          ]
+        },
+        {
+          "orbit": 4,
+          "hands": 4,
+          "startChips": {
+            "p1": 1140,
+            "p2": 15,
+            "p3": 5,
+            "p4": 40
+          },
+          "startScores": {
+            "p1": 1140,
+            "p2": -235,
+            "p3": -245,
+            "p4": 40
+          },
+          "endChips": {
+            "p1": 1140,
+            "p2": 215,
+            "p3": 245,
+            "p4": 0
+          },
+          "endScores": {
+            "p1": 1140,
+            "p2": -285,
+            "p3": -255,
+            "p4": 0
+          },
+          "handScores": [
+            {
+              "p1": 1155,
+              "p2": -240,
+              "p3": -250,
+              "p4": 35
+            },
+            {
+              "p1": 1150,
+              "p2": -250,
+              "p3": -305,
+              "p4": 55
+            },
+            {
+              "p1": 1145,
+              "p2": -305,
+              "p3": -250,
+              "p4": 10
+            },
+            {
+              "p1": 1140,
+              "p2": -285,
+              "p3": -255,
+              "p4": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 59,
+      "hands": 16,
+      "street4": 2,
+      "showdowns": 11,
+      "street1Ends": 7,
+      "street0Ends": 1,
+      "uncontested": 5,
+      "allInHands": 10,
+      "actions": 153,
+      "checks": 50,
+      "calls": 19,
+      "bets": 55,
+      "folds": 29,
+      "facingWager": 85,
+      "foldToWager": 29,
+      "draws": 62,
+      "deckDraws": 44,
+      "laneDraws": 18,
+      "blanks": 1,
+      "freeCheck": 50,
+      "freeCall": 0,
+      "freeBet": 0,
+      "stickCheck": 1,
+      "stickCall": 0,
+      "stickBet": 11,
+      "sticksSpent": 12,
+      "sticksAwarded": 2,
+      "loans": 6,
+      "laneOccupancy": 635,
+      "laneObservations": 153,
+      "showdownPlayers": 30,
+      "improvedShowdownPlayers": 9,
+      "openingLeaderWinCredit": 11,
+      "showdownRankSum": 108,
+      "decisions": 153,
+      "decisionsMs": 25495.362041999975,
+      "eliminations": 0,
+      "negativeFinishes": 2,
+      "minDeck": 72,
+      "scores": {
+        "p1": -845,
+        "p2": 515,
+        "p3": 940,
+        "p4": -110
+      },
+      "showdownRanks": {
+        "1": 1,
+        "2": 8,
+        "3": 6,
+        "4": 5,
+        "5": 5,
+        "6": 1,
+        "7": 2,
+        "9": 1,
+        "-1": 1
+      },
+      "orbits": [
+        {
+          "orbit": 1,
+          "hands": 4,
+          "startChips": {
+            "p1": 200,
+            "p2": 200,
+            "p3": 200,
+            "p4": 200
+          },
+          "startScores": {
+            "p1": 200,
+            "p2": 200,
+            "p3": 200,
+            "p4": 200
+          },
+          "endChips": {
+            "p1": 250,
+            "p2": 485,
+            "p3": 20,
+            "p4": 45
+          },
+          "endScores": {
+            "p1": 250,
+            "p2": 485,
+            "p3": 20,
+            "p4": 45
+          },
+          "handScores": [
+            {
+              "p1": 380,
+              "p2": 195,
+              "p3": 195,
+              "p4": 30
+            },
+            {
+              "p1": 375,
+              "p2": 165,
+              "p3": 190,
+              "p4": 70
+            },
+            {
+              "p1": 210,
+              "p2": 515,
+              "p3": 25,
+              "p4": 50
+            },
+            {
+              "p1": 250,
+              "p2": 485,
+              "p3": 20,
+              "p4": 45
+            }
+          ]
+        },
+        {
+          "orbit": 2,
+          "hands": 4,
+          "startChips": {
+            "p1": 250,
+            "p2": 485,
+            "p3": 20,
+            "p4": 45
+          },
+          "startScores": {
+            "p1": 250,
+            "p2": 485,
+            "p3": 20,
+            "p4": 45
+          },
+          "endChips": {
+            "p1": 195,
+            "p2": 720,
+            "p3": 0,
+            "p4": 85
+          },
+          "endScores": {
+            "p1": -55,
+            "p2": 720,
+            "p3": 0,
+            "p4": 85
+          },
+          "handScores": [
+            {
+              "p1": 205,
+              "p2": 480,
+              "p3": 15,
+              "p4": 100
+            },
+            {
+              "p1": 200,
+              "p2": 495,
+              "p3": 10,
+              "p4": 95
+            },
+            {
+              "p1": 0,
+              "p2": 705,
+              "p3": 5,
+              "p4": 90
+            },
+            {
+              "p1": -55,
+              "p2": 720,
+              "p3": 0,
+              "p4": 85
+            }
+          ]
+        },
+        {
+          "orbit": 3,
+          "hands": 4,
+          "startChips": {
+            "p1": 195,
+            "p2": 720,
+            "p3": 0,
+            "p4": 85
+          },
+          "startScores": {
+            "p1": -55,
+            "p2": 720,
+            "p3": 0,
+            "p4": 85
+          },
+          "endChips": {
+            "p1": 0,
+            "p2": 515,
+            "p3": 860,
+            "p4": 25
+          },
+          "endScores": {
+            "p1": -500,
+            "p2": 515,
+            "p3": 610,
+            "p4": 25
+          },
+          "handScores": [
+            {
+              "p1": -60,
+              "p2": 715,
+              "p3": -35,
+              "p4": 80
+            },
+            {
+              "p1": -250,
+              "p2": 525,
+              "p3": 350,
+              "p4": 75
+            },
+            {
+              "p1": -455,
+              "p2": 520,
+              "p3": 515,
+              "p4": 70
+            },
+            {
+              "p1": -500,
+              "p2": 515,
+              "p3": 610,
+              "p4": 25
+            }
+          ]
+        },
+        {
+          "orbit": 4,
+          "hands": 4,
+          "startChips": {
+            "p1": 0,
+            "p2": 515,
+            "p3": 860,
+            "p4": 25
+          },
+          "startScores": {
+            "p1": -500,
+            "p2": 515,
+            "p3": 610,
+            "p4": 25
+          },
+          "endChips": {
+            "p1": 155,
+            "p2": 515,
+            "p3": 1190,
+            "p4": 140
+          },
+          "endScores": {
+            "p1": -845,
+            "p2": 515,
+            "p3": 940,
+            "p4": -110
+          },
+          "handScores": [
+            {
+              "p1": -575,
+              "p2": 570,
+              "p3": 605,
+              "p4": 0
+            },
+            {
+              "p1": -580,
+              "p2": 565,
+              "p3": 600,
+              "p4": -35
+            },
+            {
+              "p1": -750,
+              "p2": 560,
+              "p3": 945,
+              "p4": -205
+            },
+            {
+              "p1": -845,
+              "p2": 515,
+              "p3": 940,
+              "p4": -110
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 60,
+      "hands": 16,
+      "street4": 5,
+      "showdowns": 13,
+      "street1Ends": 6,
+      "street0Ends": 1,
+      "uncontested": 3,
+      "allInHands": 9,
+      "actions": 202,
+      "checks": 84,
+      "calls": 20,
+      "bets": 73,
+      "folds": 25,
+      "facingWager": 102,
+      "foldToWager": 25,
+      "draws": 97,
+      "deckDraws": 73,
+      "laneDraws": 24,
+      "blanks": 1,
+      "freeCheck": 79,
+      "freeCall": 0,
+      "freeBet": 0,
+      "stickCheck": 1,
+      "stickCall": 2,
+      "stickBet": 15,
+      "sticksSpent": 18,
+      "sticksAwarded": 6,
+      "loans": 5,
+      "laneOccupancy": 1030,
+      "laneObservations": 202,
+      "showdownPlayers": 36,
+      "improvedShowdownPlayers": 22,
+      "openingLeaderWinCredit": 9,
+      "showdownRankSum": 198,
+      "decisions": 202,
+      "decisionsMs": 30031.80158300003,
+      "eliminations": 0,
+      "negativeFinishes": 1,
+      "minDeck": 68,
+      "scores": {
+        "p1": -210,
+        "p2": 210,
+        "p3": 420,
+        "p4": 130
+      },
+      "showdownRanks": {
+        "1": 2,
+        "2": 5,
+        "3": 5,
+        "4": 2,
+        "5": 7,
+        "6": 3,
+        "7": 4,
+        "8": 1,
+        "9": 4,
+        "12": 1,
+        "13": 2
+      },
+      "orbits": [
+        {
+          "orbit": 1,
+          "hands": 4,
+          "startChips": {
+            "p1": 200,
+            "p2": 200,
+            "p3": 200,
+            "p4": 200
+          },
+          "startScores": {
+            "p1": 200,
+            "p2": 200,
+            "p3": 200,
+            "p4": 200
+          },
+          "endChips": {
+            "p1": 20,
+            "p2": 430,
+            "p3": 30,
+            "p4": 720
+          },
+          "endScores": {
+            "p1": -230,
+            "p2": 430,
+            "p3": 30,
+            "p4": 470
+          },
+          "handScores": [
+            {
+              "p1": 30,
+              "p2": 545,
+              "p3": 195,
+              "p4": 30
+            },
+            {
+              "p1": 0,
+              "p2": 610,
+              "p3": 190,
+              "p4": 0
+            },
+            {
+              "p1": -225,
+              "p2": 435,
+              "p3": 15,
+              "p4": 475
+            },
+            {
+              "p1": -230,
+              "p2": 430,
+              "p3": 30,
+              "p4": 470
+            }
+          ]
+        },
+        {
+          "orbit": 2,
+          "hands": 4,
+          "startChips": {
+            "p1": 20,
+            "p2": 430,
+            "p3": 30,
+            "p4": 720
+          },
+          "startScores": {
+            "p1": -230,
+            "p2": 430,
+            "p3": 30,
+            "p4": 470
+          },
+          "endChips": {
+            "p1": 185,
+            "p2": 65,
+            "p3": 10,
+            "p4": 1140
+          },
+          "endScores": {
+            "p1": -315,
+            "p2": 65,
+            "p3": 10,
+            "p4": 890
+          },
+          "handScores": [
+            {
+              "p1": -250,
+              "p2": 460,
+              "p3": 25,
+              "p4": 465
+            },
+            {
+              "p1": -305,
+              "p2": 20,
+              "p3": 20,
+              "p4": 915
+            },
+            {
+              "p1": -310,
+              "p2": 50,
+              "p3": 15,
+              "p4": 895
+            },
+            {
+              "p1": -315,
+              "p2": 65,
+              "p3": 10,
+              "p4": 890
+            }
+          ]
+        },
+        {
+          "orbit": 3,
+          "hands": 4,
+          "startChips": {
+            "p1": 185,
+            "p2": 65,
+            "p3": 10,
+            "p4": 1140
+          },
+          "startScores": {
+            "p1": -315,
+            "p2": 65,
+            "p3": 10,
+            "p4": 890
+          },
+          "endChips": {
+            "p1": 215,
+            "p2": 45,
+            "p3": 590,
+            "p4": 750
+          },
+          "endScores": {
+            "p1": -285,
+            "p2": 45,
+            "p3": 340,
+            "p4": 500
+          },
+          "handScores": [
+            {
+              "p1": -120,
+              "p2": 60,
+              "p3": 5,
+              "p4": 705
+            },
+            {
+              "p1": -105,
+              "p2": 55,
+              "p3": 0,
+              "p4": 700
+            },
+            {
+              "p1": -90,
+              "p2": 50,
+              "p3": -55,
+              "p4": 695
+            },
+            {
+              "p1": -285,
+              "p2": 45,
+              "p3": 340,
+              "p4": 500
+            }
+          ]
+        },
+        {
+          "orbit": 4,
+          "hands": 4,
+          "startChips": {
+            "p1": 215,
+            "p2": 45,
+            "p3": 590,
+            "p4": 750
+          },
+          "startScores": {
+            "p1": -285,
+            "p2": 45,
+            "p3": 340,
+            "p4": 500
+          },
+          "endChips": {
+            "p1": 290,
+            "p2": 460,
+            "p3": 670,
+            "p4": 380
+          },
+          "endScores": {
+            "p1": -210,
+            "p2": 210,
+            "p3": 420,
+            "p4": 130
+          },
+          "handScores": [
+            {
+              "p1": -290,
+              "p2": 0,
+              "p3": 435,
+              "p4": 455
+            },
+            {
+              "p1": -355,
+              "p2": 220,
+              "p3": 430,
+              "p4": 255
+            },
+            {
+              "p1": -360,
+              "p2": 215,
+              "p3": 425,
+              "p4": 270
+            },
+            {
+              "p1": -210,
+              "p2": 210,
+              "p3": 420,
+              "p4": 130
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 61,
+      "hands": 16,
+      "street4": 4,
+      "showdowns": 15,
+      "street1Ends": 8,
+      "street0Ends": 2,
+      "uncontested": 1,
+      "allInHands": 11,
+      "actions": 186,
+      "checks": 37,
+      "calls": 30,
+      "bets": 96,
+      "folds": 23,
+      "facingWager": 127,
+      "foldToWager": 22,
+      "draws": 55,
+      "deckDraws": 35,
+      "laneDraws": 20,
+      "blanks": 2,
+      "freeCheck": 34,
+      "freeCall": 0,
+      "freeBet": 0,
+      "stickCheck": 0,
+      "stickCall": 1,
+      "stickBet": 20,
+      "sticksSpent": 21,
+      "sticksAwarded": 12,
+      "loans": 9,
+      "laneOccupancy": 775,
+      "laneObservations": 186,
+      "showdownPlayers": 40,
+      "improvedShowdownPlayers": 18,
+      "openingLeaderWinCredit": 11,
+      "showdownRankSum": 168,
+      "decisions": 186,
+      "decisionsMs": 25822.570095000017,
+      "eliminations": 0,
+      "negativeFinishes": 3,
+      "minDeck": 71,
+      "scores": {
+        "p1": -730,
+        "p2": -555,
+        "p3": 1780,
+        "p4": -145
+      },
+      "showdownRanks": {
+        "1": 4,
+        "2": 5,
+        "3": 11,
+        "4": 9,
+        "5": 1,
+        "6": 2,
+        "7": 1,
+        "9": 4,
+        "13": 2,
+        "-1": 1
+      },
+      "orbits": [
+        {
+          "orbit": 1,
+          "hands": 4,
+          "startChips": {
+            "p1": 200,
+            "p2": 200,
+            "p3": 200,
+            "p4": 200
+          },
+          "startScores": {
+            "p1": 200,
+            "p2": 200,
+            "p3": 200,
+            "p4": 200
+          },
+          "endChips": {
+            "p1": 105,
+            "p2": 530,
+            "p3": 340,
+            "p4": 225
+          },
+          "endScores": {
+            "p1": -145,
+            "p2": 530,
+            "p3": 90,
+            "p4": 225
+          },
+          "handScores": [
+            {
+              "p1": 30,
+              "p2": 545,
+              "p3": 30,
+              "p4": 195
+            },
+            {
+              "p1": 70,
+              "p2": 540,
+              "p3": 0,
+              "p4": 190
+            },
+            {
+              "p1": 0,
+              "p2": 535,
+              "p3": 95,
+              "p4": 120
+            },
+            {
+              "p1": -145,
+              "p2": 530,
+              "p3": 90,
+              "p4": 225
+            }
+          ]
+        },
+        {
+          "orbit": 2,
+          "hands": 4,
+          "startChips": {
+            "p1": 105,
+            "p2": 530,
+            "p3": 340,
+            "p4": 225
+          },
+          "startScores": {
+            "p1": -145,
+            "p2": 530,
+            "p3": 90,
+            "p4": 225
+          },
+          "endChips": {
+            "p1": 160,
+            "p2": 5,
+            "p3": 1420,
+            "p4": 15
+          },
+          "endScores": {
+            "p1": -340,
+            "p2": 5,
+            "p3": 1170,
+            "p4": -235
+          },
+          "handScores": [
+            {
+              "p1": -250,
+              "p2": 745,
+              "p3": 85,
+              "p4": 120
+            },
+            {
+              "p1": -305,
+              "p2": 625,
+              "p3": 330,
+              "p4": 0
+            },
+            {
+              "p1": -310,
+              "p2": 425,
+              "p3": 300,
+              "p4": 185
+            },
+            {
+              "p1": -340,
+              "p2": 5,
+              "p3": 1170,
+              "p4": -235
+            }
+          ]
+        },
+        {
+          "orbit": 3,
+          "hands": 4,
+          "startChips": {
+            "p1": 160,
+            "p2": 5,
+            "p3": 1420,
+            "p4": 15
+          },
+          "startScores": {
+            "p1": -340,
+            "p2": 5,
+            "p3": 1170,
+            "p4": -235
+          },
+          "endChips": {
+            "p1": 190,
+            "p2": 0,
+            "p3": 1795,
+            "p4": 15
+          },
+          "endScores": {
+            "p1": -560,
+            "p2": -250,
+            "p3": 1545,
+            "p4": -235
+          },
+          "handScores": [
+            {
+              "p1": -325,
+              "p2": 0,
+              "p3": 1165,
+              "p4": -240
+            },
+            {
+              "p1": -500,
+              "p2": -55,
+              "p3": 1350,
+              "p4": -245
+            },
+            {
+              "p1": -555,
+              "p2": -60,
+              "p3": 1345,
+              "p4": -230
+            },
+            {
+              "p1": -560,
+              "p2": -250,
+              "p3": 1545,
+              "p4": -235
+            }
+          ]
+        },
+        {
+          "orbit": 4,
+          "hands": 4,
+          "startChips": {
+            "p1": 190,
+            "p2": 0,
+            "p3": 1795,
+            "p4": 15
+          },
+          "startScores": {
+            "p1": -560,
+            "p2": -250,
+            "p3": 1545,
+            "p4": -235
+          },
+          "endChips": {
+            "p1": 20,
+            "p2": 195,
+            "p3": 2030,
+            "p4": 355
+          },
+          "endScores": {
+            "p1": -730,
+            "p2": -555,
+            "p3": 1780,
+            "p4": -145
+          },
+          "handScores": [
+            {
+              "p1": -565,
+              "p2": -285,
+              "p3": 1540,
+              "p4": -240
+            },
+            {
+              "p1": -575,
+              "p2": -260,
+              "p3": 1535,
+              "p4": -250
+            },
+            {
+              "p1": -580,
+              "p2": -500,
+              "p3": 1785,
+              "p4": -305
+            },
+            {
+              "p1": -730,
+              "p2": -555,
+              "p3": 1780,
+              "p4": -145
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 62,
+      "hands": 16,
+      "street4": 4,
+      "showdowns": 12,
+      "street1Ends": 7,
+      "street0Ends": 1,
+      "uncontested": 4,
+      "allInHands": 8,
+      "actions": 163,
+      "checks": 71,
+      "calls": 14,
+      "bets": 51,
+      "folds": 27,
+      "facingWager": 77,
+      "foldToWager": 27,
+      "draws": 89,
+      "deckDraws": 60,
+      "laneDraws": 29,
+      "blanks": 2,
+      "freeCheck": 71,
+      "freeCall": 0,
+      "freeBet": 0,
+      "stickCheck": 2,
+      "stickCall": 0,
+      "stickBet": 16,
+      "sticksSpent": 18,
+      "sticksAwarded": 8,
+      "loans": 2,
+      "laneOccupancy": 732,
+      "laneObservations": 163,
+      "showdownPlayers": 33,
+      "improvedShowdownPlayers": 18,
+      "openingLeaderWinCredit": 6,
+      "showdownRankSum": 163,
+      "decisions": 163,
+      "decisionsMs": 27234.28779400009,
+      "eliminations": 0,
+      "negativeFinishes": 0,
+      "minDeck": 70,
+      "scores": {
+        "p1": 300,
+        "p2": 0,
+        "p3": 260,
+        "p4": 140
+      },
+      "showdownRanks": {
+        "1": 4,
+        "2": 5,
+        "3": 2,
+        "4": 5,
+        "5": 8,
+        "6": 1,
+        "7": 2,
+        "8": 1,
+        "9": 2,
+        "12": 2,
+        "13": 1
+      },
+      "orbits": [
+        {
+          "orbit": 1,
+          "hands": 4,
+          "startChips": {
+            "p1": 200,
+            "p2": 200,
+            "p3": 200,
+            "p4": 200
+          },
+          "startScores": {
+            "p1": 200,
+            "p2": 200,
+            "p3": 200,
+            "p4": 200
+          },
+          "endChips": {
+            "p1": 160,
+            "p2": 185,
+            "p3": 85,
+            "p4": 370
+          },
+          "endScores": {
+            "p1": 160,
+            "p2": 185,
+            "p3": 85,
+            "p4": 370
+          },
+          "handScores": [
+            {
+              "p1": 195,
+              "p2": 30,
+              "p3": 380,
+              "p4": 195
+            },
+            {
+              "p1": 190,
+              "p2": 25,
+              "p3": 185,
+              "p4": 400
+            },
+            {
+              "p1": 165,
+              "p2": 100,
+              "p3": 160,
+              "p4": 375
+            },
+            {
+              "p1": 160,
+              "p2": 185,
+              "p3": 85,
+              "p4": 370
+            }
+          ]
+        },
+        {
+          "orbit": 2,
+          "hands": 4,
+          "startChips": {
+            "p1": 160,
+            "p2": 185,
+            "p3": 85,
+            "p4": 370
+          },
+          "startScores": {
+            "p1": 160,
+            "p2": 185,
+            "p3": 85,
+            "p4": 370
+          },
+          "endChips": {
+            "p1": 715,
+            "p2": 65,
+            "p3": 220,
+            "p4": 0
+          },
+          "endScores": {
+            "p1": 715,
+            "p2": 65,
+            "p3": -30,
+            "p4": 0
+          },
+          "handScores": [
+            {
+              "p1": 255,
+              "p2": 180,
+              "p3": 0,
+              "p4": 365
+            },
+            {
+              "p1": 520,
+              "p2": 175,
+              "p3": -55,
+              "p4": 110
+            },
+            {
+              "p1": 725,
+              "p2": 75,
+              "p3": -60,
+              "p4": 10
+            },
+            {
+              "p1": 715,
+              "p2": 65,
+              "p3": -30,
+              "p4": 0
+            }
+          ]
+        },
+        {
+          "orbit": 3,
+          "hands": 4,
+          "startChips": {
+            "p1": 715,
+            "p2": 65,
+            "p3": 220,
+            "p4": 0
+          },
+          "startScores": {
+            "p1": 715,
+            "p2": 65,
+            "p3": -30,
+            "p4": 0
+          },
+          "endChips": {
+            "p1": 445,
+            "p2": 20,
+            "p3": 555,
+            "p4": 180
+          },
+          "endScores": {
+            "p1": 445,
+            "p2": 20,
+            "p3": 305,
+            "p4": -70
+          },
+          "handScores": [
+            {
+              "p1": 710,
+              "p2": 60,
+              "p3": -15,
+              "p4": -55
+            },
+            {
+              "p1": 705,
+              "p2": 30,
+              "p3": 25,
+              "p4": -60
+            },
+            {
+              "p1": 430,
+              "p2": 25,
+              "p3": 310,
+              "p4": -65
+            },
+            {
+              "p1": 445,
+              "p2": 20,
+              "p3": 305,
+              "p4": -70
+            }
+          ]
+        },
+        {
+          "orbit": 4,
+          "hands": 4,
+          "startChips": {
+            "p1": 445,
+            "p2": 20,
+            "p3": 555,
+            "p4": 180
+          },
+          "startScores": {
+            "p1": 445,
+            "p2": 20,
+            "p3": 305,
+            "p4": -70
+          },
+          "endChips": {
+            "p1": 300,
+            "p2": 0,
+            "p3": 510,
+            "p4": 390
+          },
+          "endScores": {
+            "p1": 300,
+            "p2": 0,
+            "p3": 260,
+            "p4": 140
+          },
+          "handScores": [
+            {
+              "p1": 460,
+              "p2": 15,
+              "p3": 300,
+              "p4": -75
+            },
+            {
+              "p1": 475,
+              "p2": 10,
+              "p3": 295,
+              "p4": -80
+            },
+            {
+              "p1": 305,
+              "p2": 5,
+              "p3": 265,
+              "p4": 125
+            },
+            {
+              "p1": 300,
+              "p2": 0,
+              "p3": 260,
+              "p4": 140
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

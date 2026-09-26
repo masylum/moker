@@ -1,0 +1,89 @@
+{
+  "samplesPerEquityProjection": 24,
+  "gamesPerModeAndVariant": 500,
+  "modes": {
+    "basic": {
+      "orbits": 4
+    },
+    "riichi": {
+      "orbits": 1
+    }
+  },
+  "startingChips": 200,
+  "seedPrefix": "fishing-holdout-20260925",
+  "allInLock": true,
+  "declaredRiichiLock": true,
+  "design": "Paired current rules/current upgraded bots versus proposed rules/adapted upgraded bots. Two disjoint 250-game shards per cohort. No tuning on these seeds.",
+  "files": {
+    "proposed/src/game/heuristic.ts": "37285b2e960a841e0b3f339fadf6484e09406c580dd485d0a3b83b518ae31c00",
+    "proposed/src/game/engine.ts": "ed5e2bc80e15b0d8121c36265fb9d7c4a02df39a1bd55faea7093fb33eea4727",
+    "proposed/src/game/random.ts": "762d9e84062490b79439706cbe7c377d67ccaf8d737efd9146b0bf8b144c85a3",
+    "proposed/src/game/types.ts": "c3f6c4820b9b8c6efa35825bbd9945fd4d05925167d8670e3ce327971d5ab42d",
+    "proposed/src/game/rules.ts": "bcce42db5256f7740cc7a9a7a27b3e41b453ed504669bd30e765f69d1f2c7dce",
+    "proposed/src/game/rulebook.ts": "087ed6a37675c24875380600017364c3908a951e3046404132637ce3af6c25ec",
+    "proposed/src/game/cards.ts": "5e784696eca1c83a24127166158f906404c4a30c94fb2c3ab202f90dece8316b",
+    "proposed/src/game/scoring.ts": "8783283c9725e16c601c3955ab00996e26c25173ea47f8cbce225b6808df5154",
+    "proposed/src/game/automation.ts": "96371c37293225fa0e1a2e28f08074d546c895dcccfc0bfccebb8e18299e6dc8",
+    "proposed/src/game/hand-progress.ts": "d8fecf1f1bb825f3b8d163c8fafbaf5291c4894eb09802f5a4f78d198d88109b",
+    "proposed/src/game/index.ts": "9000faaa79631db261aaa4642982ea0f5a12f98cf1e2426ff6eb9ffbafca2823",
+    "proposed/src/game/information.ts": "10db4135b72ec7e8c724847b95b854326d75de2835ce59866a9a828bb504ed44",
+    "proposed/src/game/melds.ts": "f5cca05ef5ebacefc8f438ef71faf1aba5ba7eb12caec2be3a85e3de9befba49",
+    "proposed/src/game/strength.ts": "474045cced11af5686caa8ec231b79d524f2ba9616ccab734991cf4a7b592391",
+    "proposed/src/game/hand-ranks.ts": "2212a6866c604d3ba1e03b252ed2cfe9ff4145dd3b3e96afcf10f1b61ec24636",
+    "proposed/src/game/simulation.ts": "41a95c940ddbf5cf6e5e0456e0fe6c2b826f6cacc263dee1ee16916d8829c8d1",
+    "current/src/game/heuristic.ts": "76c03010d013f14742de679bd5dd5bba5bb50e79895a821dd6d4e6a0cb78f739",
+    "current/src/game/engine.ts": "1a5f422e79603cb622db36870393225ec6f309bf4679ff3fb4166de8e53e4a6b",
+    "current/src/game/random.ts": "762d9e84062490b79439706cbe7c377d67ccaf8d737efd9146b0bf8b144c85a3",
+    "current/src/game/types.ts": "c3f6c4820b9b8c6efa35825bbd9945fd4d05925167d8670e3ce327971d5ab42d",
+    "current/src/game/rules.ts": "37fab3c16810e2f3da31a6cdb1ef017983d0dd4bc9cad1362a8e999188c49a69",
+    "current/src/game/rulebook.ts": "087ed6a37675c24875380600017364c3908a951e3046404132637ce3af6c25ec",
+    "current/src/game/cards.ts": "5e784696eca1c83a24127166158f906404c4a30c94fb2c3ab202f90dece8316b",
+    "current/src/game/scoring.ts": "8783283c9725e16c601c3955ab00996e26c25173ea47f8cbce225b6808df5154",
+    "current/src/game/automation.ts": "96371c37293225fa0e1a2e28f08074d546c895dcccfc0bfccebb8e18299e6dc8",
+    "current/src/game/hand-progress.ts": "d8fecf1f1bb825f3b8d163c8fafbaf5291c4894eb09802f5a4f78d198d88109b",
+    "current/src/game/index.ts": "9000faaa79631db261aaa4642982ea0f5a12f98cf1e2426ff6eb9ffbafca2823",
+    "current/src/game/information.ts": "10db4135b72ec7e8c724847b95b854326d75de2835ce59866a9a828bb504ed44",
+    "current/src/game/melds.ts": "f5cca05ef5ebacefc8f438ef71faf1aba5ba7eb12caec2be3a85e3de9befba49",
+    "current/src/game/strength.ts": "474045cced11af5686caa8ec231b79d524f2ba9616ccab734991cf4a7b592391",
+    "current/src/game/hand-ranks.ts": "2212a6866c604d3ba1e03b252ed2cfe9ff4145dd3b3e96afcf10f1b61ec24636",
+    "current/src/game/simulation.ts": "41a95c940ddbf5cf6e5e0456e0fe6c2b826f6cacc263dee1ee16916d8829c8d1"
+  },
+  "runnerHash": "5391329ab979e6443174261adbed8ffd19de8a52175a76213924c566463e7718",
+  "catchup": "Per-orbit start/end net scores, cash, and hand-by-hand net scores; checkpoints before next ante. Ties and early tournament endings retained.",
+  "extendedRiichi": {
+    "gamesPerVariant": 200,
+    "orbits": 4,
+    "offsets": [
+      0,
+      100
+    ],
+    "seedPrefix": "fishing-long-20260925"
+  },
+  "retainedPlannedGames": 2400,
+  "interruptedPilotBatches": "Initial main batches interrupted to add requested orbit histories; excluded from final counts.",
+  "orbitHelperHash": "81e92e50e69c3f7dca0e09c5a37991b0091ad6684c0b22a9175b7d5f32de655b",
+  "status": "Complete: 2400 retained simulations; source frozen; app not switched to proposed rules",
+  "completedGames": 2400,
+  "completedHands": 19369,
+  "validation": {
+    "unitTests": 97,
+    "experimentTests": 12,
+    "strictTypeScript": true,
+    "targetedLintAndFormat": true,
+    "chipAndStickConservation": true
+  },
+  "resultHashes": {
+    "results/basic-proposed-250.json": "6fea0706cb19db721fe45af446ec5e6b25950b56853b2e468db74a971f5f60cd",
+    "results/riichi-proposed-250.json": "09f084db5680275ca0e3483c47254e215e306c52eb972d70c7cab99c812ebe8f",
+    "results/riichi-current-250.json": "f552d30e29a41aceccf7d3c9b34711af468d385841c690c61316169a412912c6",
+    "results/riichi-current-0.json": "bae1398e680ad6b44b1480d32bd9e7a2a5548a69a1a1998ba7d17d2ef1829560",
+    "results/riichi-proposed-0.json": "b2bc522d7f88c5db0b5bd0eb5d555271a124c52a2e814c23a9299ff8d67be356",
+    "results/basic-current-250.json": "e987a003cbba1d1e699ff4135f4947e0f690dc59b35bc3f53e50224c0553b313",
+    "results/basic-current-0.json": "faa0d5633f28fe8405c23bd4ca183ffb52d6a870a9facb074ad29293c224dfd0",
+    "results/basic-proposed-0.json": "4364a3be1bb7b23bd7099ac514ddbf4c172378f912e6ee468e92cb0697657324",
+    "results/riichi-long-proposed-100.json": "d07de3332f7eccd8f4e730046a36b5fa229f17a6aaef7d70e71bf40f6992ff0a",
+    "results/riichi-long-proposed-0.json": "facf34a1cdae940413e16109bb613ccec5e4597ff6dbd483a30de1a800223628",
+    "results/riichi-long-current-100.json": "1e699929b933db751fe80e3acf5996c26278545b669e0538c5c89bbb15240a0d",
+    "results/riichi-long-current-0.json": "e17a126bdba26cdf6100fce880e9d387ff924719a8476efd2239f0e3b7270fe7"
+  }
+}

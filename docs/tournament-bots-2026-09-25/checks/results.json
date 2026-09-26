@@ -1,0 +1,23 @@
+{
+  "unit": {
+    "command": "npx vitest run --testTimeout 30000",
+    "tests": 118,
+    "passed": 118
+  },
+  "worker": {
+    "command": "npm run test:worker",
+    "tests": 4,
+    "passed": 4
+  },
+  "build": {
+    "command": "npm run build",
+    "passed": true
+  },
+  "targetedLint": {
+    "passed": true
+  },
+  "targetedFormat": {
+    "passed": true
+  },
+  "note": "The initial parallel unit run hit the default 5-second timeout in the random scorer equivalence stress test while simulation workers were busy. Its isolated rerun passed, and the full 118-test suite passed with a 30-second test timeout. No assertion failure occurred."
+}

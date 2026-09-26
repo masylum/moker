@@ -1,0 +1,13 @@
+
+> mahjong-poker-lab@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.10 /Users/pao/repos/moker
+
+
+ Test Files  10 passed (10)
+      Tests  135 passed (135)
+   Start at  16:56:54
+   Duration  8.54s (transform 1.07s, setup 0ms, import 1.78s, tests 18.77s, environment 1ms)
+

@@ -1,0 +1,234 @@
+{
+  "replayed_games": 10,
+  "hands": 160,
+  "samples": 24,
+  "oracle_holding_checks": 1280,
+  "hands_containing_dragons": 24,
+  "hands_containing_pung": 57,
+  "two_distinct_dragons_charleston_decisions": 52,
+  "two_distinct_dragons_betting_decisions": 140,
+  "immediately_available_unlocked_completions": 6,
+  "completed_available": 5,
+  "missed_available": [
+    {
+      "seed": "sticks-20260925-continuous-riichi-0",
+      "hand": 16,
+      "street": 1,
+      "phase": "betting",
+      "player": "p4",
+      "cards": [
+        "Blue Dragon",
+        "West Wind",
+        "Blank",
+        "Green Dragon",
+        "West Wind",
+        "5 Bams",
+        "2 Craks"
+      ],
+      "privateIds": [
+        "dragon-white-2",
+        "wind-west-1",
+        "blank-1",
+        "dragon-green-1",
+        "wind-west-2",
+        "bamboo-5-1",
+        "characters-2-2"
+      ],
+      "beforeKind": "eye",
+      "missing": "red",
+      "chips": 225,
+      "pot": 20,
+      "toCall": 0,
+      "locked": false,
+      "sticks": 3,
+      "topSources": [
+        "discard-b"
+      ],
+      "blankAvailable": true,
+      "laneTargets": [
+        {
+          "pile": "b",
+          "index": 0,
+          "label": "Red Dragon"
+        }
+      ],
+      "lanes": [
+        [
+          "5 Dots"
+        ],
+        [
+          "Red Dragon"
+        ]
+      ],
+      "action": {
+        "type": "bet",
+        "amount": 225
+      },
+      "rationale": "1% estimated equity, 0% pot odds, 24% estimated foldout; tournament risk \u00d70.68; prioritizes final tournament win",
+      "evaluations": [
+        {
+          "action": {
+            "type": "bet",
+            "amount": 225
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.01,
+          "estimatedFoldout": 0.2373936811777442,
+          "expectedChipDelta": -88.3860204192356,
+          "utility": 4.854130708629615,
+          "samples": 24,
+          "rationale": "1% estimated equity, 0% pot odds, 24% estimated foldout; tournament risk \u00d70.68; prioritizes final tournament win"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 25,
+            "useRiichiStick": true,
+            "drawSource": "discard-b"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.8607777291403527,
+          "estimatedFoldout": 0.06988954505172072,
+          "expectedChipDelta": 51.79359060312425,
+          "utility": 0.005179359060312426,
+          "samples": 24,
+          "rationale": "86% estimated equity after fishing, 0% pot odds, 7% estimated foldout; tournament risk \u00d70.68; prioritizes final tournament win"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 15,
+            "useRiichiStick": true,
+            "drawSource": "discard-b"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.8800934148335944,
+          "estimatedFoldout": 0.041016573258915785,
+          "expectedChipDelta": 41.76822090463919,
+          "utility": 0.0041768220904639195,
+          "samples": 24,
+          "rationale": "88% estimated equity after fishing, 0% pot odds, 4% estimated foldout; tournament risk \u00d70.68; prioritizes final tournament win"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 10,
+            "useRiichiStick": true,
+            "drawSource": "discard-b"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.8800934148335944,
+          "estimatedFoldout": 0.025928264012881633,
+          "expectedChipDelta": 35.01215388542143,
+          "utility": 0.0035012153885421427,
+          "samples": 24,
+          "rationale": "88% estimated equity after fishing, 0% pot odds, 3% estimated foldout; tournament risk \u00d70.68; prioritizes final tournament win"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 5,
+            "useRiichiStick": true,
+            "drawSource": "discard-b"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.8800934148335944,
+          "estimatedFoldout": 0.012139260774488422,
+          "expectedChipDelta": 27.189451893281777,
+          "utility": 0.002718945189328178,
+          "samples": 24,
+          "rationale": "88% estimated equity after fishing, 0% pot odds, 1% estimated foldout; tournament risk \u00d70.68; prioritizes final tournament win"
+        },
+        {
+          "action": {
+            "type": "check",
+            "drawSource": "discard-b"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.8800934148335944,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 17.60186829667189,
+          "utility": 0.0017601868296671889,
+          "samples": 24,
+          "rationale": "88% estimated equity after fishing, 0% pot odds, 0% estimated foldout; tournament risk \u00d70.68; prioritizes final tournament win"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 5
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.039280212837494596,
+          "estimatedFoldout": 0.004530271038731282,
+          "expectedChipDelta": -3.418489598479929,
+          "utility": -0.0003418489598479929,
+          "samples": 24,
+          "rationale": "4% estimated equity, 0% pot odds, 0% estimated foldout; tournament risk \u00d70.68; prioritizes final tournament win"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 10
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.039280212837494596,
+          "estimatedFoldout": 0.01238634773215235,
+          "expectedChipDelta": -7.562889703554408,
+          "utility": -0.0007562889703554408,
+          "samples": 24,
+          "rationale": "4% estimated equity, 0% pot odds, 1% estimated foldout; tournament risk \u00d70.68; prioritizes final tournament win"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 15
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.039280212837494596,
+          "estimatedFoldout": 0.021986797611128126,
+          "expectedChipDelta": -11.62174726223577,
+          "utility": -0.0011621747262235771,
+          "samples": 24,
+          "rationale": "4% estimated equity, 0% pot odds, 2% estimated foldout; tournament risk \u00d70.68; prioritizes final tournament win"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 25
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.019964527144252855,
+          "estimatedFoldout": 0.04181593417559504,
+          "expectedChipDelta": -21.289204178426136,
+          "utility": -0.0021289204178426137,
+          "samples": 24,
+          "rationale": "2% estimated equity, 0% pot odds, 4% estimated foldout; tournament risk \u00d70.68; prioritizes final tournament win"
+        }
+      ],
+      "afterCards": [
+        "Blue Dragon",
+        "West Wind",
+        "Blank",
+        "Green Dragon",
+        "West Wind",
+        "5 Bams",
+        "2 Craks"
+      ],
+      "completed": false,
+      "retainsTwo": true,
+      "afterKind": "eye"
+    }
+  ],
+  "exhaustive_dragon_joker_triples": 286,
+  "valid_dragon_joker_triples": 64,
+  "tactical_bot_scenarios": 21,
+  "production_logic_changed": false,
+  "sourceHashes": {
+    "cards.ts": "b1133434d4fc65ed88c806e75f49281d3db9a3b23a981a3dfb8382ea973d5968",
+    "melds.ts": "c5d24cb782691ff6f7ad76c06219a870489c271de0e403bf7e5bb082d4400188",
+    "hand-progress.ts": "3c5a9adbc2341a9a4654efbd636337fd9fe2333ec3b366d2fc04df1da75ac79c",
+    "scoring.ts": "bfda7c74a6ae09e5c0d23d9f4c0168ba59a8ee1b293c9fecd88579ff81f1775b",
+    "heuristic.ts": "36ccfc36e2392afa5971edb2a234170f462f1e983c15605eedda027d14c78bdb",
+    "hand-ranks.ts": "7e6829e1f05626b28d2686af614c3b78cf221d20ea9d376a8793399c26c0b37f"
+  }
+}

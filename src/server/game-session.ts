@@ -1,5 +1,5 @@
 import { Agent } from "agents"
-import { stepHeuristic } from "../game/automation"
+import { prepareCharleston, stepHeuristic } from "../game/automation"
 import { GameEngine, type PlayerSetup } from "../game/engine"
 import { analyzePokerMath, chooseHeuristicAction } from "../game/heuristic"
 import type {
@@ -22,7 +22,6 @@ interface StoredEventRow {
   type: string
   actor_id: string | null
   payload_json: string
-  state_json: string
   hand_number: number
   state_version: number
   created_at: string
@@ -38,6 +37,7 @@ export class GameSession extends Agent<Env, SessionState> {
     this.ensureSchema()
     this.sql`DELETE FROM game_events`
     const engine = GameEngine.create(players, config)
+    prepareCharleston(engine)
     this.commit(engine)
     return engine.publicView(players.find((player) => player.controller === "human")?.id)
   }
@@ -53,9 +53,9 @@ export class GameSession extends Agent<Env, SessionState> {
   async getDebugGame(): Promise<DebugGameView> {
     const engine = this.engine()
     const samples = engine.state.config.heuristicSamples
-    const analyses = engine.state.players
-      .filter((player) => !player.eliminated)
-      .map((player) => analyzePokerMath(engine.state, player.id, samples))
+    const analyses = engine.state.players.map((player) =>
+      analyzePokerMath(engine.state, player.id, samples),
+    )
     const actingDecision =
       engine.state.phase === "betting" && engine.state.actingPlayerId
         ? chooseHeuristicAction(engine.state, engine.state.actingPlayerId, samples)
@@ -69,9 +69,39 @@ export class GameSession extends Agent<Env, SessionState> {
     }
   }
 
-  async applyBettingAction(playerId: string, action: BettingAction): Promise<PublicGameState> {
+  async applyBettingAction(
+    playerId: string,
+    action: BettingAction,
+    offerStick = false,
+  ): Promise<PublicGameState> {
     const engine = this.engine()
-    engine.act(playerId, action)
+    engine.act(playerId, action, offerStick)
+    this.commit(engine)
+    return engine.publicView(playerId)
+  }
+
+  async resolveStick(
+    playerId: string,
+    source?: "deck" | "discard-a" | "discard-b",
+  ): Promise<PublicGameState> {
+    const engine = this.engine()
+    if (source) engine.spendRiichiStick(playerId, source)
+    else engine.finishStickDecision(playerId)
+    this.commit(engine)
+    return engine.publicView(playerId)
+  }
+
+  async applyCharleston(playerId: string, cardIds: string[]): Promise<PublicGameState> {
+    const engine = this.engine()
+    engine.passCharleston(playerId, cardIds)
+    prepareCharleston(engine)
+    this.commit(engine)
+    return engine.publicView(playerId)
+  }
+
+  async applyExposure(playerId: string, cardIds: string[]): Promise<PublicGameState> {
+    const engine = this.engine()
+    engine.exposeCards(playerId, cardIds)
     this.commit(engine)
     return engine.publicView(playerId)
   }
@@ -83,17 +113,6 @@ export class GameSession extends Agent<Env, SessionState> {
   ): Promise<PublicGameState> {
     const engine = this.engine()
     engine.discard(playerId, { discardCardId, discardPile })
-    this.commit(engine)
-    return engine.publicView(playerId)
-  }
-
-  async applySeedDiscard(
-    playerId: string,
-    discardCardId: string,
-    discardPile: DiscardPile,
-  ): Promise<PublicGameState> {
-    const engine = this.engine()
-    engine.seedDiscard(playerId, { discardCardId, discardPile })
     this.commit(engine)
     return engine.publicView(playerId)
   }
@@ -115,6 +134,7 @@ export class GameSession extends Agent<Env, SessionState> {
   async nextHand(viewerId?: string): Promise<PublicGameState> {
     const engine = this.engine()
     engine.startNextHand()
+    prepareCharleston(engine)
     this.commit(engine)
     return engine.publicView(viewerId)
   }
@@ -127,12 +147,12 @@ export class GameSession extends Agent<Env, SessionState> {
     return { state: engine.publicView(humanId ?? step.playerId), rationale: step.rationale }
   }
 
-  async getEvents(limit = 500): Promise<Array<GameEvent & { state: GameState }>> {
+  async getEvents(limit = 500): Promise<GameEvent[]> {
     this.ensureSchema()
     const bounded = Math.max(1, Math.min(2_000, Math.floor(limit)))
     const rows = [
       ...this.sql<StoredEventRow>`
-      SELECT id, type, actor_id, payload_json, state_json, hand_number, state_version, created_at
+      SELECT id, type, actor_id, payload_json, hand_number, state_version, created_at
       FROM game_events ORDER BY id DESC LIMIT ${bounded}
     `,
     ].reverse()
@@ -146,7 +166,6 @@ export class GameSession extends Agent<Env, SessionState> {
       payload: JSON.parse(row.payload_json) as unknown,
       stateVersion: row.state_version,
       createdAt: row.created_at,
-      state: JSON.parse(row.state_json) as GameState,
     }))
   }
 

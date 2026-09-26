@@ -1,0 +1,76 @@
+/* Shared finish for UI controls; cards, chips and text links keep their own material. */
+button:where(
+  :not(
+    .card-choice,
+    .deck,
+    .fish-card,
+    .chip,
+    .text-button,
+    .ladder-toggle,
+    .setup-seat.none,
+    .mode-picker button
+  )
+),
+.main-actions button,
+.player-picker button,
+.setup-seat:not(.none),
+.start-button,
+.audio-toggle {
+  background-image: var(--gradient-button);
+  box-shadow: var(--shadow-button);
+  border-style: solid;
+  border-width: 1px;
+  border-color: var(--color-border-strong);
+  border-radius: var(--radius-control);
+}
+
+button.primary,
+.main-actions .primary,
+.start-button,
+.setup-seat.human,
+.player-picker button.selected {
+  border-color: var(--color-text);
+}
+
+.mode-picker::before {
+  background-image: var(--gradient-button);
+  box-shadow: var(--shadow-button);
+}
+
+button:active:not(
+    :disabled,
+    .card-choice,
+    .deck,
+    .fish-card,
+    .chip,
+    .text-button,
+    .ladder-toggle,
+    .mode-picker button
+  ) {
+  box-shadow: var(--shadow-button-pressed);
+}
+
+/* Shared action sizing, whether the control is on the table or in a drawer. */
+.main-actions button,
+.dialog-actions button {
+  min-height: 40px;
+  padding: 6px 16px;
+  border-radius: var(--radius-control);
+  font-size: 14px;
+  line-height: 20px;
+}
+.main-actions button.primary,
+.dialog-actions button.primary {
+  min-width: 126px;
+}
+.masthead .text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.masthead .text-button span {
+  margin-left: 0;
+}

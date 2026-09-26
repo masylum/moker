@@ -29,5 +29,5 @@
     ],
     "vitest/no-focused-tests": "error"
   },
-  "ignorePatterns": ["dist/**", "worker-configuration.d.ts"]
+  "ignorePatterns": ["dist/**", "worker-configuration.d.ts", "docs/**", "scripts/archive/**"]
 }

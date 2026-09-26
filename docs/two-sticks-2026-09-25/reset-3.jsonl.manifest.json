@@ -1,0 +1,32 @@
+{
+  "mode": "riichi",
+  "order": [
+    "high-card",
+    "eye",
+    "chow",
+    "two-eyes",
+    "chow-eye",
+    "pung",
+    "three-winds",
+    "pung-eye",
+    "three-dragons",
+    "three-dragons-eye",
+    "four-winds",
+    "kong"
+  ],
+  "count": 40,
+  "workers": 10,
+  "orbits": 1,
+  "games": 4,
+  "samples": 24,
+  "startingSticks": 3,
+  "seed": "sticks-20260925-reset",
+  "sourceHashes": {
+    "heuristic.ts": "36ccfc36e2392afa5971edb2a234170f462f1e983c15605eedda027d14c78bdb",
+    "scoring.ts": "bfda7c74a6ae09e5c0d23d9f4c0168ba59a8ee1b293c9fecd88579ff81f1775b",
+    "hand-ranks.ts": "d9846a2ac21c6d14bb67b286f88ea8923a3e28b8e412ede1491f240880e92e05",
+    "hand-progress.ts": "3c5a9adbc2341a9a4654efbd636337fd9fe2333ec3b366d2fc04df1da75ac79c",
+    "engine.ts": "9bf926f9fae3787fd005f31ad524d86b9360143a03b635b35de5e0a796495e67",
+    "rules.ts": "7a3ae02ee3113198d282fabf163721924038359c0d0cc6c322bc42e637b1965d"
+  }
+}

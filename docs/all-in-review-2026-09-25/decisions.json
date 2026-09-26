@@ -1,0 +1,3110 @@
+[
+  {
+    "game": 0,
+    "hand": 5,
+    "player": "p1",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 35,
+    "pot": 100,
+    "loans": 0,
+    "kind": "Pung",
+    "rank": 7,
+    "cards": [
+      "5 Bams",
+      "5 Craks",
+      "North Wind",
+      "6 Craks",
+      "5 Bams",
+      "1 Bams",
+      "Green Joker"
+    ],
+    "equity": 0.6500898908596124,
+    "foldout": 0,
+    "ev": 39.760337448855424,
+    "utility": 33.21379560889155,
+    "rationale": "65% estimated equity, 30% pot odds, 0% estimated foldout; tournament risk ×0.91",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 150,
+    "opponents": [
+      {
+        "id": "p2",
+        "kind": "Two Eyes",
+        "cards": [
+          "8 Bams",
+          "West Wind",
+          "Blank",
+          "West Wind",
+          "1 Dots",
+          "8 Dots",
+          "1 Dots"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "Twin Lotus",
+        "cards": [
+          "Red Joker",
+          "South Wind",
+          "6 Craks",
+          "South Wind",
+          "6 Dots",
+          "Black Lotus",
+          "White Lotus"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 0,
+    "hand": 6,
+    "player": "p2",
+    "first": true,
+    "reason": "opening-charge",
+    "street": 0,
+    "chips": 0,
+    "pot": 20,
+    "loans": 0,
+    "kind": "High Card",
+    "rank": 1,
+    "cards": [
+      "6 Dots",
+      "West Wind",
+      "7 Bams",
+      "2 Craks",
+      "5 Bams",
+      "1 Bams",
+      "6 Craks"
+    ],
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 20,
+    "opponents": [
+      {
+        "id": "p1",
+        "kind": "Single Lotus",
+        "cards": [
+          "3 Craks",
+          "3 Dots",
+          "North Wind",
+          "South Wind",
+          "Green Dragon",
+          "White Lotus",
+          "2 Dots"
+        ]
+      },
+      {
+        "id": "p3",
+        "kind": "Eyes",
+        "cards": [
+          "7 Dots",
+          "North Wind",
+          "8 Dots",
+          "7 Dots",
+          "6 Bams",
+          "5 Dots",
+          "9 Bams"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "High Card",
+        "cards": [
+          "1 Dots",
+          "North Wind",
+          "5 Bams",
+          "4 Craks",
+          "1 Bams",
+          "4 Bams",
+          "Blank"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 0,
+    "hand": 7,
+    "player": "p4",
+    "first": true,
+    "reason": "call",
+    "street": 2,
+    "chips": 20,
+    "pot": 525,
+    "loans": 0,
+    "kind": "Eyes",
+    "rank": 2,
+    "cards": [
+      "9 Dots",
+      "Green Dragon",
+      "1 Craks",
+      "5 Bams",
+      "8 Bams",
+      "8 Bams",
+      "East Wind"
+    ],
+    "equity": 0.10134952996038492,
+    "foldout": 0,
+    "ev": 26.620783781777064,
+    "utility": 17.37304753688231,
+    "rationale": "10% estimated equity, 4% pot odds, 0% estimated foldout; tournament risk ×0.68",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 460,
+    "opponents": [
+      {
+        "id": "p3",
+        "kind": "Pung",
+        "cards": [
+          "5 Craks",
+          "3 Dots",
+          "7 Bams",
+          "2 Dots",
+          "Blue Joker",
+          "7 Dots",
+          "7 Dots"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 0,
+    "hand": 9,
+    "player": "p2",
+    "first": true,
+    "reason": "bet",
+    "street": 2,
+    "chips": 430,
+    "pot": 70,
+    "loans": 1,
+    "kind": "Twin Lotus",
+    "rank": 4,
+    "cards": [
+      "1 Dots",
+      "South Wind",
+      "White Lotus",
+      "Black Lotus",
+      "North Wind",
+      "North Wind",
+      "1 Dots"
+    ],
+    "equity": 1,
+    "foldout": 0.82,
+    "ev": 77.2,
+    "utility": 167.69915322875977,
+    "rationale": "100% estimated equity, 0% pot odds, 82% estimated foldout; tournament risk ×0.61",
+    "winner": true,
+    "winCredit": 1,
+    "finalPot": 150,
+    "opponents": [
+      {
+        "id": "p4",
+        "kind": "Two Eyes",
+        "cards": [
+          "5 Bams",
+          "8 Craks",
+          "2 Craks",
+          "9 Craks",
+          "East Wind",
+          "5 Bams",
+          "East Wind"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 0,
+    "hand": 9,
+    "player": "p4",
+    "first": false,
+    "reason": "call",
+    "street": 2,
+    "chips": 40,
+    "pot": 500,
+    "loans": 1,
+    "kind": "Two Eyes",
+    "rank": 4,
+    "cards": [
+      "5 Bams",
+      "8 Craks",
+      "2 Craks",
+      "9 Craks",
+      "East Wind",
+      "5 Bams",
+      "East Wind"
+    ],
+    "equity": 0.729211360641081,
+    "foldout": 0,
+    "ev": 69.38170409616215,
+    "utility": 69.96593130898377,
+    "rationale": "73% estimated equity, 27% pot odds, 0% estimated foldout; tournament risk ×0.50",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 150,
+    "opponents": [
+      {
+        "id": "p2",
+        "kind": "Twin Lotus",
+        "cards": [
+          "1 Dots",
+          "South Wind",
+          "White Lotus",
+          "Black Lotus",
+          "North Wind",
+          "North Wind",
+          "1 Dots"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 0,
+    "hand": 11,
+    "player": "p4",
+    "first": true,
+    "reason": "call",
+    "street": 2,
+    "chips": 5,
+    "pot": 625,
+    "loans": 2,
+    "kind": "Eyes",
+    "rank": 2,
+    "cards": [
+      "3 Bams",
+      "6 Bams",
+      "7 Dots",
+      "6 Craks",
+      "South Wind",
+      "Blue Dragon",
+      "South Wind"
+    ],
+    "equity": 0.07732098574300454,
+    "foldout": 0,
+    "ev": 34.43370272893232,
+    "utility": 32.877005193289826,
+    "rationale": "8% estimated equity, 1% pot odds, 0% estimated foldout; tournament risk ×0.50",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 515,
+    "opponents": [
+      {
+        "id": "p2",
+        "kind": "Chow",
+        "cards": [
+          "2 Bams",
+          "4 Bams",
+          "8 Bams",
+          "Blank",
+          "7 Craks",
+          "6 Craks",
+          "8 Craks"
+        ]
+      },
+      {
+        "id": "p3",
+        "kind": "Chow + Eye",
+        "cards": [
+          "Blank",
+          "West Wind",
+          "2 Craks",
+          "West Wind",
+          "Blue Joker",
+          "9 Dots",
+          "7 Dots"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 0,
+    "hand": 12,
+    "player": "p1",
+    "first": true,
+    "reason": "opening-charge",
+    "street": 0,
+    "chips": 0,
+    "pot": 20,
+    "loans": 1,
+    "kind": "Three Winds",
+    "rank": 6,
+    "cards": [
+      "North Wind",
+      "6 Bams",
+      "1 Dots",
+      "5 Craks",
+      "Black Joker",
+      "7 Bams",
+      "South Wind"
+    ],
+    "winner": true,
+    "winCredit": 1,
+    "finalPot": 20,
+    "opponents": [
+      {
+        "id": "p2",
+        "kind": "Chow",
+        "cards": [
+          "7 Dots",
+          "Blank",
+          "5 Bams",
+          "9 Bams",
+          "Blue Joker",
+          "4 Craks",
+          "5 Dots"
+        ]
+      },
+      {
+        "id": "p3",
+        "kind": "Eyes",
+        "cards": [
+          "9 Bams",
+          "7 Craks",
+          "3 Dots",
+          "9 Bams",
+          "6 Dots",
+          "3 Bams",
+          "3 Craks"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "Single Lotus",
+        "cards": [
+          "Blue Dragon",
+          "7 Dots",
+          "8 Bams",
+          "2 Bams",
+          "1 Dots",
+          "White Lotus",
+          "8 Craks"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 0,
+    "hand": 13,
+    "player": "p4",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 75,
+    "pot": 360,
+    "loans": 3,
+    "kind": "Pung",
+    "rank": 7,
+    "cards": [
+      "3 Craks",
+      "5 Dots",
+      "3 Craks",
+      "7 Dots",
+      "West Wind",
+      "3 Craks",
+      "7 Bams"
+    ],
+    "equity": 0.8081712833849134,
+    "foldout": 0,
+    "ev": 248.26851335396537,
+    "utility": 252.32493648089962,
+    "rationale": "81% estimated equity, 19% pot odds, 0% estimated foldout; tournament risk ×0.50",
+    "winner": true,
+    "winCredit": 1,
+    "finalPot": 400,
+    "opponents": [
+      {
+        "id": "p3",
+        "kind": "Chow",
+        "cards": [
+          "7 Craks",
+          "6 Dots",
+          "Green Dragon",
+          "Blank",
+          "6 Craks",
+          "8 Craks",
+          "2 Bams"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 0,
+    "hand": 14,
+    "player": "p2",
+    "first": true,
+    "reason": "opening-charge",
+    "street": 0,
+    "chips": 0,
+    "pot": 20,
+    "loans": 1,
+    "kind": "High Card",
+    "rank": 1,
+    "cards": [
+      "Green Dragon",
+      "West Wind",
+      "Blank",
+      "5 Craks",
+      "9 Craks",
+      "6 Bams",
+      "9 Bams"
+    ],
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 20,
+    "opponents": [
+      {
+        "id": "p1",
+        "kind": "Chow",
+        "cards": [
+          "2 Bams",
+          "4 Dots",
+          "5 Bams",
+          "6 Craks",
+          "3 Dots",
+          "5 Dots",
+          "North Wind"
+        ]
+      },
+      {
+        "id": "p3",
+        "kind": "Two Eyes",
+        "cards": [
+          "Blue Dragon",
+          "3 Dots",
+          "5 Bams",
+          "7 Craks",
+          "Blue Dragon",
+          "4 Bams",
+          "7 Craks"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "Eyes",
+        "cards": [
+          "2 Dots",
+          "2 Dots",
+          "9 Craks",
+          "North Wind",
+          "Green Dragon",
+          "2 Craks",
+          "West Wind"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 0,
+    "hand": 15,
+    "player": "p2",
+    "first": true,
+    "reason": "call",
+    "street": 3,
+    "chips": 5,
+    "pot": 595,
+    "loans": 2,
+    "kind": "Two Eyes",
+    "rank": 4,
+    "cards": [
+      "8 Bams",
+      "1 Dots",
+      "2 Craks",
+      "2 Dots",
+      "5 Dots",
+      "5 Dots",
+      "2 Dots"
+    ],
+    "equity": 0.06649246545792575,
+    "foldout": 0,
+    "ev": 34.89547927475545,
+    "utility": 33.31171043840027,
+    "rationale": "7% estimated equity, 1% pot odds, 0% estimated foldout; tournament risk ×0.50",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 605,
+    "opponents": [
+      {
+        "id": "p3",
+        "kind": "Eyes",
+        "cards": [
+          "Black Joker",
+          "7 Bams",
+          "1 Craks",
+          "4 Bams",
+          "East Wind",
+          "4 Bams",
+          "9 Bams"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "Two Eyes",
+        "cards": [
+          "4 Craks",
+          "Red Dragon",
+          "2 Bams",
+          "West Wind",
+          "Green Dragon",
+          "West Wind",
+          "Green Dragon"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 0,
+    "hand": 16,
+    "player": "p1",
+    "first": true,
+    "reason": "opening-charge",
+    "street": 0,
+    "chips": 0,
+    "pot": 20,
+    "loans": 1,
+    "kind": "Eyes",
+    "rank": 2,
+    "cards": [
+      "6 Craks",
+      "4 Craks",
+      "1 Craks",
+      "3 Bams",
+      "8 Craks",
+      "4 Craks",
+      "2 Craks"
+    ],
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 20,
+    "opponents": [
+      {
+        "id": "p2",
+        "kind": "Eyes",
+        "cards": [
+          "1 Dots",
+          "2 Craks",
+          "Blue Dragon",
+          "4 Dots",
+          "1 Dots",
+          "South Wind",
+          "5 Bams"
+        ]
+      },
+      {
+        "id": "p3",
+        "kind": "High Card",
+        "cards": [
+          "7 Bams",
+          "6 Bams",
+          "9 Craks",
+          "3 Dots",
+          "5 Dots",
+          "5 Craks",
+          "2 Bams"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "Eyes",
+        "cards": [
+          "3 Dots",
+          "1 Dots",
+          "6 Dots",
+          "9 Craks",
+          "8 Dots",
+          "East Wind",
+          "East Wind"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 1,
+    "hand": 2,
+    "player": "p2",
+    "first": true,
+    "reason": "call",
+    "street": 3,
+    "chips": 55,
+    "pot": 330,
+    "loans": 0,
+    "kind": "Two Eyes",
+    "rank": 4,
+    "cards": [
+      "7 Dots",
+      "2 Bams",
+      "8 Craks",
+      "Green Dragon",
+      "6 Craks",
+      "Green Dragon",
+      "6 Craks"
+    ],
+    "equity": 0.30841008833219746,
+    "foldout": 0,
+    "ev": 60.65378312457405,
+    "utility": 11.408621779647127,
+    "rationale": "31% estimated equity, 15% pot odds, 0% estimated foldout; tournament risk ×1.33",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 375,
+    "opponents": [
+      {
+        "id": "p4",
+        "kind": "Three Winds",
+        "cards": [
+          "North Wind",
+          "8 Craks",
+          "South Wind",
+          "3 Craks",
+          "5 Craks",
+          "4 Craks",
+          "West Wind"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 1,
+    "hand": 3,
+    "player": "p1",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 130,
+    "pot": 360,
+    "loans": 0,
+    "kind": "Chow",
+    "rank": 3,
+    "cards": [
+      "1 Bams",
+      "South Wind",
+      "5 Craks",
+      "Black Joker",
+      "4 Craks",
+      "9 Dots",
+      "6 Craks"
+    ],
+    "equity": 0.5276720466565319,
+    "foldout": 0,
+    "ev": 123.28258239513531,
+    "utility": 51.78150284194332,
+    "rationale": "53% estimated equity, 27% pot odds, 0% estimated foldout; tournament risk ×1.27",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 480,
+    "opponents": [
+      {
+        "id": "p4",
+        "kind": "Chow",
+        "cards": [
+          "Blank",
+          "8 Craks",
+          "5 Dots",
+          "6 Dots",
+          "North Wind",
+          "2 Craks",
+          "7 Dots"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 1,
+    "hand": 4,
+    "player": "p3",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 35,
+    "pot": 280,
+    "loans": 0,
+    "kind": "Two Eyes",
+    "rank": 4,
+    "cards": [
+      "7 Dots",
+      "Green Dragon",
+      "Green Dragon",
+      "6 Craks",
+      "8 Craks",
+      "8 Craks",
+      "2 Dots"
+    ],
+    "equity": 0.6231985736795537,
+    "foldout": 0,
+    "ev": 130.14762202508172,
+    "utility": 120.42450367614653,
+    "rationale": "62% estimated equity, 13% pot odds, 0% estimated foldout; tournament risk ×1.02",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 300,
+    "opponents": [
+      {
+        "id": "p1",
+        "kind": "Pung",
+        "cards": [
+          "1 Craks",
+          "9 Dots",
+          "3 Dots",
+          "North Wind",
+          "1 Craks",
+          "1 Craks",
+          "9 Bams"
+        ]
+      },
+      {
+        "id": "p2",
+        "kind": "Two Eyes",
+        "cards": [
+          "1 Dots",
+          "Black Joker",
+          "1 Dots",
+          "Red Dragon",
+          "Red Dragon",
+          "3 Bams",
+          "Blue Dragon"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "Chow",
+        "cards": [
+          "South Wind",
+          "7 Dots",
+          "6 Dots",
+          "Blank",
+          "5 Bams",
+          "5 Dots",
+          "4 Craks"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 1,
+    "hand": 5,
+    "player": "p2",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 25,
+    "pot": 100,
+    "loans": 1,
+    "kind": "Chow + Eye",
+    "rank": 5,
+    "cards": [
+      "9 Craks",
+      "3 Craks",
+      "2 Craks",
+      "2 Bams",
+      "9 Craks",
+      "1 Dots",
+      "1 Craks"
+    ],
+    "equity": 0.7092142463376404,
+    "foldout": 0,
+    "ev": 42.375353402075845,
+    "utility": 39.764415040711725,
+    "rationale": "71% estimated equity, 26% pot odds, 0% estimated foldout; tournament risk ×0.88",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 95,
+    "opponents": [
+      {
+        "id": "p3",
+        "kind": "Two Eyes",
+        "cards": [
+          "2 Bams",
+          "3 Bams",
+          "9 Dots",
+          "Green Dragon",
+          "3 Dots",
+          "9 Dots",
+          "Green Dragon"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "Chow + Eye",
+        "cards": [
+          "8 Craks",
+          "Red Dragon",
+          "6 Bams",
+          "5 Bams",
+          "7 Bams",
+          "2 Craks",
+          "8 Craks"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 1,
+    "hand": 6,
+    "player": "p3",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 65,
+    "pot": 345,
+    "loans": 1,
+    "kind": "Three Winds",
+    "rank": 6,
+    "cards": [
+      "6 Bams",
+      "East Wind",
+      "9 Craks",
+      "3 Craks",
+      "Red Dragon",
+      "West Wind",
+      "North Wind"
+    ],
+    "equity": 0.7701512932598098,
+    "foldout": 0,
+    "ev": 223.80673497242867,
+    "utility": 222.3516105188444,
+    "rationale": "77% estimated equity, 17% pot odds, 0% estimated foldout; tournament risk ×0.75",
+    "winner": true,
+    "winCredit": 1,
+    "finalPot": 375,
+    "opponents": [
+      {
+        "id": "p1",
+        "kind": "Chow + Eye",
+        "cards": [
+          "5 Craks",
+          "Red Joker",
+          "6 Dots",
+          "Blue Dragon",
+          "3 Craks",
+          "8 Bams",
+          "8 Bams"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 1,
+    "hand": 8,
+    "player": "p1",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 180,
+    "pot": 465,
+    "loans": 1,
+    "kind": "Eyes",
+    "rank": 2,
+    "cards": [
+      "9 Dots",
+      "South Wind",
+      "7 Dots",
+      "Blank",
+      "4 Bams",
+      "7 Bams",
+      "South Wind"
+    ],
+    "equity": 0.5000185146651682,
+    "foldout": 0,
+    "ev": 140.01184938570765,
+    "utility": 122.01351570557279,
+    "rationale": "50% estimated equity, 28% pot odds, 0% estimated foldout; tournament risk ×0.50",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 740,
+    "opponents": [
+      {
+        "id": "p3",
+        "kind": "Eyes",
+        "cards": [
+          "5 Dots",
+          "8 Dots",
+          "2 Bams",
+          "West Wind",
+          "8 Dots",
+          "3 Craks",
+          "6 Bams"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "Two Eyes",
+        "cards": [
+          "Blue Dragon",
+          "Blank",
+          "2 Dots",
+          "4 Craks",
+          "North Wind",
+          "2 Dots",
+          "Blue Dragon"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 1,
+    "hand": 10,
+    "player": "p1",
+    "first": true,
+    "reason": "call",
+    "street": 2,
+    "chips": 15,
+    "pot": 140,
+    "loans": 2,
+    "kind": "Eyes",
+    "rank": 2,
+    "cards": [
+      "Red Dragon",
+      "6 Dots",
+      "1 Dots",
+      "1 Bams",
+      "Green Dragon",
+      "9 Bams",
+      "9 Bams"
+    ],
+    "equity": 0.1914875672336323,
+    "foldout": 0,
+    "ev": 8.93594590420404,
+    "utility": 5.122102658456281,
+    "rationale": "19% estimated equity, 12% pot odds, 0% estimated foldout; tournament risk ×0.50",
+    "winner": true,
+    "winCredit": 0.5,
+    "finalPot": 125,
+    "opponents": [
+      {
+        "id": "p3",
+        "kind": "Eyes",
+        "cards": [
+          "5 Dots",
+          "8 Dots",
+          "8 Bams",
+          "3 Bams",
+          "9 Dots",
+          "West Wind",
+          "9 Dots"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 1,
+    "hand": 11,
+    "player": "p1",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 32.5,
+    "pot": 215,
+    "loans": 2,
+    "kind": "Eyes",
+    "rank": 2,
+    "cards": [
+      "West Wind",
+      "9 Bams",
+      "West Wind",
+      "3 Dots",
+      "2 Craks",
+      "1 Bams",
+      "Green Dragon"
+    ],
+    "equity": 0.26533742201459426,
+    "foldout": 0,
+    "ev": 18.577453737809392,
+    "utility": 11.51418684554655,
+    "rationale": "27% estimated equity, 17% pot odds, 0% estimated foldout; tournament risk ×0.50",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 192.5,
+    "opponents": [
+      {
+        "id": "p3",
+        "kind": "Chow + Eye",
+        "cards": [
+          "5 Craks",
+          "6 Craks",
+          "8 Dots",
+          "4 Craks",
+          "9 Craks",
+          "6 Dots",
+          "6 Dots"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "Chow",
+        "cards": [
+          "Green Joker",
+          "8 Craks",
+          "5 Bams",
+          "7 Craks",
+          "6 Craks",
+          "Red Dragon",
+          "3 Bams"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 1,
+    "hand": 13,
+    "player": "p2",
+    "first": true,
+    "reason": "call",
+    "street": 2,
+    "chips": 45,
+    "pot": 475,
+    "loans": 2,
+    "kind": "Chow + Eye",
+    "rank": 5,
+    "cards": [
+      "3 Bams",
+      "4 Bams",
+      "3 Craks",
+      "2 Bams",
+      "8 Bams",
+      "8 Bams",
+      "3 Craks"
+    ],
+    "equity": 0.4323019006096635,
+    "foldout": 0,
+    "ev": 158.18189328654185,
+    "utility": 152.1586860502593,
+    "rationale": "43% estimated equity, 10% pot odds, 0% estimated foldout; tournament risk ×0.50",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 515,
+    "opponents": [
+      {
+        "id": "p3",
+        "kind": "Two Eyes",
+        "cards": [
+          "6 Dots",
+          "6 Craks",
+          "3 Dots",
+          "7 Craks",
+          "South Wind",
+          "South Wind",
+          "7 Craks"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "Chow + Eye",
+        "cards": [
+          "East Wind",
+          "1 Bams",
+          "Blue Dragon",
+          "1 Bams",
+          "5 Dots",
+          "3 Dots",
+          "4 Dots"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 1,
+    "hand": 14,
+    "player": "p3",
+    "first": true,
+    "reason": "call",
+    "street": 4,
+    "chips": 2.5,
+    "pot": 250,
+    "loans": 1,
+    "kind": "Two Eyes",
+    "rank": 4,
+    "cards": [
+      "Blank",
+      "2 Bams",
+      "South Wind",
+      "Red Dragon",
+      "South Wind",
+      "Red Dragon",
+      "5 Craks"
+    ],
+    "equity": 0.10701042964587597,
+    "foldout": 0,
+    "ev": 24.252607411468993,
+    "utility": 23.51137044852634,
+    "rationale": "11% estimated equity, 1% pot odds, 0% estimated foldout; tournament risk ×0.50",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 250,
+    "opponents": [
+      {
+        "id": "p2",
+        "kind": "Chow + Eye",
+        "cards": [
+          "East Wind",
+          "Blue Dragon",
+          "8 Dots",
+          "7 Dots",
+          "9 Dots",
+          "5 Bams",
+          "5 Bams"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 1,
+    "hand": 15,
+    "player": "p1",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 5,
+    "pot": 70,
+    "loans": 3,
+    "kind": "Chow + Eye",
+    "rank": 5,
+    "cards": [
+      "1 Craks",
+      "2 Craks",
+      "Red Joker",
+      "3 Bams",
+      "8 Bams",
+      "7 Craks",
+      "3 Bams"
+    ],
+    "equity": 0.6392735866652065,
+    "foldout": 0,
+    "ev": 17.37457553328223,
+    "utility": 17.222759499945244,
+    "rationale": "64% estimated equity, 14% pot odds, 0% estimated foldout; tournament risk ×0.50",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 35,
+    "opponents": [
+      {
+        "id": "p2",
+        "kind": "Eyes",
+        "cards": [
+          "East Wind",
+          "8 Craks",
+          "South Wind",
+          "6 Craks",
+          "3 Craks",
+          "6 Dots",
+          "8 Craks"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "Pung + Eye",
+        "cards": [
+          "5 Bams",
+          "4 Dots",
+          "9 Bams",
+          "5 Bams",
+          "8 Dots",
+          "Green Joker",
+          "8 Dots"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 1,
+    "hand": 16,
+    "player": "p3",
+    "first": true,
+    "reason": "bet",
+    "street": 1,
+    "chips": 190,
+    "pot": 70,
+    "loans": 2,
+    "kind": "Three Winds",
+    "rank": 6,
+    "cards": [
+      "West Wind",
+      "7 Craks",
+      "North Wind",
+      "5 Dots",
+      "East Wind",
+      "Red Dragon",
+      "4 Bams"
+    ],
+    "equity": 0.5685622772599431,
+    "foldout": 0.07998529463904633,
+    "ev": 134.88236594266797,
+    "utility": 0.013488236594266798,
+    "rationale": "57% estimated equity, 26% pot odds, 8% estimated foldout; tournament risk ×0.50; prioritizes final tournament win",
+    "winner": true,
+    "winCredit": 1,
+    "finalPot": 590,
+    "opponents": [
+      {
+        "id": "p1",
+        "kind": "Chow + Eye",
+        "cards": [
+          "8 Dots",
+          "4 Bams",
+          "8 Dots",
+          "7 Dots",
+          "South Wind",
+          "5 Bams",
+          "3 Bams"
+        ]
+      },
+      {
+        "id": "p2",
+        "kind": "Two Eyes",
+        "cards": [
+          "4 Craks",
+          "3 Dots",
+          "Blank",
+          "4 Craks",
+          "7 Bams",
+          "6 Dots",
+          "6 Dots"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 2,
+    "hand": 2,
+    "player": "p2",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 55,
+    "pot": 100,
+    "loans": 0,
+    "kind": "Pung + Eye",
+    "rank": 9,
+    "cards": [
+      "North Wind",
+      "2 Craks",
+      "Black Joker",
+      "5 Dots",
+      "5 Dots",
+      "8 Craks",
+      "North Wind"
+    ],
+    "equity": 0.7095851520006258,
+    "foldout": 0,
+    "ev": 54.98569856009699,
+    "utility": 36.8953575138915,
+    "rationale": "71% estimated equity, 35% pot odds, 0% estimated foldout; tournament risk ×1.29",
+    "winner": true,
+    "winCredit": 1,
+    "finalPot": 185,
+    "opponents": [
+      {
+        "id": "p3",
+        "kind": "Two Eyes",
+        "cards": [
+          "1 Craks",
+          "5 Bams",
+          "7 Dots",
+          "4 Bams",
+          "6 Craks",
+          "5 Bams",
+          "4 Bams"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "Two Eyes",
+        "cards": [
+          "2 Bams",
+          "Red Dragon",
+          "Red Dragon",
+          "West Wind",
+          "2 Bams",
+          "8 Bams",
+          "6 Craks"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 2,
+    "hand": 4,
+    "player": "p4",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 65,
+    "pot": 360,
+    "loans": 0,
+    "kind": "Chow",
+    "rank": 3,
+    "cards": [
+      "Blue Dragon",
+      "3 Bams",
+      "East Wind",
+      "8 Craks",
+      "Green Joker",
+      "9 Dots",
+      "2 Bams"
+    ],
+    "equity": 0.41523840936924516,
+    "foldout": 0,
+    "ev": 90.71440351346695,
+    "utility": 53.92958939761454,
+    "rationale": "42% estimated equity, 17% pot odds, 0% estimated foldout; tournament risk ×1.11",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 395,
+    "opponents": [
+      {
+        "id": "p1",
+        "kind": "Chow",
+        "cards": [
+          "7 Craks",
+          "Blue Dragon",
+          "6 Dots",
+          "8 Dots",
+          "7 Dots",
+          "9 Craks",
+          "Green Dragon"
+        ]
+      },
+      {
+        "id": "p3",
+        "kind": "Two Eyes",
+        "cards": [
+          "1 Dots",
+          "West Wind",
+          "6 Dots",
+          "South Wind",
+          "9 Bams",
+          "9 Bams",
+          "South Wind"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 2,
+    "hand": 6,
+    "player": "p2",
+    "first": true,
+    "reason": "opening-charge",
+    "street": 0,
+    "chips": 0,
+    "pot": 20,
+    "loans": 0,
+    "kind": "Eyes",
+    "rank": 2,
+    "cards": [
+      "7 Dots",
+      "9 Dots",
+      "2 Bams",
+      "7 Bams",
+      "6 Bams",
+      "6 Bams",
+      "3 Craks"
+    ],
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 20,
+    "opponents": [
+      {
+        "id": "p1",
+        "kind": "High Card",
+        "cards": [
+          "2 Craks",
+          "4 Bams",
+          "South Wind",
+          "7 Bams",
+          "5 Craks",
+          "6 Craks",
+          "3 Dots"
+        ]
+      },
+      {
+        "id": "p3",
+        "kind": "Eyes",
+        "cards": [
+          "Green Dragon",
+          "Green Dragon",
+          "8 Bams",
+          "5 Bams",
+          "9 Craks",
+          "4 Bams",
+          "7 Dots"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "High Card",
+        "cards": [
+          "7 Craks",
+          "9 Bams",
+          "2 Bams",
+          "1 Craks",
+          "Blue Joker",
+          "North Wind",
+          "9 Craks"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 2,
+    "hand": 8,
+    "player": "p2",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 35,
+    "pot": 225,
+    "loans": 1,
+    "kind": "Chow",
+    "rank": 3,
+    "cards": [
+      "5 Dots",
+      "4 Dots",
+      "3 Bams",
+      "3 Craks",
+      "7 Craks",
+      "1 Craks",
+      "6 Dots"
+    ],
+    "equity": 0.6050516887529098,
+    "foldout": 0,
+    "ev": 86.01033775058197,
+    "utility": 84.34874230375789,
+    "rationale": "61% estimated equity, 18% pot odds, 0% estimated foldout; tournament risk ×0.50",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 200,
+    "opponents": [
+      {
+        "id": "p4",
+        "kind": "Two Eyes",
+        "cards": [
+          "7 Dots",
+          "7 Dots",
+          "5 Dots",
+          "North Wind",
+          "1 Bams",
+          "1 Bams",
+          "4 Craks"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 2,
+    "hand": 10,
+    "player": "p3",
+    "first": true,
+    "reason": "bet",
+    "street": 2,
+    "chips": 600,
+    "pot": 120,
+    "loans": 0,
+    "kind": "Twin Lotus",
+    "rank": 2,
+    "cards": [
+      "Green Joker",
+      "2 Craks",
+      "White Lotus",
+      "Black Lotus",
+      "8 Dots",
+      "8 Dots",
+      "7 Bams"
+    ],
+    "equity": 1,
+    "foldout": 0.4557323613668917,
+    "ev": 189.80786254348274,
+    "utility": 225.45038752212042,
+    "rationale": "100% estimated equity, 0% pot odds, 46% estimated foldout; tournament risk ×2.64",
+    "winner": true,
+    "winCredit": 1,
+    "finalPot": 200,
+    "opponents": [
+      {
+        "id": "p1",
+        "kind": "Three Winds",
+        "cards": [
+          "8 Bams",
+          "2 Dots",
+          "9 Bams",
+          "7 Craks",
+          "South Wind",
+          "North Wind",
+          "East Wind"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 2,
+    "hand": 10,
+    "player": "p1",
+    "first": false,
+    "reason": "call",
+    "street": 2,
+    "chips": 40,
+    "pot": 720,
+    "loans": 0,
+    "kind": "Three Winds",
+    "rank": 6,
+    "cards": [
+      "8 Bams",
+      "2 Dots",
+      "9 Bams",
+      "7 Craks",
+      "South Wind",
+      "North Wind",
+      "East Wind"
+    ],
+    "equity": 0.7629327583230419,
+    "foldout": 0,
+    "ev": 112.58655166460838,
+    "utility": 99.45576471998407,
+    "rationale": "76% estimated equity, 20% pot odds, 0% estimated foldout; tournament risk ×1.44",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 200,
+    "opponents": [
+      {
+        "id": "p3",
+        "kind": "Twin Lotus",
+        "cards": [
+          "Green Joker",
+          "2 Craks",
+          "White Lotus",
+          "Black Lotus",
+          "8 Dots",
+          "8 Dots",
+          "7 Bams"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 2,
+    "hand": 12,
+    "player": "p4",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 105,
+    "pot": 630,
+    "loans": 1,
+    "kind": "Three Winds",
+    "rank": 6,
+    "cards": [
+      "South Wind",
+      "2 Dots",
+      "North Wind",
+      "3 Dots",
+      "North Wind",
+      "East Wind",
+      "2 Bams"
+    ],
+    "equity": 0.7477133006520064,
+    "foldout": 0,
+    "ev": 437.09214297270466,
+    "utility": 439.597091256935,
+    "rationale": "75% estimated equity, 14% pot odds, 0% estimated foldout; tournament risk ×0.50",
+    "winner": true,
+    "winCredit": 1,
+    "finalPot": 830,
+    "opponents": [
+      {
+        "id": "p2",
+        "kind": "Chow",
+        "cards": [
+          "5 Craks",
+          "Green Dragon",
+          "Red Joker",
+          "2 Craks",
+          "3 Craks",
+          "8 Craks",
+          "5 Bams"
+        ]
+      },
+      {
+        "id": "p3",
+        "kind": "Eyes",
+        "cards": [
+          "1 Bams",
+          "Red Dragon",
+          "9 Bams",
+          "Blue Dragon",
+          "Red Dragon",
+          "4 Bams",
+          "6 Dots"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 2,
+    "hand": 13,
+    "player": "p2",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 25,
+    "pot": 45,
+    "loans": 2,
+    "kind": "Eyes",
+    "rank": 2,
+    "cards": [
+      "West Wind",
+      "Blue Dragon",
+      "Blank",
+      "West Wind",
+      "Red Joker",
+      "3 Craks",
+      "9 Craks"
+    ],
+    "equity": 0.43869907886725645,
+    "foldout": 0,
+    "ev": 5.7089355207079535,
+    "utility": 2.4426740065486587,
+    "rationale": "44% estimated equity, 36% pot odds, 0% estimated foldout; tournament risk ×0.50",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 70,
+    "opponents": [
+      {
+        "id": "p4",
+        "kind": "Two Eyes",
+        "cards": [
+          "North Wind",
+          "2 Bams",
+          "North Wind",
+          "2 Bams",
+          "4 Dots",
+          "5 Dots",
+          "1 Bams"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 2,
+    "hand": 14,
+    "player": "p4",
+    "first": true,
+    "reason": "bet",
+    "street": 3,
+    "chips": 690,
+    "pot": 570,
+    "loans": 1,
+    "kind": "Twin Lotus",
+    "rank": 1,
+    "cards": [
+      "1 Dots",
+      "White Lotus",
+      "Black Lotus",
+      "8 Dots",
+      "3 Dots",
+      "5 Craks",
+      "2 Craks"
+    ],
+    "equity": 1,
+    "foldout": 0.4707474786300827,
+    "ev": 574.9118694189409,
+    "utility": 614.47801019564,
+    "rationale": "100% estimated equity, 0% pot odds, 47% estimated foldout; tournament risk ×1.31",
+    "winner": true,
+    "winCredit": 1,
+    "finalPot": 585,
+    "opponents": [
+      {
+        "id": "p1",
+        "kind": "Chow",
+        "cards": [
+          "Blank",
+          "Black Joker",
+          "2 Bams",
+          "4 Craks",
+          "Red Joker",
+          "6 Craks",
+          "3 Bams"
+        ]
+      },
+      {
+        "id": "p2",
+        "kind": "Chow + Eye",
+        "cards": [
+          "Blue Joker",
+          "5 Bams",
+          "2 Dots",
+          "Red Dragon",
+          "9 Bams",
+          "9 Bams",
+          "4 Dots"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 2,
+    "hand": 14,
+    "player": "p1",
+    "first": false,
+    "reason": "call",
+    "street": 3,
+    "chips": 5,
+    "pot": 1260,
+    "loans": 1,
+    "kind": "Chow",
+    "rank": 3,
+    "cards": [
+      "Blank",
+      "Black Joker",
+      "2 Bams",
+      "4 Craks",
+      "Red Joker",
+      "6 Craks",
+      "3 Bams"
+    ],
+    "equity": 0.6735197397972487,
+    "foldout": 0,
+    "ev": 385.6414490824042,
+    "utility": 385.57524843189736,
+    "rationale": "67% estimated equity, 1% pot odds, 0% estimated foldout; tournament risk ×0.50",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 585,
+    "opponents": [
+      {
+        "id": "p2",
+        "kind": "Chow + Eye",
+        "cards": [
+          "Blue Joker",
+          "5 Bams",
+          "2 Dots",
+          "Red Dragon",
+          "9 Bams",
+          "9 Bams",
+          "4 Dots"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "Twin Lotus",
+        "cards": [
+          "1 Dots",
+          "White Lotus",
+          "Black Lotus",
+          "8 Dots",
+          "3 Dots",
+          "5 Craks",
+          "2 Craks"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 2,
+    "hand": 15,
+    "player": "p2",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 10,
+    "pot": 45,
+    "loans": 3,
+    "kind": "Eyes",
+    "rank": 2,
+    "cards": [
+      "4 Bams",
+      "4 Dots",
+      "7 Dots",
+      "6 Bams",
+      "4 Craks",
+      "6 Dots",
+      "6 Bams"
+    ],
+    "equity": 0.38485656047457745,
+    "foldout": 0,
+    "ev": 5.394262418983098,
+    "utility": 3.818545221355986,
+    "rationale": "38% estimated equity, 25% pot odds, 0% estimated foldout; tournament risk ×0.50",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 40,
+    "opponents": [
+      {
+        "id": "p4",
+        "kind": "Pung",
+        "cards": [
+          "5 Craks",
+          "Red Joker",
+          "1 Craks",
+          "Green Dragon",
+          "Green Dragon",
+          "1 Dots",
+          "Green Dragon"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 2,
+    "hand": 16,
+    "player": "p3",
+    "first": true,
+    "reason": "bet",
+    "street": 1,
+    "chips": 505,
+    "pot": 20,
+    "loans": 0,
+    "kind": "High Card",
+    "rank": 1,
+    "cards": [
+      "Blue Dragon",
+      "North Wind",
+      "East Wind",
+      "8 Craks",
+      "9 Bams",
+      "3 Dots",
+      "1 Bams"
+    ],
+    "equity": 0.02395833333333333,
+    "foldout": 0.2369744185256561,
+    "ev": -198.65137754998997,
+    "utility": 11.548868290432312,
+    "rationale": "2% estimated equity, 0% pot odds, 24% estimated foldout; tournament risk ×0.67; prioritizes final tournament win",
+    "winner": true,
+    "winCredit": 1,
+    "finalPot": 525,
+    "opponents": []
+  },
+  {
+    "game": 3,
+    "hand": 5,
+    "player": "p1",
+    "first": true,
+    "reason": "call",
+    "street": 2,
+    "chips": 25,
+    "pot": 265,
+    "loans": 0,
+    "kind": "Three Winds",
+    "rank": 6,
+    "cards": [
+      "Blank",
+      "4 Dots",
+      "8 Bams",
+      "1 Craks",
+      "East Wind",
+      "West Wind",
+      "North Wind"
+    ],
+    "equity": 0.8091330720119737,
+    "foldout": 0,
+    "ev": 189.42026408317304,
+    "utility": 188.41867920449744,
+    "rationale": "81% estimated equity, 9% pot odds, 0% estimated foldout; tournament risk ×0.91",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 265,
+    "opponents": [
+      {
+        "id": "p4",
+        "kind": "Twin Lotus",
+        "cards": [
+          "4 Bams",
+          "White Lotus",
+          "3 Dots",
+          "Black Lotus",
+          "7 Craks",
+          "9 Dots",
+          "5 Bams"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 3,
+    "hand": 6,
+    "player": "p2",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 10,
+    "pot": 75,
+    "loans": 0,
+    "kind": "Chow",
+    "rank": 3,
+    "cards": [
+      "Blue Joker",
+      "Blank",
+      "Green Dragon",
+      "North Wind",
+      "6 Dots",
+      "2 Dots",
+      "7 Dots"
+    ],
+    "equity": 0.42863570491006564,
+    "foldout": 0,
+    "ev": 11.431785245503281,
+    "utility": 8.589033136849922,
+    "rationale": "43% estimated equity, 20% pot odds, 0% estimated foldout; tournament risk ×0.76",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 60,
+    "opponents": [
+      {
+        "id": "p1",
+        "kind": "Two Eyes",
+        "cards": [
+          "2 Craks",
+          "5 Dots",
+          "5 Dots",
+          "West Wind",
+          "West Wind",
+          "Blue Dragon",
+          "3 Craks"
+        ]
+      },
+      {
+        "id": "p3",
+        "kind": "Chow + Eye",
+        "cards": [
+          "3 Craks",
+          "1 Bams",
+          "Red Joker",
+          "3 Dots",
+          "2 Craks",
+          "9 Craks",
+          "3 Dots"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "Chow",
+        "cards": [
+          "9 Craks",
+          "7 Dots",
+          "8 Dots",
+          "Blank",
+          "9 Dots",
+          "9 Dots",
+          "4 Bams"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 3,
+    "hand": 7,
+    "player": "p2",
+    "first": true,
+    "reason": "call",
+    "street": 3,
+    "chips": 45,
+    "pot": 400,
+    "loans": 1,
+    "kind": "Chow + Eye",
+    "rank": 5,
+    "cards": [
+      "5 Craks",
+      "7 Dots",
+      "6 Dots",
+      "8 Craks",
+      "9 Dots",
+      "8 Craks",
+      "8 Dots"
+    ],
+    "equity": 0.65645048873312,
+    "foldout": 0,
+    "ev": 224.1447003805792,
+    "utility": 221.2323703761982,
+    "rationale": "66% estimated equity, 11% pot odds, 0% estimated foldout; tournament risk ×0.63",
+    "winner": true,
+    "winCredit": 1,
+    "finalPot": 410,
+    "opponents": [
+      {
+        "id": "p4",
+        "kind": "Chow + Eye",
+        "cards": [
+          "South Wind",
+          "9 Bams",
+          "3 Dots",
+          "4 Craks",
+          "6 Craks",
+          "5 Craks",
+          "3 Dots"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 3,
+    "hand": 8,
+    "player": "p3",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 15,
+    "pot": 350,
+    "loans": 0,
+    "kind": "Kong",
+    "rank": 12,
+    "cards": [
+      "9 Craks",
+      "9 Craks",
+      "Red Joker",
+      "1 Dots",
+      "5 Dots",
+      "9 Craks",
+      "7 Dots"
+    ],
+    "equity": 0.724737018677538,
+    "foldout": 0,
+    "ev": 119.07634845534454,
+    "utility": 119.1482354150636,
+    "rationale": "72% estimated equity, 8% pot odds, 0% estimated foldout; tournament risk ×0.53",
+    "winner": true,
+    "winCredit": 1,
+    "finalPot": 185,
+    "opponents": [
+      {
+        "id": "p1",
+        "kind": "Eyes",
+        "cards": [
+          "4 Craks",
+          "7 Bams",
+          "West Wind",
+          "6 Bams",
+          "5 Craks",
+          "6 Bams",
+          "Green Dragon"
+        ]
+      },
+      {
+        "id": "p2",
+        "kind": "Chow",
+        "cards": [
+          "Red Dragon",
+          "6 Dots",
+          "South Wind",
+          "5 Dots",
+          "5 Bams",
+          "4 Dots",
+          "2 Bams"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 3,
+    "hand": 12,
+    "player": "p3",
+    "first": true,
+    "reason": "opening-charge",
+    "street": 0,
+    "chips": 0,
+    "pot": 20,
+    "loans": 0,
+    "kind": "Eyes",
+    "rank": 2,
+    "cards": [
+      "North Wind",
+      "Green Dragon",
+      "8 Dots",
+      "7 Craks",
+      "5 Dots",
+      "5 Dots",
+      "9 Craks"
+    ],
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 20,
+    "opponents": [
+      {
+        "id": "p1",
+        "kind": "Eyes",
+        "cards": [
+          "5 Bams",
+          "5 Craks",
+          "7 Craks",
+          "4 Bams",
+          "7 Craks",
+          "1 Craks",
+          "Blue Dragon"
+        ]
+      },
+      {
+        "id": "p2",
+        "kind": "High Card",
+        "cards": [
+          "West Wind",
+          "8 Craks",
+          "6 Craks",
+          "6 Dots",
+          "4 Bams",
+          "4 Dots",
+          "3 Dots"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "High Card",
+        "cards": [
+          "Red Dragon",
+          "Green Dragon",
+          "6 Craks",
+          "South Wind",
+          "Blank",
+          "6 Dots",
+          "West Wind"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 3,
+    "hand": 13,
+    "player": "p1",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 35,
+    "pot": 85,
+    "loans": 1,
+    "kind": "Three Dragons",
+    "rank": 8,
+    "cards": [
+      "5 Craks",
+      "Green Joker",
+      "8 Bams",
+      "7 Bams",
+      "Red Dragon",
+      "1 Bams",
+      "Blue Dragon"
+    ],
+    "equity": 0.6491944627626659,
+    "foldout": 0,
+    "ev": 39.657363217706575,
+    "utility": 38.76826631605323,
+    "rationale": "65% estimated equity, 30% pot odds, 0% estimated foldout; tournament risk ×0.50",
+    "winner": true,
+    "winCredit": 1,
+    "finalPot": 125,
+    "opponents": [
+      {
+        "id": "p2",
+        "kind": "Chow",
+        "cards": [
+          "1 Craks",
+          "5 Dots",
+          "5 Dots",
+          "4 Craks",
+          "7 Dots",
+          "2 Bams",
+          "6 Dots"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "Pung",
+        "cards": [
+          "North Wind",
+          "Black Joker",
+          "9 Dots",
+          "9 Dots",
+          "9 Dots",
+          "Green Dragon",
+          "3 Bams"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 3,
+    "hand": 14,
+    "player": "p1",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 75,
+    "pot": 395,
+    "loans": 1,
+    "kind": "Chow + Eye",
+    "rank": 5,
+    "cards": [
+      "5 Craks",
+      "8 Dots",
+      "7 Dots",
+      "6 Dots",
+      "5 Craks",
+      "Green Dragon",
+      "7 Dots"
+    ],
+    "equity": 0.7098261238352404,
+    "foldout": 0,
+    "ev": 212.47958015327237,
+    "utility": 212.84805979709387,
+    "rationale": "71% estimated equity, 19% pot odds, 0% estimated foldout; tournament risk ×0.50",
+    "winner": true,
+    "winCredit": 1,
+    "finalPot": 405,
+    "opponents": [
+      {
+        "id": "p2",
+        "kind": "Chow",
+        "cards": [
+          "6 Dots",
+          "Blue Dragon",
+          "4 Dots",
+          "Red Joker",
+          "5 Dots",
+          "4 Dots",
+          "Red Dragon"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "Chow + Eye",
+        "cards": [
+          "South Wind",
+          "4 Craks",
+          "3 Craks",
+          "7 Craks",
+          "5 Craks",
+          "4 Bams",
+          "South Wind"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 3,
+    "hand": 15,
+    "player": "p3",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 85,
+    "pot": 285,
+    "loans": 1,
+    "kind": "Two Eyes",
+    "rank": 4,
+    "cards": [
+      "Green Dragon",
+      "Green Dragon",
+      "2 Bams",
+      "6 Craks",
+      "West Wind",
+      "8 Dots",
+      "8 Dots"
+    ],
+    "equity": 0.8085403665135501,
+    "foldout": 0,
+    "ev": 189.90372461460703,
+    "utility": 194.5166901914329,
+    "rationale": "81% estimated equity, 25% pot odds, 0% estimated foldout; tournament risk ×0.50",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 340,
+    "opponents": [
+      {
+        "id": "p1",
+        "kind": "Three Winds",
+        "cards": [
+          "7 Bams",
+          "5 Bams",
+          "North Wind",
+          "East Wind",
+          "South Wind",
+          "9 Bams",
+          "1 Dots"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 3,
+    "hand": 16,
+    "player": "p2",
+    "first": true,
+    "reason": "bet",
+    "street": 1,
+    "chips": 395,
+    "pot": 45,
+    "loans": 1,
+    "kind": "High Card",
+    "rank": 1,
+    "cards": [
+      "Green Joker",
+      "4 Craks",
+      "9 Bams",
+      "Red Dragon",
+      "4 Dots",
+      "4 Bams",
+      "1 Bams"
+    ],
+    "equity": 0.01,
+    "foldout": 0.1421507784058883,
+    "ev": -252.11919324558139,
+    "utility": 7.72921236151165,
+    "rationale": "1% estimated equity, 36% pot odds, 14% estimated foldout; tournament risk ×0.52; prioritizes final tournament win",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 605,
+    "opponents": [
+      {
+        "id": "p1",
+        "kind": "High Card",
+        "cards": [
+          "7 Craks",
+          "7 Dots",
+          "Blank",
+          "East Wind",
+          "6 Dots",
+          "9 Bams",
+          "5 Craks"
+        ]
+      },
+      {
+        "id": "p3",
+        "kind": "Pung + Eye",
+        "cards": [
+          "Red Joker",
+          "3 Craks",
+          "1 Dots",
+          "1 Dots",
+          "3 Craks",
+          "9 Craks",
+          "6 Craks"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 3,
+    "hand": 16,
+    "player": "p3",
+    "first": false,
+    "reason": "call",
+    "street": 1,
+    "chips": 195,
+    "pot": 440,
+    "loans": 2,
+    "kind": "Pung + Eye",
+    "rank": 9,
+    "cards": [
+      "Red Joker",
+      "3 Craks",
+      "1 Dots",
+      "1 Dots",
+      "3 Craks",
+      "9 Craks",
+      "6 Craks"
+    ],
+    "equity": 0.7172620090796706,
+    "foldout": 0,
+    "ev": 117.0089739496567,
+    "utility": 717.2737099770656,
+    "rationale": "72% estimated equity, 45% pot odds, 0% estimated foldout; tournament risk ×0.50; prioritizes final tournament win",
+    "winner": true,
+    "winCredit": 1,
+    "finalPot": 605,
+    "opponents": [
+      {
+        "id": "p1",
+        "kind": "High Card",
+        "cards": [
+          "7 Craks",
+          "7 Dots",
+          "Blank",
+          "East Wind",
+          "6 Dots",
+          "9 Bams",
+          "5 Craks"
+        ]
+      },
+      {
+        "id": "p2",
+        "kind": "High Card",
+        "cards": [
+          "Green Joker",
+          "4 Craks",
+          "9 Bams",
+          "Red Dragon",
+          "4 Dots",
+          "4 Bams",
+          "1 Bams"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 4,
+    "hand": 3,
+    "player": "p2",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 10,
+    "pot": 80,
+    "loans": 0,
+    "kind": "Three Dragons + Eye",
+    "rank": 11,
+    "cards": [
+      "Red Dragon",
+      "South Wind",
+      "4 Dots",
+      "4 Dots",
+      "Green Dragon",
+      "5 Dots",
+      "Blue Joker"
+    ],
+    "equity": 0.7121600819317584,
+    "foldout": 0,
+    "ev": 32.729604915905504,
+    "utility": 30.25637851754437,
+    "rationale": "71% estimated equity, 17% pot odds, 0% estimated foldout; tournament risk ×1.14",
+    "winner": true,
+    "winCredit": 1,
+    "finalPot": 60,
+    "opponents": [
+      {
+        "id": "p1",
+        "kind": "Two Eyes",
+        "cards": [
+          "5 Bams",
+          "3 Bams",
+          "9 Craks",
+          "3 Bams",
+          "2 Bams",
+          "5 Bams",
+          "7 Craks"
+        ]
+      },
+      {
+        "id": "p3",
+        "kind": "Chow",
+        "cards": [
+          "5 Craks",
+          "4 Bams",
+          "East Wind",
+          "1 Craks",
+          "7 Craks",
+          "3 Craks",
+          "6 Craks"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "Two Eyes",
+        "cards": [
+          "4 Craks",
+          "Blue Dragon",
+          "6 Dots",
+          "4 Craks",
+          "8 Bams",
+          "9 Craks",
+          "9 Craks"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 4,
+    "hand": 6,
+    "player": "p1",
+    "first": true,
+    "reason": "opening-charge",
+    "street": 0,
+    "chips": 0,
+    "pot": 20,
+    "loans": 0,
+    "kind": "Single Lotus",
+    "rank": 3,
+    "cards": [
+      "4 Dots",
+      "Black Lotus",
+      "6 Bams",
+      "2 Dots",
+      "3 Dots",
+      "7 Craks",
+      "1 Bams"
+    ],
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 20,
+    "opponents": [
+      {
+        "id": "p2",
+        "kind": "High Card",
+        "cards": [
+          "7 Dots",
+          "East Wind",
+          "1 Craks",
+          "7 Bams",
+          "Blue Dragon",
+          "4 Bams",
+          "6 Dots"
+        ]
+      },
+      {
+        "id": "p3",
+        "kind": "Chow",
+        "cards": [
+          "5 Bams",
+          "8 Bams",
+          "West Wind",
+          "9 Bams",
+          "7 Bams",
+          "8 Dots",
+          "1 Bams"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "Pung",
+        "cards": [
+          "7 Craks",
+          "9 Craks",
+          "Red Joker",
+          "Red Dragon",
+          "Red Dragon",
+          "6 Dots",
+          "4 Bams"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 4,
+    "hand": 8,
+    "player": "p4",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 20,
+    "pot": 95,
+    "loans": 0,
+    "kind": "Eyes",
+    "rank": 2,
+    "cards": [
+      "8 Bams",
+      "Blue Dragon",
+      "9 Craks",
+      "West Wind",
+      "Red Dragon",
+      "9 Craks",
+      "1 Bams"
+    ],
+    "equity": 0.33404716317070765,
+    "foldout": 0,
+    "ev": 13.404716317070765,
+    "utility": 9.256415224499461,
+    "rationale": "33% estimated equity, 20% pot odds, 0% estimated foldout; tournament risk ×0.54",
+    "winner": true,
+    "winCredit": 1,
+    "finalPot": 100,
+    "opponents": [
+      {
+        "id": "p1",
+        "kind": "Eyes",
+        "cards": [
+          "7 Dots",
+          "8 Dots",
+          "South Wind",
+          "7 Craks",
+          "7 Craks",
+          "9 Bams",
+          "1 Bams"
+        ]
+      },
+      {
+        "id": "p2",
+        "kind": "Eyes",
+        "cards": [
+          "Blue Dragon",
+          "2 Craks",
+          "Green Dragon",
+          "2 Craks",
+          "4 Dots",
+          "7 Bams",
+          "3 Bams"
+        ]
+      },
+      {
+        "id": "p3",
+        "kind": "Eyes",
+        "cards": [
+          "6 Craks",
+          "9 Dots",
+          "Blank",
+          "7 Dots",
+          "3 Craks",
+          "6 Craks",
+          "2 Bams"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 4,
+    "hand": 9,
+    "player": "p2",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 5,
+    "pot": 300,
+    "loans": 0,
+    "kind": "Chow + Eye",
+    "rank": 5,
+    "cards": [
+      "Green Joker",
+      "West Wind",
+      "West Wind",
+      "6 Dots",
+      "5 Dots",
+      "8 Bams",
+      "7 Dots"
+    ],
+    "equity": 0.34396460350278246,
+    "foldout": 0,
+    "ev": 43.15504449038954,
+    "utility": 42.2649559991465,
+    "rationale": "34% estimated equity, 4% pot odds, 0% estimated foldout; tournament risk ×0.50",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 140,
+    "opponents": [
+      {
+        "id": "p1",
+        "kind": "Chow + Eye",
+        "cards": [
+          "2 Craks",
+          "7 Craks",
+          "Red Joker",
+          "6 Bams",
+          "8 Craks",
+          "6 Bams",
+          "East Wind"
+        ]
+      },
+      {
+        "id": "p3",
+        "kind": "Three Winds",
+        "cards": [
+          "5 Dots",
+          "5 Bams",
+          "9 Dots",
+          "4 Dots",
+          "East Wind",
+          "South Wind",
+          "North Wind"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "Chow + Eye",
+        "cards": [
+          "4 Bams",
+          "4 Bams",
+          "3 Craks",
+          "3 Bams",
+          "9 Craks",
+          "3 Craks",
+          "5 Bams"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 4,
+    "hand": 11,
+    "player": "p4",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 40,
+    "pot": 100,
+    "loans": 0,
+    "kind": "Chow",
+    "rank": 3,
+    "cards": [
+      "2 Dots",
+      "North Wind",
+      "2 Craks",
+      "Green Joker",
+      "9 Bams",
+      "5 Bams",
+      "8 Bams"
+    ],
+    "equity": 0.6075297556851771,
+    "foldout": 0,
+    "ev": 35.94121946064713,
+    "utility": 34.09181457435068,
+    "rationale": "61% estimated equity, 32% pot odds, 0% estimated foldout; tournament risk ×0.50",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 140,
+    "opponents": [
+      {
+        "id": "p1",
+        "kind": "Two Eyes",
+        "cards": [
+          "3 Bams",
+          "2 Craks",
+          "8 Dots",
+          "2 Craks",
+          "5 Craks",
+          "Green Dragon",
+          "8 Dots"
+        ]
+      },
+      {
+        "id": "p2",
+        "kind": "Three Winds",
+        "cards": [
+          "East Wind",
+          "West Wind",
+          "4 Bams",
+          "South Wind",
+          "1 Dots",
+          "5 Craks",
+          "4 Craks"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 4,
+    "hand": 12,
+    "player": "p4",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 140,
+    "pot": 345,
+    "loans": 1,
+    "kind": "Chow + Eye",
+    "rank": 5,
+    "cards": [
+      "West Wind",
+      "West Wind",
+      "1 Dots",
+      "4 Craks",
+      "2 Dots",
+      "8 Craks",
+      "3 Dots"
+    ],
+    "equity": 0.8076715263517829,
+    "foldout": 0,
+    "ev": 235.56725975357904,
+    "utility": 243.10426659820385,
+    "rationale": "81% estimated equity, 30% pot odds, 0% estimated foldout; tournament risk ×0.50",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 465,
+    "opponents": [
+      {
+        "id": "p2",
+        "kind": "Three Dragons",
+        "cards": [
+          "8 Bams",
+          "Red Joker",
+          "4 Dots",
+          "5 Craks",
+          "2 Bams",
+          "Blue Dragon",
+          "Green Dragon"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 4,
+    "hand": 13,
+    "player": "p1",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 120,
+    "pot": 580,
+    "loans": 1,
+    "kind": "Pung + Eye",
+    "rank": 9,
+    "cards": [
+      "Red Joker",
+      "5 Bams",
+      "5 Craks",
+      "5 Craks",
+      "5 Bams",
+      "4 Bams",
+      "8 Dots"
+    ],
+    "equity": 0.7488851176917416,
+    "foldout": 0,
+    "ev": 389.24188003038427,
+    "utility": 392.17498709188874,
+    "rationale": "75% estimated equity, 18% pot odds, 0% estimated foldout; tournament risk ×0.50",
+    "winner": true,
+    "winCredit": 1,
+    "finalPot": 680,
+    "opponents": [
+      {
+        "id": "p2",
+        "kind": "Two Eyes",
+        "cards": [
+          "1 Bams",
+          "Red Dragon",
+          "6 Dots",
+          "Blue Dragon",
+          "8 Dots",
+          "6 Dots",
+          "Red Dragon"
+        ]
+      },
+      {
+        "id": "p3",
+        "kind": "Chow",
+        "cards": [
+          "2 Dots",
+          "3 Bams",
+          "8 Bams",
+          "7 Craks",
+          "1 Craks",
+          "7 Bams",
+          "Green Joker"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 4,
+    "hand": 14,
+    "player": "p3",
+    "first": true,
+    "reason": "call",
+    "street": 1,
+    "chips": 125,
+    "pot": 465,
+    "loans": 0,
+    "kind": "Chow",
+    "rank": 3,
+    "cards": [
+      "West Wind",
+      "8 Bams",
+      "9 Craks",
+      "3 Dots",
+      "4 Dots",
+      "9 Dots",
+      "2 Dots"
+    ],
+    "equity": 0.5213905801094203,
+    "foldout": 0,
+    "ev": 174.79958356291667,
+    "utility": 128.381783086744,
+    "rationale": "52% estimated equity, 22% pot odds, 0% estimated foldout; tournament risk ×1.09",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 590,
+    "opponents": [
+      {
+        "id": "p1",
+        "kind": "Pung",
+        "cards": [
+          "4 Craks",
+          "6 Bams",
+          "North Wind",
+          "4 Craks",
+          "2 Dots",
+          "4 Bams",
+          "4 Craks"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "Three Dragons + Eye",
+        "cards": [
+          "Red Dragon",
+          "2 Craks",
+          "1 Bams",
+          "5 Dots",
+          "2 Craks",
+          "Blue Dragon",
+          "Green Dragon"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 4,
+    "hand": 14,
+    "player": "p4",
+    "first": false,
+    "reason": "call",
+    "street": 1,
+    "chips": 85,
+    "pot": 575,
+    "loans": 2,
+    "kind": "Three Dragons + Eye",
+    "rank": 11,
+    "cards": [
+      "Red Dragon",
+      "2 Craks",
+      "1 Bams",
+      "5 Dots",
+      "2 Craks",
+      "Blue Dragon",
+      "Green Dragon"
+    ],
+    "equity": 0.7125076444127851,
+    "foldout": 0,
+    "ev": 335.37951020354325,
+    "utility": 335.9110850910866,
+    "rationale": "71% estimated equity, 14% pot odds, 0% estimated foldout; tournament risk ×0.50",
+    "winner": true,
+    "winCredit": 1,
+    "finalPot": 590,
+    "opponents": [
+      {
+        "id": "p1",
+        "kind": "Pung",
+        "cards": [
+          "4 Craks",
+          "6 Bams",
+          "North Wind",
+          "4 Craks",
+          "2 Dots",
+          "4 Bams",
+          "4 Craks"
+        ]
+      },
+      {
+        "id": "p3",
+        "kind": "Chow",
+        "cards": [
+          "West Wind",
+          "8 Bams",
+          "9 Craks",
+          "3 Dots",
+          "4 Dots",
+          "9 Dots",
+          "2 Dots"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 4,
+    "hand": 16,
+    "player": "p1",
+    "first": true,
+    "reason": "bet",
+    "street": 1,
+    "chips": 475,
+    "pot": 20,
+    "loans": 1,
+    "kind": "Chow + Eye",
+    "rank": 5,
+    "cards": [
+      "3 Bams",
+      "6 Bams",
+      "8 Craks",
+      "7 Craks",
+      "6 Craks",
+      "3 Bams",
+      "7 Dots"
+    ],
+    "equity": 0.51875,
+    "foldout": 0.3277300702111682,
+    "ev": 30.39513086973163,
+    "utility": 174.49443137899792,
+    "rationale": "52% estimated equity, 0% pot odds, 33% estimated foldout; tournament risk ×0.56; prioritizes final tournament win",
+    "winner": true,
+    "winCredit": 1,
+    "finalPot": 560,
+    "opponents": [
+      {
+        "id": "p2",
+        "kind": "Single Lotus",
+        "cards": [
+          "8 Dots",
+          "3 Dots",
+          "5 Craks",
+          "1 Dots",
+          "9 Dots",
+          "Black Lotus",
+          "7 Dots"
+        ]
+      },
+      {
+        "id": "p4",
+        "kind": "Two Eyes",
+        "cards": [
+          "5 Bams",
+          "5 Dots",
+          "5 Bams",
+          "2 Bams",
+          "2 Bams",
+          "1 Dots",
+          "9 Bams"
+        ]
+      }
+    ]
+  },
+  {
+    "game": 4,
+    "hand": 16,
+    "player": "p4",
+    "first": false,
+    "reason": "call",
+    "street": 1,
+    "chips": 180,
+    "pot": 970,
+    "loans": 2,
+    "kind": "Two Eyes",
+    "rank": 4,
+    "cards": [
+      "5 Bams",
+      "5 Dots",
+      "5 Bams",
+      "2 Bams",
+      "2 Bams",
+      "1 Dots",
+      "9 Bams"
+    ],
+    "equity": 0.665401510029966,
+    "foldout": 0,
+    "ev": 192.62484561678093,
+    "utility": 0.019262484561678093,
+    "rationale": "67% estimated equity, 32% pot odds, 0% estimated foldout; tournament risk ×0.50; prioritizes final tournament win",
+    "winner": false,
+    "winCredit": 0,
+    "finalPot": 560,
+    "opponents": [
+      {
+        "id": "p1",
+        "kind": "Chow + Eye",
+        "cards": [
+          "3 Bams",
+          "6 Bams",
+          "8 Craks",
+          "7 Craks",
+          "6 Craks",
+          "3 Bams",
+          "7 Dots"
+        ]
+      },
+      {
+        "id": "p2",
+        "kind": "Single Lotus",
+        "cards": [
+          "8 Dots",
+          "3 Dots",
+          "5 Craks",
+          "1 Dots",
+          "9 Dots",
+          "Black Lotus",
+          "7 Dots"
+        ]
+      }
+    ]
+  }
+]

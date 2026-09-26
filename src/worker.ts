@@ -15,17 +15,45 @@ const CreateGameSchema = z.object({
   sessionId: z.string().min(1).max(120).optional(),
   seed: z.string().min(1).max(200),
   players: z.array(PlayerSchema).min(2).max(6),
+  mode: z.enum(["basic", "riichi"]).default("basic"),
+  orbits: z.number().int().min(1).max(4).default(1),
+  tournamentGames: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]).default(1),
   heuristicSamples: z.int().min(1).max(256).optional(),
 })
 const ActionSchema = z.discriminatedUnion("kind", [
   z.object({
+    kind: z.literal("riichi-stick"),
+    playerId: z.string(),
+    source: z.enum(["deck", "discard-a", "discard-b"]).optional(),
+  }),
+  z.object({
+    kind: z.literal("charleston"),
+    playerId: z.string(),
+    cardIds: z.array(z.string()).length(2),
+  }),
+  z.object({
+    kind: z.literal("expose"),
+    playerId: z.string(),
+    cardIds: z.array(z.string()).min(1).max(3),
+  }),
+  z.object({
     kind: z.literal("betting"),
+    offerStick: z.boolean().optional(),
     playerId: z.string(),
     action: z.discriminatedUnion("type", [
       z.object({
         type: z.literal("check"),
-        drawSource: z.enum(["deck", "discard-a", "discard-b"]),
+        drawSource: z.enum(["deck", "discard-a", "discard-b"]).optional(),
         blankExchange: z
+          .object({
+            blankCardId: z.string(),
+            pile: z.enum(["a", "b"]),
+            cardIndex: z.int().nonnegative(),
+          })
+          .optional(),
+        useRiichiStick: z.boolean().optional(),
+        riichiDrawSource: z.enum(["deck", "discard-a", "discard-b"]).optional(),
+        riichiBlankExchange: z
           .object({
             blankCardId: z.string(),
             pile: z.enum(["a", "b"]),
@@ -35,7 +63,7 @@ const ActionSchema = z.discriminatedUnion("kind", [
       }),
       z.object({
         type: z.literal("call"),
-        drawSource: z.enum(["deck", "discard-a", "discard-b"]),
+        drawSource: z.enum(["deck", "discard-a", "discard-b"]).optional(),
         blankExchange: z
           .object({
             blankCardId: z.string(),
@@ -43,28 +71,39 @@ const ActionSchema = z.discriminatedUnion("kind", [
             cardIndex: z.int().nonnegative(),
           })
           .optional(),
+        useRiichiStick: z.boolean().optional(),
+        riichiDrawSource: z.enum(["deck", "discard-a", "discard-b"]).optional(),
+        riichiBlankExchange: z
+          .object({
+            blankCardId: z.string(),
+            pile: z.enum(["a", "b"]),
+            cardIndex: z.int().nonnegative(),
+          })
+          .optional(),
+        curseTargetId: z.string().optional(),
+        removeCurse: z.boolean().optional(),
       }),
       z.object({
         type: z.literal("bet"),
-        amount: z.int().positive(),
+        amount: z.number().positive(),
         riichi: z.boolean().optional(),
-      }),
-      z.object({
-        type: z.literal("raise"),
-        amount: z.int().positive(),
-        riichi: z.boolean().optional(),
+        useRiichiStick: z.boolean().optional(),
+        drawSource: z.enum(["deck", "discard-a", "discard-b"]).optional(),
+        blankExchange: z
+          .object({
+            blankCardId: z.string(),
+            pile: z.enum(["a", "b"]),
+            cardIndex: z.int().nonnegative(),
+          })
+          .optional(),
+        curseTargetId: z.string().optional(),
+        removeCurse: z.boolean().optional(),
       }),
       z.object({ type: z.literal("fold") }),
     ]),
   }),
   z.object({
     kind: z.literal("discard"),
-    playerId: z.string(),
-    discardCardId: z.string(),
-    discardPile: z.enum(["a", "b"]),
-  }),
-  z.object({
-    kind: z.literal("seed-discard"),
     playerId: z.string(),
     discardCardId: z.string(),
     discardPile: z.enum(["a", "b"]),
@@ -76,8 +115,7 @@ const ActionSchema = z.discriminatedUnion("kind", [
 const SimulationSchema = z.object({
   count: z.int().min(1).max(20).default(1),
   seedPrefix: z.string().min(1).max(120),
-  playerCount: z.int().min(2).max(6).default(4),
-  heuristicSamples: z.int().min(1).max(64).default(8),
+  heuristicSamples: z.int().min(1).max(64).default(24),
 })
 
 export default {
@@ -127,6 +165,9 @@ async function handleApi(request: Request, env: Env, url: URL): Promise<Response
     const game = env.GAME_SESSION.getByName(sessionId)
     const state = await game.newGame(input.players, {
       seed: input.seed,
+      mode: input.mode,
+      tournamentGames: input.tournamentGames,
+      orbits: input.orbits,
       heuristicSamples: input.heuristicSamples,
     })
     return Response.json({ sessionId, state }, { status: 201 })
@@ -138,7 +179,6 @@ async function handleApi(request: Request, env: Env, url: URL): Promise<Response
       const seed = `${input.seedPrefix}-${index}`
       const result = simulateGame({
         seed,
-        playerCount: input.playerCount,
         heuristicSamples: input.heuristicSamples,
       })
       const sessionId = `simulation-${input.seedPrefix}-${index}`
@@ -151,7 +191,7 @@ async function handleApi(request: Request, env: Env, url: URL): Promise<Response
         decisionCount: result.decisions.length,
       })
     }
-    return Response.json({ results })
+    return Response.json({ results, heuristicSamples: input.heuristicSamples })
   }
 
   const match = url.pathname.match(/^\/api\/games\/([^/]+)(?:\/(.+))?$/)
@@ -226,12 +266,16 @@ async function applyAction(
   input: z.infer<typeof ActionSchema>,
 ) {
   switch (input.kind) {
+    case "riichi-stick":
+      return game.resolveStick(input.playerId, input.source)
     case "betting":
-      return game.applyBettingAction(input.playerId, input.action)
+      return game.applyBettingAction(input.playerId, input.action, input.offerStick)
+    case "charleston":
+      return game.applyCharleston(input.playerId, input.cardIds)
+    case "expose":
+      return game.applyExposure(input.playerId, input.cardIds)
     case "discard":
       return game.applyDiscard(input.playerId, input.discardCardId, input.discardPile)
-    case "seed-discard":
-      return game.applySeedDiscard(input.playerId, input.discardCardId, input.discardPile)
     case "take-loan":
       return game.takeLoan(input.playerId)
     case "repay-loan":
@@ -251,14 +295,12 @@ async function applyAgentOperation(
   switch (operation.kind) {
     case "betting":
       return game.applyBettingAction(playerId, operation.action as BettingActionForRpc)
+    case "charleston":
+      return game.applyCharleston(playerId, operation.cardIds)
+    case "expose":
+      return game.applyExposure(playerId, operation.cardIds)
     case "discard":
       return game.applyDiscard(
-        playerId,
-        operation.discardCardId,
-        operation.discardPile as "a" | "b",
-      )
-    case "seed-discard":
-      return game.applySeedDiscard(
         playerId,
         operation.discardCardId,
         operation.discardPile as "a" | "b",
@@ -279,7 +321,11 @@ function decisionPlayerId(state: Awaited<ReturnType<GameSession["getInternalStat
     return state.pendingDiscard.playerId
   }
 
-  if (state.phase === "seeding" && state.actingPlayerId) {
+  if (state.phase === "exposing" && state.actingPlayerId) {
+    return state.actingPlayerId
+  }
+
+  if (state.phase === "charleston" && state.actingPlayerId) {
     return state.actingPlayerId
   }
 

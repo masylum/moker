@@ -1,0 +1,26 @@
+[
+  {
+    "label": "Basic continuous opening potential",
+    "higherMinusLowerPct": -9.305873379099936,
+    "ci95": [
+      -22.77137659187386,
+      3.4141514101929715
+    ]
+  },
+  {
+    "label": "Advanced continuous showdown",
+    "higherMinusLowerPct": -0.7649158592554812,
+    "ci95": [
+      -16.279069767441854,
+      15.686274509803923
+    ]
+  },
+  {
+    "label": "Advanced reset showdown",
+    "higherMinusLowerPct": -14.487179487179489,
+    "ci95": [
+      -29.545454545454547,
+      2.0
+    ]
+  }
+]

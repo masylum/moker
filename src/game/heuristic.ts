@@ -1,10 +1,23 @@
+import { hasFreeFishing } from "./rules"
+import { GameEngine } from "./engine"
 import { createDeck } from "./cards"
-import { summarizeHandProgress } from "./hand-progress"
+import { nextHandPotential, summarizeHandProgress } from "./hand-progress"
 import { publicKnownPrivateCards } from "./information"
 import { SeededRandom } from "./random"
-import { CHIP_UNIT, ORBIT_VALUES, PRIVATE_CARD_COUNT, toChipUnit } from "./rules"
-import { compareHandStrengths, scoreHandStrength } from "./scoring"
-import { clearStrengthCache, summarizeHandPotential } from "./strength"
+import {
+  CHIP_UNIT,
+  LOAN_PENALTY,
+  LOAN_VALUE,
+  MAX_LOANS,
+  STREET_REVEAL_COUNTS,
+  toChipUnit,
+} from "./rules"
+import {
+  clearHandStrengthCache,
+  compareHandStrengths,
+  scoreHand,
+  scoreHandStrength,
+} from "./scoring"
 import type {
   BettingAction,
   BlankExchange,
@@ -18,6 +31,55 @@ import type {
   PlayerState,
 } from "./types"
 
+export interface BotPolicy {
+  betEquityFloor: number
+  raiseEquityFloor: number
+  riichiEquityFloor: number
+  riichiRewardDiscount: number
+  potWagerFraction: number
+  maxStackRisk: number
+  allInEquityFloor: number
+  bluffFrequency: number
+  lotusBluffFrequency: number
+  foldPressure: number
+  reserveChips: number
+  standingAwareness: number
+  survivalRiskPenalty: number
+  equityCalibration: number
+  aggressionGateShrinkage: number
+  callDevelopmentWeight: number
+}
+
+const TRAINED_POLICY: BotPolicy = {
+  betEquityFloor: 0.34,
+  raiseEquityFloor: 0.46,
+  riichiEquityFloor: 0.42,
+  riichiRewardDiscount: 0.04,
+  potWagerFraction: 0.9,
+  maxStackRisk: 0.7,
+  allInEquityFloor: 0.95,
+  bluffFrequency: 0.06,
+  lotusBluffFrequency: 0.42,
+  foldPressure: 0.76,
+  reserveChips: 30,
+  standingAwareness: 0.45,
+  survivalRiskPenalty: 1,
+  equityCalibration: 0.75,
+  aggressionGateShrinkage: 0.5,
+  callDevelopmentWeight: 1,
+}
+
+export const DEFAULT_BOT_POLICY: Readonly<BotPolicy> = Object.freeze(TRAINED_POLICY)
+const RIICHI_BOT_POLICY: Readonly<BotPolicy> = Object.freeze({
+  ...TRAINED_POLICY,
+  allInEquityFloor: 0.95,
+  equityCalibration: 0.65,
+})
+
+export function defaultBotPolicy(mode: "basic" | "riichi"): Readonly<BotPolicy> {
+  return mode === "riichi" ? RIICHI_BOT_POLICY : DEFAULT_BOT_POLICY
+}
+
 export interface DiscardChoice {
   discardCardId: string
   discardPile: DiscardPile
@@ -25,171 +87,116 @@ export interface DiscardChoice {
   rationale: string
 }
 
-export type SeedDiscardChoice = DiscardChoice
+export interface ExposureChoice {
+  cardIds: string[]
+  expectedScore: number
+  rationale: string
+}
+
+export interface CharlestonChoice {
+  cardIds: string[]
+  expectedScore: number
+  rationale: string
+}
 
 interface DrawPlan {
   source: CardSource
   blankExchange?: BlankExchange
   value: number
+  tie: number
+  second?: DrawPlan
 }
 
-const privatePotentialCache = new Map<string, number>()
-const PRIVATE_POTENTIAL_CACHE_LIMIT = 100_000
+const potentialCache = new Map<string, number>()
+const POTENTIAL_CACHE_LIMIT = 100_000
 
 export function clearHeuristicCaches(): void {
-  privatePotentialCache.clear()
-  clearStrengthCache()
+  potentialCache.clear()
+  clearHandStrengthCache()
 }
 
-export function chooseHeuristicAction(
+export function chooseHeuristicCharleston(state: GameState, playerId: string): CharlestonChoice {
+  if (state.phase !== "charleston" || !state.pendingPlayerIds.includes(playerId)) {
+    throw new Error("Player is not choosing a Charleston pass")
+  }
+  const player = getPlayer(state, playerId)
+  const random = decisionRandom(state, playerId, "charleston")
+  const choices: { cardIds: string[]; value: number; tie: number }[] = []
+  for (let left = 0; left < player.privateCards.length; left += 1) {
+    for (let right = left + 1; right < player.privateCards.length; right += 1) {
+      const kept = player.privateCards.filter((_, index) => index !== left && index !== right)
+      choices.push({
+        cardIds: [player.privateCards[left]!.id, player.privateCards[right]!.id],
+        value: handPotential(kept, state.config.mode),
+        tie: random.next(),
+      })
+    }
+  }
+  choices.sort((a, b) => b.value - a.value || b.tie - a.tie)
+  const best = choices[0]!
+  return {
+    cardIds: best.cardIds,
+    expectedScore: best.value / 100,
+    rationale: "Chooses the two-card pass jointly to preserve the strongest five-card core",
+  }
+}
+
+export function chooseHeuristicExposure(state: GameState, playerId: string): ExposureChoice {
+  if (state.phase !== "exposing" || state.actingPlayerId !== playerId) {
+    throw new Error("Player is not choosing a Street exposure")
+  }
+  const player = getPlayer(state, playerId)
+  const revealCount = STREET_REVEAL_COUNTS[state.street - 1] ?? 0
+  const all = [...player.publicCards, ...player.privateCards]
+  const fullValue = handPotential(all, state.config.mode)
+  const madeIds = new Set(scoreHand(all, state.config.mode).selectedCardIds)
+  const ranked = player.privateCards
+    .map((card) => {
+      const essential = madeIds.has(card.id) ? 100 : 0
+      const safety =
+        card.kind === "blank" ? -30 : card.kind === "flower" && !hasTwinLotus(all) ? -80 : 0
+      const honor = card.kind === "wind" || card.kind === "dragon" ? 3 : 0
+      return {
+        card,
+        value: essential + safety + honor + cardTieValue(card) / 100,
+        tie: decisionTie(state, playerId, "expose", card.id),
+      }
+    })
+    .sort((a, b) => b.value - a.value || b.tie - a.tie)
+  const best = ranked.slice(0, revealCount)
+  return {
+    cardIds: best.map((entry) => entry.card.id),
+    expectedScore: fullValue / 100,
+    rationale:
+      "Locks made-hand anchors while keeping weak, flexible, Blank, and lone-Lotus tiles concealed for later discards",
+  }
+}
+
+export function chooseHeuristicDiscard(
   state: GameState,
   playerId: string,
   samples = state.config.heuristicSamples,
-): HeuristicDecision {
-  if (state.phase !== "betting" || state.actingPlayerId !== playerId)
-    throw new Error("Heuristic player is not acting")
+  _policy: Readonly<BotPolicy> = DEFAULT_BOT_POLICY,
+): DiscardChoice {
+  if (state.phase !== "discarding" || state.pendingDiscard?.playerId !== playerId) {
+    throw new Error("Player is not discarding")
+  }
   const player = getPlayer(state, playerId)
-  const random = new SeededRandom(
-    `${state.config.seed}:h${state.handNumber}:s${state.street}:v${state.version}:${playerId}`,
-  )
-  const drawPlan = chooseDrawPlan(state, player, random.fork("draw"), samples)
-  const math = analyzePokerMath(state, playerId, samples)
-  const toCall = state.currentWager - player.roundCommitted
-  const evaluations: DecisionEvaluation[] = []
-  const liability = futureBlueLiability(state, player.blueSticks)
-
-  const makeEvaluation = (
-    action: BettingAction,
-    chipCost: number,
-    aggressive = false,
-  ): DecisionEvaluation => {
-    const responseRate = Math.max(
-      0.2,
-      Math.min(0.55, 0.55 - (chipCost / Math.max(CHIP_UNIT, state.pot + chipCost)) * 0.35),
-    )
-    const expectedOpponentContribution =
-      aggressive && (action.type === "bet" || action.type === "raise")
-        ? state.players
-            .filter(
-              (candidate) =>
-                !candidate.eliminated && !candidate.folded && candidate.id !== playerId,
-            )
-            .reduce(
-              (total, candidate) =>
-                total + Math.max(0, action.amount - candidate.roundCommitted) * responseRate,
-              0,
-            )
-        : 0
-    const expectedPot = state.pot + chipCost + expectedOpponentContribution
-    const expectedChipDelta = math.showdownEquity * expectedPot - chipCost
-    const blueBenefit =
-      aggressive && player.blueSticks > 0 ? Math.min(3, nextChargesValue(state) * 0.03) : 0
-    const riichiBonus =
-      "riichi" in action && action.riichi
-        ? math.showdownEquity * nextChargesValue(state) * player.blueSticks * 0.12
-        : 0
-    const utility =
-      expectedChipDelta + blueBenefit + riichiBonus + math.expectedScore * 0.02 - liability * 0.01
-
-    return {
-      action,
-      expectedScore: math.expectedScore,
-      estimatedWinRate: math.showdownEquity,
-      expectedChipDelta,
-      utility,
-      samples,
-      rationale: `${Math.round(math.showdownEquity * 100)}% showdown equity; ${formatPercent(math.potOdds)} pot odds; call EV ${formatSigned(math.callExpectedValue)}; ${math.improveRate.toFixed(0)}% improve${rangeContext(math)}`,
-    }
-  }
-
-  const foldUtility = -liability * 0.03
-  evaluations.push({
-    action: { type: "fold" },
-    expectedScore: 0,
-    estimatedWinRate: 0,
-    expectedChipDelta: 0,
-    utility: foldUtility,
-    samples,
-    rationale: `Preserves chips but adds a blue stick worth about ${liability} in future charges`,
-  })
-
-  if (toCall === 0) {
-    evaluations.push(
-      makeEvaluation(
-        {
-          type: "check",
-          drawSource: drawPlan.source,
-          ...(drawPlan.blankExchange ? { blankExchange: drawPlan.blankExchange } : {}),
-        },
-        0,
-      ),
-    )
-    const aggressionThreshold = Math.max(0.38, 1 / (math.opponents + 1) + 0.1)
-
-    if (math.showdownEquity >= aggressionThreshold) {
-      for (const amount of sensibleWagers(state, player, CHIP_UNIT)) {
-        const riichi = shouldDeclareRiichi(
-          state,
-          player,
-          math.currentBest.rank,
-          math.showdownEquity,
-        )
-        evaluations.push(
-          makeEvaluation(
-            { type: "bet", amount, ...(riichi ? { riichi: true } : {}) },
-            amount - player.roundCommitted,
-            true,
-          ),
-        )
+  const best = player.privateCards
+    .map((card) => {
+      const remaining = player.privateCards.filter((candidate) => candidate.id !== card.id)
+      return {
+        card,
+        value: discardPotential(state, player, remaining),
+        tie: decisionTie(state, playerId, "discard", card.id),
       }
-    }
-  } else if (player.chips >= toCall) {
-    evaluations.push(
-      makeEvaluation(
-        {
-          type: "call",
-          drawSource: drawPlan.source,
-          ...(drawPlan.blankExchange ? { blankExchange: drawPlan.blankExchange } : {}),
-        },
-        toCall,
-      ),
-    )
-    const aggressionThreshold = Math.max(0.5, math.potOdds + 0.15, 1 / (math.opponents + 1) + 0.15)
-
-    if (math.showdownEquity >= aggressionThreshold) {
-      for (const amount of sensibleWagers(state, player, state.currentWager + state.minimumRaise)) {
-        const riichi = shouldDeclareRiichi(
-          state,
-          player,
-          math.currentBest.rank,
-          math.showdownEquity,
-        )
-        evaluations.push(
-          makeEvaluation(
-            { type: "raise", amount, ...(riichi ? { riichi: true } : {}) },
-            amount - player.roundCommitted,
-            true,
-          ),
-        )
-      }
-    }
-  }
-
-  evaluations.sort(
-    (left, right) =>
-      right.utility - left.utility || actionOrder(left.action) - actionOrder(right.action),
-  )
-  const best = evaluations[0]
-
-  if (!best) {
-    throw new Error("No heuristic action available")
-  }
-
+    })
+    .sort((a, b) => b.value - a.value || b.tie - a.tie)[0]!
   return {
-    playerId,
-    action: best.action,
-    evaluations,
-    rationale: `Selected ${best.action.type} at utility ${best.utility.toFixed(1)}. ${best.rationale}.`,
+    discardCardId: best.card.id,
+    discardPile: chooseDiscardPile(state, best.card),
+    expectedScore: best.value / 100,
+    rationale: `Discards the lowest-value concealed tile after ${samples} draw-equity samples`,
   }
 }
 
@@ -199,42 +206,45 @@ export function analyzePokerMath(
   samples = state.config.heuristicSamples,
 ): PokerMathAnalysis {
   const player = getPlayer(state, playerId)
-  const random = new SeededRandom(
-    `${state.config.seed}:math:h${state.handNumber}:s${state.street}:v${state.version}:${playerId}`,
+  const future = analyzeCurrentEquity(
+    state,
+    player,
+    decisionRandom(state, playerId, "math"),
+    samples,
   )
-  const future = analyzePrivateFuture(state, playerId, player.privateCards, random, samples)
-  const progress = summarizeHandProgress([...player.privateCards, ...state.community])
-  const activeOpponentIds = new Set(
-    state.players
-      .filter(
-        (candidate) => !candidate.eliminated && !candidate.folded && candidate.id !== playerId,
-      )
-      .map((candidate) => candidate.id),
+  const toCall = Math.min(player.chips, Math.max(0, state.currentWager - player.roundCommitted))
+  const cap = player.chips === toCall ? player.roundCommitted + toCall : Infinity
+  const refunds = state.players.reduce(
+    (sum, candidate) => sum + Math.max(0, candidate.roundCommitted - cap),
+    0,
   )
-  const publicCards = publicKnownPrivateCards(state)
-  const toCall = Math.max(0, state.currentWager - player.roundCommitted)
-  const potAfterCall = state.pot + toCall
-  const potOdds = toCall === 0 ? 0 : toCall / potAfterCall
-
+  const potBeforeCall = state.pot - refunds
+  const potAfterCall = potBeforeCall + toCall
+  const progress = summarizeHandProgress(
+    [...player.privateCards, ...player.publicCards],
+    state.config.mode,
+  )
+  const known = publicKnownPrivateCards(state, player.id)
+  const opponents = activeOpponents(state, playerId)
   return {
     playerId,
     samples: Math.max(1, samples),
-    opponents: future.opponents,
-    knownOpponentTiles: [...activeOpponentIds].reduce(
-      (count, opponentId) => count + (publicCards[opponentId]?.length ?? 0),
+    effectiveSamples: future.effectiveSamples,
+    certainLoss: future.certainLoss,
+    opponents: opponents.length,
+    knownOpponentTiles: opponents.reduce(
+      (total, opponent) => total + (known[opponent.id]?.length ?? 0) + opponent.publicCards.length,
       0,
     ),
     opponentAggressiveActions: state.bettingHistory.filter(
-      (record) =>
-        activeOpponentIds.has(record.playerId) &&
-        (record.type === "bet" || record.type === "raise"),
+      (record) => record.playerId !== playerId && record.type === "bet",
     ).length,
     toCall,
-    potBeforeCall: state.pot,
+    potBeforeCall,
     potAfterCall,
-    potOdds,
+    potOdds: toCall === 0 ? 0 : toCall / Math.max(1, potAfterCall),
     showdownEquity: future.showdownEquity,
-    equityEdge: future.showdownEquity - potOdds,
+    equityEdge: future.showdownEquity - (toCall === 0 ? 0 : toCall / Math.max(1, potAfterCall)),
     callExpectedValue: future.showdownEquity * potAfterCall - toCall,
     expectedScore: future.expectedScore,
     improveRate: future.improveRate,
@@ -243,80 +253,586 @@ export function analyzePokerMath(
   }
 }
 
-export function chooseHeuristicDiscard(
+export function chooseHeuristicAction(
   state: GameState,
   playerId: string,
   samples = state.config.heuristicSamples,
-): DiscardChoice {
-  if (state.phase !== "discarding" || state.pendingDiscard?.playerId !== playerId) {
-    throw new Error("Player is not discarding")
+  policy: Readonly<BotPolicy> = defaultBotPolicy(state.config.mode),
+): HeuristicDecision {
+  if (state.phase !== "betting" || state.actingPlayerId !== playerId) {
+    throw new Error("Heuristic player is not acting")
+  }
+  const player = getPlayer(state, playerId)
+  const random = decisionRandom(state, playerId, "action")
+  const math = analyzePokerMath(state, playerId, samples)
+  const plan = chooseDrawPlan(state, player, random.fork("draw"), samples)
+  const currentPotential = handPotential(
+    [...player.privateCards, ...player.publicCards],
+    state.config.mode,
+  )
+  const drawGain = Math.max(0, plan.value - currentPotential)
+  const opponents = activeOpponents(state, playerId)
+  const legal = legalActions(state, player)
+  const fairShare = 1 / Math.max(1, opponents.length + 1)
+  const certain = hasTwinLotus([...player.privateCards, ...player.publicCards])
+  const knownPrivate = publicKnownPrivateCards(state, player.id)
+  if (
+    !certain &&
+    opponents.some((opponent) =>
+      hasTwinLotus([...opponent.publicCards, ...(knownPrivate[opponent.id] ?? [])]),
+    )
+  ) {
+    const rationale = "Known Twin Lotus cannot be beaten or outdrawn"
+    const fold: DecisionEvaluation = {
+      action: { type: "fold" },
+      expectedScore: math.expectedScore,
+      estimatedWinRate: 0,
+      estimatedFoldout: 0,
+      expectedChipDelta: 0,
+      utility: 0,
+      samples,
+      rationale,
+    }
+    return { playerId, street: state.street, action: fold.action, evaluations: [fold], rationale }
+  }
+  const sampledEquity = math.certainLoss
+    ? 0
+    : uncertaintyAdjustedEquity(math.showdownEquity, math.effectiveSamples ?? samples)
+  // A player who has bet is a stronger range than an unselected random hand.
+  const equity = certain
+    ? 1
+    : state.currentWager > player.roundCommitted
+      ? sampledEquity * (policy.equityCalibration + (1 - policy.equityCalibration) * sampledEquity)
+      : sampledEquity
+  const doublePlan =
+    player.riichiSticks > 0 && !player.riichi && player.chips > math.toCall
+      ? chooseDoubleDrawPlan(state, player, plan)
+      : plan
+  const fishingEquity = (drawPlan: DrawPlan) => {
+    const projected = projectVisibleDraws(state, player, drawPlan)
+    const deckFish =
+      !projected && drawPlan.source === "deck" && !drawPlan.blankExchange && !drawPlan.second
+    if (!projected && !deckFish) return undefined
+    const forecastState = projected ?? state
+    const own = getPlayer(forecastState, player.id)
+    if (hasTwinLotus([...own.privateCards, ...own.publicCards])) return 1
+    const estimate = analyzeCurrentEquity(
+      forecastState,
+      own,
+      decisionRandom(state, player.id, "math"),
+      samples,
+      deckFish,
+    )
+    const adjusted = estimate.certainLoss
+      ? 0
+      : uncertaintyAdjustedEquity(estimate.showdownEquity, estimate.effectiveSamples)
+    return state.currentWager > player.roundCommitted
+      ? adjusted * (policy.equityCalibration + (1 - policy.equityCalibration) * adjusted)
+      : adjusted
+  }
+  const canForecastFishing =
+    !player.riichi && state.allInPlayerIds.length === 0 && player.chips > math.toCall
+  const singleFishingEquity = canForecastFishing && drawGain > 0 ? fishingEquity(plan) : undefined
+  const doubleFishingEquity =
+    canForecastFishing && doublePlan.second ? fishingEquity(doublePlan) : undefined
+  const evaluations: DecisionEvaluation[] = []
+  const singleConcealedLotus =
+    player.privateCards.filter((card) => card.kind === "flower").length === 1 &&
+    player.publicCards.every((card) => card.kind !== "flower")
+  const lotusBluff =
+    singleConcealedLotus && random.fork("lotus-bluff").next() < policy.lotusBluffFrequency
+  const standing = standingAdjustment(state, player, policy)
+  const tournamentRisk = tournamentRiskMultiplier(state, player)
+  const finalHand = isFinalTournamentHand(state)
+
+  const evaluate = (action: BettingAction): DecisionEvaluation => {
+    const cost = actionCost(state, player, action)
+    const aggressive = action.type === "bet"
+    const wager = aggressive ? action.amount : player.roundCommitted + cost
+    const canFish =
+      action.type !== "fold" &&
+      !player.riichi &&
+      state.allInPlayerIds.length === 0 &&
+      cost < player.chips &&
+      !(action.type === "bet" && action.riichi)
+    const freeFish = hasFreeFishing(state.config.mode, action.type)
+    const usesFish = canFish && (freeFish || action.useRiichiStick)
+    const visibleEquity = usesFish
+      ? freeFish && action.useRiichiStick
+        ? doubleFishingEquity
+        : singleFishingEquity
+      : undefined
+    const developedEquity = visibleEquity ?? equity
+    const callerEquity =
+      aggressive && developedEquity > 0 && developedEquity < 1
+        ? callerRangeAdjustedEquity(state, player, wager, developedEquity)
+        : developedEquity
+    const foldRates = opponents.map((opponent) =>
+      foldProbability(state, opponent, wager, callerEquity, policy),
+    )
+    const allFold = aggressive ? foldRates.reduce((value, rate) => value * rate, 1) : 0
+    const bluffBonus = singleConcealedLotus
+      ? opponents.reduce((sum, opponent) => sum + Math.min(opponent.chips, state.orbitValue * 3), 0)
+      : 0
+    const expectedChipDelta =
+      action.type === "fold"
+        ? 0
+        : aggressive
+          ? expectedBetValue(state, player, wager, callerEquity, opponents, foldRates, bluffBonus)
+          : developedEquity * math.potAfterCall - cost
+    const fishingGain =
+      freeFish && action.type !== "fold" && action.useRiichiStick
+        ? Math.max(0, doublePlan.value - currentPotential)
+        : drawGain
+    const drawUtility = usesFish
+      ? (state.config.mode === "riichi" ? 0.25 : 1) *
+        developmentValue(fishingGain) *
+        (visibleEquity === undefined ? 1 : Math.max(0, 4 - state.street) / 3)
+      : 0
+    const stickUtility =
+      action.type !== "fold" && action.useRiichiStick ? -stickShadowValue(state, player) : 0
+    const riichiUtility =
+      action.type === "bet" && action.riichi
+        ? (allFold + (1 - allFold) * callerEquity) * 2 * stickShadowValue(state, player) -
+          futureDevelopmentCost(state, drawGain)
+        : 0
+    const riskPenalty =
+      action.type === "fold"
+        ? 0
+        : policy.survivalRiskPenalty *
+          tournamentRisk *
+          cost *
+          ((player.handCommitted + cost) /
+            Math.max(CHIP_UNIT, player.chips + player.handCommitted)) **
+            2 *
+          (1 - developedEquity)
+    const continuationPenalty =
+      action.type === "fold"
+        ? 0
+        : continuationRiskCost(
+            state,
+            player,
+            cost,
+            allFold + (1 - allFold) * callerEquity,
+            aggressive ? opponents : [],
+          )
+    return {
+      action,
+      expectedScore: math.expectedScore,
+      estimatedWinRate: callerEquity,
+      estimatedFoldout: allFold,
+      expectedChipDelta,
+      utility: finalHand
+        ? 1000 * finalHandWinCredit(state, player, action, callerEquity, opponents, foldRates) +
+          expectedChipDelta * 0.0001
+        : expectedChipDelta +
+          (drawUtility + stickUtility) * (aggressive ? 1 - allFold : 1) +
+          riichiUtility +
+          standing * cost -
+          riskPenalty -
+          continuationPenalty,
+      samples,
+      rationale: `${percent(callerEquity)} estimated equity${visibleEquity === undefined ? "" : " after fishing"}, ${percent(math.potOdds)} pot odds, ${percent(allFold)} estimated foldout; tournament risk ×${tournamentRisk.toFixed(2)}${continuationPenalty > 0 ? `; next-ante risk cost ${continuationPenalty.toFixed(1)}` : ""}${finalHand ? "; prioritizes final tournament win" : ""}`,
+    }
   }
 
-  const player = getPlayer(state, playerId)
-  const random = new SeededRandom(`${state.config.seed}:discard:${state.version}:${playerId}`)
-  const evaluations = player.privateCards.map((card, index) => {
-    const hand = player.privateCards.filter((_, candidateIndex) => candidateIndex !== index)
-    return {
-      card,
-      ...analyzePrivateFuture(state, playerId, hand, random.fork(card.id), samples, [card]),
+  const call = legal.find((entry) => entry.type === "call" || entry.type === "check")
+  if (call) {
+    const base: Extract<BettingAction, { type: "call" | "check" }> = {
+      ...drawAction("call", plan, false),
+      type: call.type === "check" ? "check" : "call",
     }
-  })
-  evaluations.sort(
-    (left, right) =>
-      right.expectedScore - left.expectedScore || left.card.id.localeCompare(right.card.id),
-  )
+    evaluations.push(evaluate(base))
+    const useStick = (call.canUseRiichiStick ?? false) && Boolean(doublePlan.second)
+    if (useStick)
+      evaluations.push(
+        evaluate({
+          ...drawAction("call", doublePlan, true),
+          type: call.type === "check" ? "check" : "call",
+        }),
+      )
+  }
+  if (state.currentWager > player.roundCommitted) evaluations.push(evaluate({ type: "fold" }))
+
+  const bet = legal.find((entry) => entry.type === "bet")
+  if (bet?.minimum !== undefined && bet.maximum !== undefined) {
+    const bluff = random.fork("bluff").next() < policy.bluffFrequency
+    const threshold = state.currentWager === 0 ? policy.betEquityFloor : policy.raiseEquityFloor
+    if (
+      finalHand ||
+      Math.max(
+        equity,
+        hasFreeFishing(state.config.mode, "bet") || bet.canUseRiichiStick
+          ? (singleFishingEquity ?? equity)
+          : equity,
+      ) +
+        standing >=
+        Math.max(fairShare, threshold) ||
+      bluff ||
+      lotusBluff
+    ) {
+      for (const amount of wagerCandidates(
+        state,
+        player,
+        bet.minimum,
+        bet.maximum,
+        equity,
+        policy,
+      )) {
+        const base: Extract<BettingAction, { type: "bet" }> = {
+          type: "bet",
+          amount,
+          ...(hasFreeFishing(state.config.mode, "bet") ? drawFields(plan) : {}),
+        }
+        evaluations.push(evaluate(base))
+        if (bet.canUseRiichiStick && amount - player.roundCommitted < player.chips) {
+          evaluations.push(evaluate({ ...base, useRiichiStick: true, ...drawFields(plan) }))
+        }
+        if (bet.canRiichi && shouldRiichi(state, player, equity, drawGain, policy)) {
+          evaluations.push(evaluate({ ...base, riichi: true }))
+        }
+      }
+    }
+  }
+
+  if (evaluations.length === 0) evaluations.push(evaluate({ type: "fold" }))
+  evaluations.sort((a, b) => b.utility - a.utility || actionOrder(a.action) - actionOrder(b.action))
+  // Protect a mathematically secured lead. Basic has a fixed chip supply,
+  // so reserve every possible remaining ante and secure it before the last hand.
+  // Riichi loans can expand the chip supply, so its guarantee is final-hand only.
+  // All other stacks and the pot form a conservative upper bound: folded
+  // opponents cannot actually transfer their entire stacks, but counting them
+  // keeps this decision independent of assumptions about their future play.
+  if (
+    !certain &&
+    state.gameNumber === state.config.tournamentGames &&
+    (state.config.mode === "basic" || finalHand)
+  ) {
+    const prior = (id: string) =>
+      state.gameScores.reduce((sum, scores) => sum + (scores[id] ?? 0), 0)
+    const others = state.players.filter((candidate) => candidate.id !== player.id)
+    const remainingAntes =
+      state.config.mode === "basic"
+        ? Math.max(0, state.maxHands - state.dealerSteps - 1) * state.orbitValue
+        : 0
+    // A folded participant still pays a possible Single Lotus winner.
+    const lotusLiability =
+      state.config.mode === "riichi" ? Math.min(player.chips, 3 * state.orbitValue) : 0
+    const reserve = remainingAntes + lotusLiability
+    const available =
+      state.pot + others.reduce((sum, candidate) => sum + candidate.chips, 0) + reserve
+    const ownScore = prior(player.id) + player.chips - player.loans * LOAN_PENALTY - reserve
+    const opposingMaximum = Math.max(
+      ...others.map(
+        (candidate) => prior(candidate.id) + available - candidate.loans * LOAN_PENALTY,
+      ),
+    )
+    if (ownScore > opposingMaximum) {
+      const fold = evaluate({ type: "fold" })
+      fold.utility = evaluations[0]!.utility + 1
+      fold.rationale = "Folding guarantees the tournament lead, including remaining antes"
+      evaluations.unshift(fold)
+    }
+  }
   const best = evaluations[0]!
-  const pile = chooseDiscardPile(state, best.card)
   return {
-    discardCardId: best.card.id,
-    discardPile: pile,
-    expectedScore: best.expectedScore,
-    rationale: `Expected final ladder rank ${best.expectedScore.toFixed(1)} across ${samples} rollouts`,
+    playerId,
+    street: state.street,
+    action: best.action,
+    evaluations,
+    ...(lotusBluff && best.action.type === "bet" ? { strategy: "lotus-bluff" as const } : {}),
+    rationale: best.rationale,
   }
 }
 
-export function chooseHeuristicSeedDiscard(
+function legalActions(state: GameState, player: PlayerState) {
+  return GameEngine.restore(state).legalActions(player.id)
+}
+
+function shouldRiichi(
   state: GameState,
-  playerId: string,
-  samples = state.config.heuristicSamples,
-): SeedDiscardChoice {
-  if (state.phase !== "seeding" || state.actingPlayerId !== playerId) {
-    throw new Error("Player is not seeding a discard lane")
-  }
-
-  const player = getPlayer(state, playerId)
-  const random = new SeededRandom(`${state.config.seed}:seed-discard:${state.version}:${playerId}`)
-  const evaluations = player.privateCards.map((card, index) => {
-    const privateCards = player.privateCards.filter((_, candidateIndex) => candidateIndex !== index)
-    const future = analyzePrivateFuture(
-      state,
-      playerId,
-      privateCards,
-      random.fork(card.id),
-      samples,
-      [card],
-    )
-    const flowerCount = privateCards.filter((candidate) => candidate.kind === "flower").length
-
-    return {
-      card,
-      ...future,
-      value: future.expectedScore - (flowerCount === 1 ? 20 : 0),
-    }
-  })
-  evaluations.sort(
-    (left, right) =>
-      right.value - left.value ||
-      right.showdownEquity - left.showdownEquity ||
-      left.card.id.localeCompare(right.card.id),
+  player: PlayerState,
+  equity: number,
+  drawGain: number,
+  policy: Readonly<BotPolicy>,
+): boolean {
+  const cards = [...player.privateCards, ...player.publicCards]
+  const rank = hasTwinLotus(cards) ? 14 : scoreHandStrength(cards, state.config.mode).total
+  return (
+    equity >= policy.riichiEquityFloor &&
+    (rank >= 8 || state.street >= 3) &&
+    (drawGain < 120 || state.street === 3) &&
+    futureDevelopmentCost(state, drawGain) <= equity * 3 * stickShadowValue(state, player)
   )
-  const best = evaluations[0]!
+}
 
+function futureDevelopmentCost(state: GameState, drawGain: number): number {
+  return Math.max(0, 4 - state.street) * developmentValue(drawGain) * 0.45
+}
+
+function developmentValue(drawGain: number): number {
+  return Math.min(90, drawGain / 4)
+}
+
+function stickShadowValue(state: GameState, player?: PlayerState): number {
+  return (
+    (player ? 12 / Math.max(1, player.riichiSticks) : 12) +
+    Math.min(8, Math.max(0, state.maxHands - state.handNumber))
+  )
+}
+
+function standingAdjustment(
+  state: GameState,
+  player: PlayerState,
+  policy: Readonly<BotPolicy>,
+): number {
+  const scores = tournamentScores(state)
+  const own = scores[player.id]!
+  const leader = Math.max(...Object.values(scores))
+  const late = tournamentProgress(state)
+  return clamp(
+    ((leader - own) / Math.max(300, Math.abs(leader))) * policy.standingAwareness * late,
+    0,
+    0.15,
+  )
+}
+
+/** Incremental cost of losing the ability to fund the next ante. The loan
+ * charge is its net 50-chip score cost, not a second 250-chip deduction.
+ * With no rescue available, value up to one orbit of continued participation.
+ * This is a bounded one-step reserve, not a full tournament rollout. */
+export function continuationRiskCost(
+  state: GameState,
+  player: PlayerState,
+  cost: number,
+  winProbability: number,
+  possibleCallers: readonly PlayerState[] = [],
+): number {
+  const remaining = Math.max(0, state.maxHands - state.dealerSteps - 1)
+  if (!remaining || isFinalGameHand(state)) return 0
+  const exposure = possibleCallers.length
+    ? Math.min(
+        cost,
+        Math.max(
+          0,
+          ...possibleCallers.map(
+            (opponent) => opponent.roundCommitted + opponent.chips - player.roundCommitted,
+          ),
+        ),
+      )
+    : cost
+  const liability = (cash: number) =>
+    cash >= state.orbitValue
+      ? 0
+      : state.config.mode === "riichi" && player.loans < MAX_LOANS
+        ? LOAN_PENALTY - LOAN_VALUE
+        : state.orbitValue * Math.min(remaining, state.players.filter((p) => !p.eliminated).length)
+  return Math.max(
+    0,
+    (1 - winProbability) * liability(player.chips - exposure) - liability(player.chips),
+  )
+}
+
+function tournamentScores(state: GameState): Record<string, number> {
+  return Object.fromEntries(
+    state.players.map((player) => [
+      player.id,
+      state.gameScores.reduce((sum, scores) => sum + (scores[player.id] ?? 0), 0) +
+        player.chips -
+        player.loans * LOAN_PENALTY,
+    ]),
+  )
+}
+
+function isFinalTournamentHand(state: GameState): boolean {
+  return state.gameNumber === state.config.tournamentGames && isFinalGameHand(state)
+}
+
+function isFinalGameHand(state: GameState): boolean {
+  let steps = state.dealerSteps
+  let dealer = state.dealerIndex
+  do {
+    steps++
+    dealer = (dealer + 1) % state.players.length
+  } while (steps < state.maxHands && state.players[dealer]!.eliminated)
+  return steps >= state.maxHands || state.handNumber >= state.maxHands
+}
+
+function tournamentProgress(state: GameState): number {
+  return clamp(
+    (state.gameNumber - 1 + Math.max(state.handNumber, state.dealerSteps + 1) / state.maxHands) /
+      state.config.tournamentGames,
+    0,
+    1,
+  )
+}
+
+/** Survival matters early; a late leader protects the lead, a trailer can take risk.
+ * This is a finite-horizon heuristic, not a solved tournament win probability. */
+export function tournamentRiskMultiplier(state: GameState, player: PlayerState): number {
+  const scores = tournamentScores(state)
+  const own = scores[player.id]!
+  const others = state.players.filter((p) => p.id !== player.id && !p.eliminated)
+  const highest = Math.max(...others.map((p) => scores[p.id]!))
+  const scale = Math.max(state.config.startingChips, ...state.players.map((p) => p.chips))
+  const lead = clamp((own - highest) / scale, -1, 1)
+  const late = tournamentProgress(state)
+  return clamp(1.5 + 2 * late * lead, 0.5, 3.5)
+}
+
+/** Final-hand goal is the final ranking, not raw pot profit. Each caller subset
+ * settles capped contributions. On a loss, average over possible opposing
+ * winners; this is an approximation, not an opponent-specific showdown model. */
+function finalHandWinCredit(
+  state: GameState,
+  player: PlayerState,
+  action: BettingAction,
+  equity: number,
+  opponents: readonly PlayerState[],
+  folds: readonly number[],
+): number {
+  const aggressive = action.type === "bet"
+  const wager = aggressive ? action.amount : state.currentWager
+  const ownCost = action.type === "fold" ? 0 : actionCost(state, player, action)
+  let value = 0
+  for (let mask = 0; mask < (aggressive ? 2 ** opponents.length : 1); mask++) {
+    const callers = aggressive ? opponents.filter((_, i) => mask & (1 << i)) : opponents
+    const probability = aggressive
+      ? opponents.reduce((p, _, i) => p * (mask & (1 << i) ? 1 - folds[i]! : folds[i]!), 1)
+      : 1
+    const scores = tournamentScores(state)
+    let pot = state.pot
+    const cap = Math.min(
+      wager,
+      player.roundCommitted + ownCost,
+      ...callers.map((p) => p.roundCommitted + p.chips),
+    )
+    for (const p of state.players) {
+      // A fold does not trigger a new cap; only an actual short payment does.
+      const refund = action.type === "fold" ? 0 : Math.max(0, p.roundCommitted - cap)
+      const cost =
+        p.id === player.id
+          ? Math.min(ownCost, Math.max(0, cap - p.roundCommitted))
+          : callers.some((q) => q.id === p.id)
+            ? Math.max(0, (action.type === "fold" ? wager : cap) - p.roundCommitted)
+            : 0
+      const paid = Math.min(p.chips, cost)
+      scores[p.id] = scores[p.id]! + refund - paid
+      pot += paid - refund
+    }
+    const credit = (winner: string) => {
+      const settled = Object.entries(scores).map(([id, score]) => ({
+        id,
+        score: score + (id === winner ? pot : 0),
+      }))
+      const best = Math.max(...settled.map((p) => p.score))
+      return settled.find((p) => p.id === player.id)!.score === best
+        ? 1 / settled.filter((p) => p.score === best).length
+        : 0
+    }
+    if (!callers.length) value += probability * credit(player.id)
+    else {
+      const win = action.type === "fold" ? 0 : equity
+      value +=
+        probability *
+        (win * credit(player.id) +
+          ((1 - win) * callers.reduce((sum, p) => sum + credit(p.id), 0)) / callers.length)
+    }
+  }
+  return value
+}
+
+function wagerCandidates(
+  state: GameState,
+  player: PlayerState,
+  minimum: number,
+  maximum: number,
+  equity: number,
+  policy: Readonly<BotPolicy>,
+): number[] {
+  const spendable = Math.max(0, player.chips - policy.reserveChips)
+  // Budget the whole hand: a re-raise must not reset the risk allowance.
+  const handBudget = Math.max(
+    0,
+    (player.chips + player.handCommitted) * policy.maxStackRisk - player.handCommitted,
+  )
+  const riskCap = player.roundCommitted + toChipUnit(Math.min(spendable, handBudget))
+  const potTargets = [0.25, 0.5, policy.potWagerFraction, 1.25].map((fraction) =>
+    toChipUnit(player.roundCommitted + Math.max(CHIP_UNIT, state.pot * fraction)),
+  )
+  const normal = [minimum, ...potTargets].filter(
+    (amount) => amount >= minimum && amount <= Math.min(maximum, riskCap),
+  )
+  const allIn = equity >= policy.allInEquityFloor || isFinalTournamentHand(state) ? [maximum] : []
+  return [...new Set([...normal, ...allIn])].sort((a, b) => a - b)
+}
+
+function callerRangeAdjustedEquity(
+  state: GameState,
+  player: PlayerState,
+  wager: number,
+  equity: number,
+): number {
+  const multiple = Math.max(0, wager - player.roundCommitted) / Math.max(CHIP_UNIT, state.pot)
+  return clamp(equity - clamp(Math.log2(Math.max(1, multiple)) * 0.06, 0, 0.2), 0.01, 0.99)
+}
+
+function foldProbability(
+  state: GameState,
+  opponent: PlayerState,
+  wager: number,
+  representedEquity: number,
+  policy: Readonly<BotPolicy>,
+): number {
+  const toCall = Math.max(0, wager - opponent.roundCommitted)
+  const stackPressure = toCall / Math.max(CHIP_UNIT, opponent.chips + toCall)
+  const potPressure = toCall / Math.max(CHIP_UNIT, state.pot + toCall)
+  const priorBets = state.bettingHistory.filter(
+    (record) => record.playerId === opponent.id && record.type === "bet",
+  ).length
+  const priceFactor = Math.min(1, potPressure / 0.2)
+  const rangeFactor = 1 / (1 + Math.min(2, priorBets) * 0.35)
+  return clamp(
+    (0.07 +
+      (stackPressure * 0.5 + potPressure * 0.5) * policy.foldPressure +
+      representedEquity * 0.08) *
+      (0.88 + state.street * 0.07) *
+      priceFactor *
+      rangeFactor,
+    0,
+    0.82,
+  )
+}
+
+function actionCost(state: GameState, player: PlayerState, action: BettingAction): number {
+  if (action.type === "call")
+    return Math.min(player.chips, state.currentWager - player.roundCommitted)
+  if (action.type === "bet") return action.amount - player.roundCommitted
+  return 0
+}
+
+function drawAction(
+  type: "call",
+  plan: DrawPlan,
+  useStick: boolean,
+): Extract<BettingAction, { type: "call" }> {
   return {
-    discardCardId: best.card.id,
-    discardPile: chooseDiscardPile(state, best.card),
-    expectedScore: best.expectedScore,
-    rationale: `Seeds the discard lanes with expected final ladder rank ${best.expectedScore.toFixed(1)}`,
+    type,
+    ...drawFields(plan),
+    ...(useStick
+      ? {
+          useRiichiStick: true,
+          riichiDrawSource: plan.second?.source ?? plan.source,
+          ...(plan.second?.blankExchange ? { riichiBlankExchange: plan.second.blankExchange } : {}),
+        }
+      : {}),
+  }
+}
+
+function drawFields(plan: DrawPlan) {
+  return {
+    drawSource: plan.source,
+    ...(plan.blankExchange ? { blankExchange: plan.blankExchange } : {}),
   }
 }
 
@@ -326,330 +842,593 @@ function chooseDrawPlan(
   random: SeededRandom,
   samples: number,
 ): DrawPlan {
-  const sources: CardSource[] = ["deck"]
+  const sources: CardSource[] = state.deck.length > 0 ? ["deck"] : []
   if (state.discardA.length > 0) sources.push("discard-a")
   if (state.discardB.length > 0) sources.push("discard-b")
-  const unknown = unknownCards(state, player.privateCards)
-  const sourceValue = (source: CardSource): number => {
-    const visible =
-      source === "discard-a"
-        ? state.discardA.at(-1)
-        : source === "discard-b"
-          ? state.discardB.at(-1)
-          : undefined
-    let total = 0
-    const count = source === "deck" ? Math.max(1, samples) : 1
-    for (let index = 0; index < count; index += 1) {
-      const drawn = visible ?? random.pick(unknown)
-      total += bestImmediatePrivatePotential([...player.privateCards, drawn], state)
-    }
-    return total / count
-  }
-  const plans: DrawPlan[] = sources.map((source) => ({ source, value: sourceValue(source) }))
+  const plans: DrawPlan[] = sources.map((source) => ({
+    source,
+    value: expectedDrawPotential(state, player, source, random.fork(source), samples),
+    tie: random.next(),
+  }))
   const blank = player.privateCards.find((card) => card.kind === "blank")
-
   if (blank) {
     for (const [pile, cards] of [
       ["a", state.discardA],
       ["b", state.discardB],
     ] as const) {
       cards.forEach((card, cardIndex) => {
-        const replaced = player.privateCards.map((privateCard) =>
-          privateCard.id === blank.id ? card : privateCard,
+        const hand = player.privateCards.map((candidate) =>
+          candidate.id === blank.id ? card : candidate,
         )
         plans.push({
           source: "deck",
           blankExchange: { blankCardId: blank.id, pile, cardIndex },
-          value: privatePotential(replaced, state),
+          value: handPotential([...hand, ...player.publicCards], state.config.mode),
+          tie: random.next(),
         })
       })
     }
   }
-
   return plans.sort(
-    (left, right) =>
-      right.value - left.value ||
-      Number(Boolean(right.blankExchange)) - Number(Boolean(left.blankExchange)) ||
-      left.source.localeCompare(right.source),
+    (a, b) =>
+      b.value - a.value ||
+      Number(Boolean(b.blankExchange)) - Number(Boolean(a.blankExchange)) ||
+      b.tie - a.tie,
   )[0]!
 }
 
-function bestImmediatePrivatePotential(candidateCards: Card[], state: GameState): number {
-  let best = 0
-  for (let discardIndex = 0; discardIndex < candidateCards.length; discardIndex += 1) {
-    const privateCards = candidateCards.filter((_, index) => index !== discardIndex)
-    best = Math.max(best, privatePotential(privateCards, state))
-  }
-  return best
-}
-
-function privatePotential(privateCards: Card[], state: GameState): number {
-  const cacheKey = [...privateCards, ...state.community]
-    .map((card) =>
-      card.kind === "numbered"
-        ? `${card.suit}-${card.rank}`
-        : card.kind === "dragon"
-          ? `dragon-${card.dragon}`
-          : card.kind === "wind"
-            ? `wind-${card.wind}`
-            : card.kind === "flower"
-              ? `flower-${card.flower}`
-              : card.kind === "joker"
-                ? `joker-${card.color}`
-                : "blank",
-    )
-    .sort()
-    .join("|")
-  const cached = privatePotentialCache.get(cacheKey)
-
-  if (cached !== undefined) {
-    return cached
-  }
-
-  const progress = summarizeHandPotential([...privateCards, ...state.community])
-
-  const potential =
-    progress.currentRank * 100 +
-    (progress.nextMissing !== null && progress.nextRank !== null
-      ? (10 - progress.nextMissing) * 2 + progress.nextRank / 100
-      : 0)
-
-  if (privatePotentialCache.size >= PRIVATE_POTENTIAL_CACHE_LIMIT) {
-    privatePotentialCache.clear()
-  }
-
-  privatePotentialCache.set(cacheKey, potential)
-
-  return potential
-}
-
-function analyzePrivateFuture(
+function expectedDrawPotential(
   state: GameState,
-  playerId: string,
-  privateCards: Card[],
+  player: PlayerState,
+  source: CardSource,
   random: SeededRandom,
   samples: number,
-  additionallyKnown: Card[] = [],
-) {
-  const neededCommunity = 5 - state.community.length
-  const current = currentStrength(privateCards, state)
+): number {
+  const visible =
+    source === "discard-a"
+      ? state.discardA.at(-1)
+      : source === "discard-b"
+        ? state.discardB.at(-1)
+        : undefined
+  const unknown = visible ? [] : unknownCards(state, player)
+  const count = visible ? 1 : Math.max(1, samples)
   let total = 0
-  let improvements = 0
-  let equity = 0
-  let equityWeight = 0
-  const trials = Math.max(1, samples)
-  const opponents = state.players.filter(
-    (candidate) => !candidate.eliminated && !candidate.folded && candidate.id !== playerId,
-  )
-  const publicCards = publicKnownPrivateCards(state)
-  const knownOpponentCards = opponents.flatMap((opponent) => publicCards[opponent.id] ?? [])
-  const unknown = unknownCards(state, [
-    ...privateCards,
-    ...additionallyKnown,
-    ...knownOpponentCards,
-  ])
+  for (let index = 0; index < count; index += 1) {
+    const drawn = visible ?? random.pick(unknown)
+    let best = Number.NEGATIVE_INFINITY
+    for (const discard of [...player.privateCards, drawn]) {
+      const remaining = [...player.privateCards, drawn].filter((card) => card.id !== discard.id)
+      best = Math.max(best, handPotential([...remaining, ...player.publicCards], state.config.mode))
+    }
+    total += best
+  }
+  return total / count
+}
 
+function analyzeCurrentEquity(
+  state: GameState,
+  player: PlayerState,
+  random: SeededRandom,
+  samples: number,
+  fishDeck = false,
+) {
+  const ownCards = [...player.publicCards, ...player.privateCards]
+  const baseOwn = projectedHand(ownCards, state.config.mode)
+  const opponents = activeOpponents(state, player.id)
+  const knownPrivate = publicKnownPrivateCards(state, player.id)
+  const unknown = unknownCards(state, player)
+  // Sampling uncertainty must never invent outs against a publicly unbeatable
+  // hand. In Riichi, an ordinary exposed meld can still be disqualified by a
+  // hidden single Lotus, so only known Twin Lotus is sufficient here.
+  const certainLoss =
+    !hasTwinLotus(ownCards) &&
+    opponents.some((opponent) => {
+      const visible = [...opponent.publicCards, ...(knownPrivate[opponent.id] ?? [])]
+      if (hasTwinLotus(visible)) return true
+      return (
+        !fishDeck &&
+        state.config.mode === "basic" &&
+        compareHandStrengths(scoreHandStrength(visible, "basic"), baseOwn.score) > 0
+      )
+    })
+  // A concealed hand has been selected through Charleston and fishing;
+  // it is not a fresh uniform deal. Each equity trial chooses the strongest
+  // of a small number of feasible completions reflecting those public chances
+  // to develop. Only the chosen cards are reserved in the joint sample.
+  const completions = opponents.map(
+    (opponent) =>
+      1 +
+      Number(state.charlestonHistory.some((record) => record.toPlayerId === opponent.id)) +
+      Math.min(
+        2,
+        state.drawDiscardHistory.filter((record) => record.playerId === opponent.id).length,
+      ),
+  )
+  const trials = Math.max(1, samples)
+  let equity = 0
+  const deals: { credit: number; opponents: ReturnType<typeof projectedHand>[] }[] = []
+  let improvements = 0
   for (let sample = 0; sample < trials; sample += 1) {
     const shuffled = random.shuffle(unknown)
-    const completion = shuffled.filter((card) => card.kind !== "flower").slice(0, neededCommunity)
-    const completionIds = new Set(completion.map((card) => card.id))
-    const remaining = shuffled.filter((card) => !completionIds.has(card.id))
-    const completed = [...privateCards, ...state.community, ...completion]
-    const score = scoreHandStrength(completed)
-    total += score.total
-
-    if (score.total > current) {
-      improvements += 1
-    }
-
     let cursor = 0
-    const opponentResults = opponents.map((opponent) => {
-      const known = publicCards[opponent.id] ?? []
-      const hiddenCount = Math.max(0, PRIVATE_CARD_COUNT - known.length)
-      const cards = [...known, ...remaining.slice(cursor, cursor + hiddenCount)]
-      cursor += hiddenCount
-      const opponentScore = scoreHandStrength([...cards, ...state.community, ...completion])
-
-      return {
-        eligible: !hasSingleFlower(cards),
-        score: opponentScore,
-        weight: opponentRangeWeight(state, opponent.id, opponentScore.total),
+    let own = baseOwn
+    if (fishDeck) {
+      const drawn = shuffled[cursor++]!
+      const candidates = [...player.privateCards, drawn]
+      const discard = candidates
+        .map((card) => ({
+          card,
+          value: handPotential(
+            candidates.filter((c) => c.id !== card.id).concat(player.publicCards),
+            state.config.mode,
+          ),
+          tie: decisionTie(state, player.id, "discard", card.id),
+        }))
+        .sort((a, b) => b.value - a.value || b.tie - a.tie)[0]!.card
+      own = projectedHand(
+        candidates.filter((c) => c.id !== discard.id).concat(player.publicCards),
+        state.config.mode,
+      )
+    }
+    const opponentScores = opponents.map((opponent, opponentIndex) => {
+      const known = [...opponent.publicCards, ...(knownPrivate[opponent.id] ?? [])]
+      const missing = Math.max(0, 7 - known.length)
+      let hidden = shuffled.slice(cursor, cursor + missing)
+      let best = projectedHand([...known, ...hidden], state.config.mode)
+      const completionCount = missing > 0 ? completions[opponentIndex]! : 1
+      for (let option = 1; option < completionCount; option++) {
+        const indices = new Set<number>()
+        while (indices.size < missing)
+          indices.add(cursor + random.integer(shuffled.length - cursor))
+        const alternative = [...indices].map((index) => shuffled[index]!)
+        const score = projectedHand([...known, ...alternative], state.config.mode)
+        const comparison =
+          Number(score.eligible) - Number(best.eligible) ||
+          compareHandStrengths(score.score, best.score)
+        if (comparison > 0) {
+          hidden = alternative
+          best = score
+        }
       }
+      for (const card of hidden) {
+        const index = shuffled.indexOf(card, cursor)
+        ;[shuffled[cursor], shuffled[index]] = [shuffled[index]!, shuffled[cursor]!]
+        cursor++
+      }
+      return best
     })
-    const sampleWeight = opponentResults.reduce((weight, result) => weight * result.weight, 1)
-    equityWeight += sampleWeight
-    const ownEligible = !hasSingleFlower(privateCards)
+    const beforeEquity = equity
     const eligibleScores = [
-      ...(ownEligible ? [score] : []),
-      ...opponentResults.filter(({ eligible }) => eligible).map((result) => result.score),
+      ...(own.eligible ? [own.score] : []),
+      ...opponentScores.filter((entry) => entry.eligible).map((entry) => entry.score),
     ]
     if (eligibleScores.length === 0) {
-      equity += sampleWeight / (opponents.length + 1)
-
-      continue
+      equity += fairSplit(opponents.length + 1)
+    } else {
+      const best = eligibleScores.sort((a, b) => compareHandStrengths(b, a))[0]!
+      if (own.eligible && compareHandStrengths(own.score, best) === 0) {
+        equity +=
+          1 /
+          (1 +
+            opponentScores.filter(
+              (entry) => entry.eligible && compareHandStrengths(entry.score, own.score) === 0,
+            ).length)
+      }
     }
-
-    const bestScore = eligibleScores.sort((left, right) => compareHandStrengths(right, left))[0]!
-
-    if (ownEligible && compareHandStrengths(score, bestScore) === 0) {
-      equity +=
-        (sampleWeight * 1) /
-        (1 +
-          opponentResults.filter(
-            (opponent) => opponent.eligible && compareHandStrengths(opponent.score, score) === 0,
-          ).length)
+    deals.push({ credit: equity - beforeEquity, opponents: opponentScores })
+    const drawn = shuffled[cursor]
+    if (drawn && !fishDeck) {
+      const bestAfterDraw = [...player.privateCards, drawn].reduce((best, discard) => {
+        const cards = [...player.publicCards, ...player.privateCards, drawn].filter(
+          (card) => card.id !== discard.id,
+        )
+        return Math.max(best, scoreHandStrength(cards, state.config.mode).total)
+      }, own.score.total)
+      if (bestAfterDraw > own.score.total) improvements += 1
     }
+  }
+  // Infer strength from publicly observed investment and development. No
+  // concealed draw identities or opposing private cards enter this model.
+  const pressure = opponents.map((opponent) => {
+    const bets = state.bettingHistory.filter(
+      (record) => record.playerId === opponent.id && record.type === "bet",
+    )
+    const investment = Math.max(
+      0,
+      ...bets.map(
+        (record) =>
+          Math.log1p((record.cost ?? 0) / Math.max(CHIP_UNIT, record.potBefore ?? 0)) +
+          (2 * (record.cost ?? 0)) / Math.max(CHIP_UNIT, record.actorChipsBefore ?? Infinity),
+      ),
+    )
+    const declared = opponent.riichi || bets.some((record) => record.riichi)
+    const draws = state.drawDiscardHistory.filter(
+      (record) => record.playerId === opponent.id,
+    ).length
+    const passed = state.charlestonHistory.some((record) => record.toPlayerId === opponent.id)
+    return Math.min(
+      8,
+      bets.length * 0.75 +
+        investment * 1.5 +
+        Number(declared) * 2 +
+        Math.min(2, draws * 0.25 + Number(passed) * 0.5),
+    )
+  })
+  let weightedEquity = 0,
+    weightTotal = 0,
+    squaredWeight = 0
+  for (const deal of deals) {
+    let weight = 1
+    for (let i = 0; i < opponents.length; i++) {
+      if (!pressure[i]) continue
+      const strength = deal.opponents[i]!
+      const compare = (other: typeof strength) =>
+        Number(strength.eligible) - Number(other.eligible) ||
+        compareHandStrengths(strength.score, other.score)
+      const percentile =
+        deals.reduce((sum, other) => {
+          const order = compare(other.opponents[i]!)
+          return sum + (order > 0 ? 1 : order === 0 ? 0.5 : 0)
+        }, 0) / deals.length
+      weight *= 0.01 + 0.99 * percentile ** pressure[i]!
+    }
+    weightTotal += weight
+    squaredWeight += weight * weight
+    weightedEquity += weight * deal.credit
   }
   return {
-    expectedScore: total / trials,
+    expectedScore: baseOwn.score.total,
     improveRate: (improvements / trials) * 100,
-    showdownEquity: equity / Math.max(Number.EPSILON, equityWeight),
-    opponents: opponents.length,
+    showdownEquity: weightedEquity / weightTotal,
+    effectiveSamples: weightTotal ** 2 / squaredWeight,
+    certainLoss,
   }
 }
 
-function opponentRangeWeight(state: GameState, playerId: string, finalRank: number): number {
-  const strength = Math.max(0, Math.min(1, (finalRank - 1) / 15))
-  let weight = 1
-
-  for (const action of state.bettingHistory.filter((record) => record.playerId === playerId)) {
-    if (action.type === "raise") {
-      weight *= 0.08 + 0.92 * strength ** 2
-    } else if (action.type === "bet") {
-      weight *= 0.15 + 0.85 * strength ** 1.5
-    } else if (action.type === "call") {
-      weight *= 0.3 + 0.7 * strength
-    }
+function projectedHand(cards: readonly Card[], mode: "basic" | "riichi") {
+  const lotusCount = cards.filter((card) => card.kind === "flower").length
+  return {
+    eligible: lotusCount !== 1,
+    score: lotusCount === 2 ? { total: 14, tieBreak: [] } : scoreHandStrength(cards, mode),
   }
-
-  return weight
 }
 
-function rangeContext(math: PokerMathAnalysis): string {
-  if (math.knownOpponentTiles === 0 && math.opponentAggressiveActions === 0) {
-    return ""
-  }
-
-  return `; opponent ranges include ${math.knownOpponentTiles} publicly retained tile${math.knownOpponentTiles === 1 ? "" : "s"} and ${math.opponentAggressiveActions} aggressive action${math.opponentAggressiveActions === 1 ? "" : "s"}`
+function handPotential(cards: readonly Card[], mode: "basic" | "riichi"): number {
+  const key = mode + ":" + cards.map(cardKey).sort().join("|")
+  const cached = potentialCache.get(key)
+  if (cached !== undefined) return cached
+  const scored = scoreHandStrength(cards, mode)
+  const strength = hasTwinLotus(cards) ? 14 : scored.total
+  const tieValue = scored.tieBreak.reduce((sum, value, index) => sum + value / 16 ** index, 0)
+  const blankOption = cards.some((card) => card.kind === "blank") ? 12 : 0
+  const jokerOption = cards.filter((card) => card.kind === "joker").length * 25
+  const future = nextHandPotential(cards, mode, scored.total)
+  const value =
+    strength * 100 +
+    tieValue +
+    blankOption +
+    jokerOption -
+    (cards.filter((card) => card.kind === "flower").length === 1 ? 250 : 0) +
+    (future.nextMissing === null ? 0 : (10 - future.nextMissing) * 2 + (future.nextRank ?? 0) / 100)
+  if (potentialCache.size >= POTENTIAL_CACHE_LIMIT) potentialCache.clear()
+  potentialCache.set(key, value)
+  return value
 }
 
-function hasSingleFlower(cards: readonly Card[]): boolean {
-  return cards.filter((card) => card.kind === "flower").length === 1
-}
-
-function unknownCards(state: GameState, privateCards: Card[]): Card[] {
-  const known = new Set(
+function unknownCards(state: GameState, player: PlayerState): Card[] {
+  const knownPrivate = Object.values(publicKnownPrivateCards(state, player.id)).flat()
+  const knownIds = new Set(
     [
-      ...privateCards,
-      ...state.community,
-      ...state.scrappedCommunity,
+      ...player.privateCards,
+      ...state.players.flatMap((candidate) => candidate.publicCards),
+      ...knownPrivate,
       ...state.discardA,
       ...state.discardB,
     ].map((card) => card.id),
   )
-  return createDeck().filter((card) => !known.has(card.id))
-}
-
-function currentStrength(privateCards: Card[], state: GameState): number {
-  const cards = [...privateCards, ...state.community]
-
-  return scoreHandStrength(cards).total
+  return createDeck(state.config.mode).filter((card) => !knownIds.has(card.id))
 }
 
 function chooseDiscardPile(state: GameState, discarded: Card): DiscardPile {
-  if (state.discardA.length === 0) {
-    return "a"
-  }
-
-  if (state.discardB.length === 0) {
-    return "b"
-  }
-
-  const a = state.discardA.at(-1)!
-  const b = state.discardB.at(-1)!
+  const diggingSource = state.drawContext?.remaining[0]?.source
+  if (diggingSource === "discard-a") return "b"
+  if (diggingSource === "discard-b") return "a"
+  if (state.discardA.length === 0) return "a"
+  if (state.discardB.length === 0) return "b"
   const danger = (card: Card) =>
     card.kind === "joker"
-      ? 8
+      ? 9
       : card.kind === "blank"
-        ? 0
-        : card.kind === "wind" || card.kind === "dragon" || card.kind === "flower"
-          ? 3
-          : card.rank >= 3 && card.rank <= 7
-            ? 4
-            : 2
-  return danger(a) >= danger(b) || danger(discarded) > 5 ? "a" : "b"
+        ? 1
+        : card.kind === "numbered" && card.rank >= 3 && card.rank <= 7
+          ? 5
+          : 3
+  const aDanger = danger(state.discardA.at(-1)!)
+  const bDanger = danger(state.discardB.at(-1)!)
+  if (aDanger !== bDanger) return aDanger > bDanger ? "a" : "b"
+  return decisionTie(
+    state,
+    discarded.id,
+    "lane",
+    `${state.discardA.at(-1)!.id}:${state.discardB.at(-1)!.id}`,
+  ) < 0.5
+    ? "a"
+    : "b"
 }
 
-function sensibleWagers(state: GameState, player: PlayerState, minimum: number): number[] {
-  const reserve = Math.min(player.chips, toChipUnit(nextChargesValue(state) + 20))
-  const maximum = toChipUnit(player.roundCommitted + Math.max(0, player.chips - reserve))
-  if (maximum < minimum) {
-    return []
-  }
-
-  const targets = [
-    minimum,
-    Math.max(
-      minimum,
-      state.currentWager +
-        Math.max(state.minimumRaise, Math.ceil((state.pot * 0.5) / CHIP_UNIT) * CHIP_UNIT),
-    ),
-  ]
-  return [
-    ...new Set(
-      targets.map((amount) => Math.min(maximum, amount)).filter((amount) => amount >= minimum),
-    ),
-  ]
+function activeOpponents(state: GameState, playerId: string): PlayerState[] {
+  return state.players.filter((player) => player.id !== playerId && !player.folded)
 }
 
-function shouldDeclareRiichi(
-  state: GameState,
-  player: PlayerState,
-  currentScore: number,
-  winRate: number,
-): boolean {
-  return (
-    state.street < 4 &&
-    !state.players.some((candidate) => candidate.riichi) &&
-    player.blueSticks > 0 &&
-    currentScore >= 3 &&
-    winRate >= 0.4
-  )
+function hasTwinLotus(cards: readonly Card[]): boolean {
+  return cards.filter((card) => card.kind === "flower").length === 2
 }
 
-function futureBlueLiability(state: GameState, blueSticks: number): number {
-  return blueSticks * nextChargesValue(state)
+function cardTieValue(card: Card): number {
+  if (card.kind === "numbered") return card.rank
+  if (card.kind === "dragon") return 10
+  if (card.kind === "wind") return 11
+  return 0
 }
 
-function nextChargesValue(state: GameState): number {
-  let total = 15
-  for (let hand = state.handNumber + 1; hand <= state.maxHands; hand += 1) {
-    const handsPerOrbit = state.config.playerCount === 2 ? 4 : state.config.playerCount
-    const orbit = Math.min(3, Math.floor((hand - 1) / handsPerOrbit))
-    total += ORBIT_VALUES[orbit]!
-  }
-
-  return total
+function cardKey(card: Card): string {
+  if (card.kind === "numbered") return `${card.suit}-${card.rank}`
+  if (card.kind === "dragon") return `dragon-${card.dragon}`
+  if (card.kind === "wind") return `wind-${card.wind}`
+  if (card.kind === "flower") return `flower-${card.flower}`
+  if (card.kind === "joker") return `joker-${card.color}`
+  return "blank"
 }
 
 function getPlayer(state: GameState, playerId: string): PlayerState {
   const player = state.players.find((candidate) => candidate.id === playerId)
-
-  if (!player) {
-    throw new Error(`Unknown player ${playerId}`)
-  }
-
+  if (!player) throw new Error(`Unknown player ${playerId}`)
   return player
 }
 
-function actionOrder(action: BettingAction): number {
-  return ["check", "call", "bet", "raise", "fold"].indexOf(action.type)
+function decisionRandom(state: GameState, playerId: string, purpose: string): SeededRandom {
+  return new SeededRandom(
+    `${state.config.seed}:h${state.handNumber}:s${state.street}:v${state.version}:${playerId}:${purpose}`,
+  )
 }
 
-function formatPercent(value: number): string {
+function decisionTie(state: GameState, playerId: string, purpose: string, choice: string): number {
+  return decisionRandom(state, playerId, `${purpose}:${choice}`).next()
+}
+
+function uncertaintyAdjustedEquity(equity: number, samples: number): number {
+  // Conservative smoothing preserves zero wins. An equal-share prior made
+  // almost any cheap all-in Call look profitable, even with no sampled outs.
+  return (equity * samples) / (samples + 2)
+}
+
+function fairSplit(players: number): number {
+  return 1 / Math.max(1, players)
+}
+
+function actionOrder(action: BettingAction): number {
+  return { check: 0, call: 0, bet: 1, fold: 2 }[action.type]
+}
+
+function percent(value: number): string {
   return `${Math.round(value * 100)}%`
 }
 
-function formatSigned(value: number): string {
-  return `${value >= 0 ? "+" : ""}${value.toFixed(1)}`
+function clamp(value: number, minimum: number, maximum: number): number {
+  return Math.max(minimum, Math.min(maximum, value))
+}
+
+// Each caller can lower the single-pot cap. Only this street is refundable;
+// earlier commitments (including folded players' money) stay in the pot.
+function expectedBetValue(
+  state: GameState,
+  player: PlayerState,
+  wager: number,
+  equity: number,
+  opponents: readonly PlayerState[],
+  folds: readonly number[],
+  bluffBonus: number,
+): number {
+  let value = 0
+  for (let mask = 0; mask < 2 ** opponents.length; mask += 1) {
+    const callers = opponents.filter((_, index) => mask & (1 << index))
+    const probability = opponents.reduce(
+      (p, _, index) => p * (mask & (1 << index) ? 1 - folds[index]! : folds[index]!),
+      1,
+    )
+    if (!callers.length) {
+      value += probability * (state.pot + bluffBonus)
+      continue
+    }
+    const cap = Math.min(
+      wager,
+      ...callers.map((opponent) => opponent.roundCommitted + opponent.chips),
+    )
+    const ownCost = cap - player.roundCommitted
+    const refunds = state.players
+      .filter((p) => p.id !== player.id)
+      .reduce((sum, p) => sum + Math.max(0, p.roundCommitted - cap), 0)
+    const calls = callers.reduce((sum, p) => sum + Math.max(0, cap - p.roundCommitted), 0)
+    value += probability * (equity * (state.pot + ownCost + calls - refunds) - ownCost)
+  }
+  return value
+}
+
+function bestDrawValue(
+  hidden: readonly Card[],
+  publicCards: readonly Card[],
+  drawn: Card,
+  mode: "basic" | "riichi",
+): number {
+  return Math.max(
+    ...[...hidden, drawn].map((discard) =>
+      handPotential(
+        [...hidden, drawn].filter((card) => card.id !== discard.id).concat(publicCards),
+        mode,
+      ),
+    ),
+  )
+}
+
+// Plan two visible draws jointly, including the card underneath an unhelpful top.
+// The first discard is re-evaluated against the queued second draw below.
+function chooseDoubleDrawPlan(state: GameState, player: PlayerState, single: DrawPlan): DrawPlan {
+  let best = single
+  const lanes = [
+    ["discard-a", state.discardA],
+    ["discard-b", state.discardB],
+  ] as const
+  for (const [source, cards] of lanes) {
+    const first = cards.at(-1)
+    if (!first) continue
+    // A visible Blank can be fished first, then spent to retrieve any buried card.
+    if (first.kind === "blank") {
+      for (const [targetSource, targetCards] of lanes) {
+        const available = targetSource === source ? targetCards.slice(0, -1) : targetCards
+        available.forEach((target, cardIndex) => {
+          const value = Math.max(
+            ...player.privateCards.map((discard) =>
+              handPotential(
+                player.privateCards
+                  .filter((card) => card.id !== discard.id)
+                  .concat(target, player.publicCards),
+                state.config.mode,
+              ),
+            ),
+          )
+          if (value > best.value)
+            best = {
+              source,
+              value,
+              tie: 0,
+              second: {
+                source: "deck",
+                value,
+                tie: 0,
+                blankExchange: {
+                  blankCardId: first.id,
+                  pile: targetSource === "discard-a" ? "a" : "b",
+                  cardIndex,
+                },
+              },
+            }
+        })
+      }
+    }
+    for (const [secondSource, secondCards] of lanes) {
+      const second = secondCards.at(source === secondSource ? -2 : -1)
+      if (!second) continue
+      let value = -Infinity
+      for (const discard of [...player.privateCards, first]) {
+        const hidden = [...player.privateCards, first].filter((card) => card.id !== discard.id)
+        value = Math.max(
+          value,
+          bestDrawValue(hidden, player.publicCards, second, state.config.mode),
+        )
+      }
+      if (value > best.value)
+        best = { source, value, tie: 0, second: { source: secondSource, value, tie: 0 } }
+    }
+  }
+  return best
+}
+
+function discardPotential(state: GameState, player: PlayerState, hidden: Card[]): number {
+  const next = state.drawContext?.remaining[0]
+  if (next?.blankExchange) {
+    const exchange = next.blankExchange
+    const target = (exchange.pile === "a" ? state.discardA : state.discardB)[exchange.cardIndex]
+    if (!target || !hidden.some((card) => card.id === exchange.blankCardId)) return -Infinity
+    return handPotential(
+      hidden
+        .map((card) => (card.id === exchange.blankCardId ? target : card))
+        .concat(player.publicCards),
+      state.config.mode,
+    )
+  }
+  const drawn =
+    next?.source === "discard-a"
+      ? state.discardA.at(-1)
+      : next?.source === "discard-b"
+        ? state.discardB.at(-1)
+        : undefined
+  return drawn && !next?.blankExchange
+    ? bestDrawValue(hidden, player.publicCards, drawn, state.config.mode)
+    : handPotential([...hidden, ...player.publicCards], state.config.mode)
+}
+
+// Only public lane contents and the actor's cards are used. Deck draws stay uncertain.
+function projectVisibleDraws(
+  state: GameState,
+  player: PlayerState,
+  plan: DrawPlan,
+): GameState | undefined {
+  const projected = {
+    ...state,
+    discardA: [...state.discardA],
+    discardB: [...state.discardB],
+    players: state.players.map((p) =>
+      p.id === player.id ? { ...p, privateCards: [...p.privateCards] } : p,
+    ),
+  }
+  const own = getPlayer(projected, player.id)
+  const steps = plan.second ? [plan, plan.second] : [plan]
+  for (let index = 0; index < steps.length; index += 1) {
+    const step = steps[index]!
+    if (step.blankExchange) {
+      const exchange = step.blankExchange
+      const lane = exchange.pile === "a" ? projected.discardA : projected.discardB
+      const blank = own.privateCards.find((c) => c.id === exchange.blankCardId)
+      const target = lane[exchange.cardIndex]
+      if (!blank || !target) return undefined
+      own.privateCards = own.privateCards.map((c) => (c.id === blank.id ? target : c))
+      lane[exchange.cardIndex] = blank
+    } else {
+      if (step.source === "deck") return undefined
+      const lane = step.source === "discard-a" ? projected.discardA : projected.discardB
+      const drawn = lane.pop()
+      if (!drawn) return undefined
+      own.privateCards.push(drawn)
+      const next = steps[index + 1]
+      const nextCard =
+        next?.source === "discard-a"
+          ? projected.discardA.at(-1)
+          : next?.source === "discard-b"
+            ? projected.discardB.at(-1)
+            : undefined
+      const ranked = own.privateCards
+        .map((discard) => {
+          const hidden = own.privateCards.filter((c) => c.id !== discard.id)
+          let value = handPotential(hidden.concat(own.publicCards), state.config.mode)
+          if (nextCard) value = bestDrawValue(hidden, own.publicCards, nextCard, state.config.mode)
+          if (next?.blankExchange) {
+            const ex = next.blankExchange
+            const target = (ex.pile === "a" ? projected.discardA : projected.discardB)[
+              ex.cardIndex
+            ]!
+            value = hidden.some((c) => c.id === ex.blankCardId)
+              ? handPotential(
+                  hidden.map((c) => (c.id === ex.blankCardId ? target : c)).concat(own.publicCards),
+                  state.config.mode,
+                )
+              : -Infinity
+          }
+          return { discard, value, tie: decisionTie(state, player.id, "discard", discard.id) }
+        })
+        .sort((a, b) => b.value - a.value || b.tie - a.tie)
+      const discard = ranked[0]!.discard
+      own.privateCards = own.privateCards.filter((c) => c.id !== discard.id)
+      // Keep the queued draw accessible; when one lane is empty it must be filled.
+      const destination =
+        projected.discardA.length === 0
+          ? projected.discardA
+          : projected.discardB.length === 0
+            ? projected.discardB
+            : next?.source === "discard-a"
+              ? projected.discardB
+              : projected.discardA
+      destination.push(discard)
+    }
+  }
+  return projected
 }

@@ -1,0 +1,966 @@
+[
+  {
+    "game": 0,
+    "hand": 7,
+    "street": 1,
+    "player": "p4",
+    "chips": 200,
+    "pot": 45,
+    "old": {
+      "action": {
+        "type": "bet",
+        "amount": 40
+      },
+      "rationale": "36% estimated equity, 36% pot odds, 2% estimated foldout; tournament risk ×0.93",
+      "evaluations": [
+        {
+          "action": {
+            "type": "bet",
+            "amount": 40
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.3571810701488812,
+          "estimatedFoldout": 0.01517214628705477,
+          "expectedChipDelta": 15.049957729640179,
+          "utility": 19.007044329088878,
+          "samples": 24,
+          "rationale": "36% estimated equity, 36% pot odds, 2% estimated foldout; tournament risk ×0.93"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 30
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.3571810701488812,
+          "estimatedFoldout": 0.004046174507672544,
+          "expectedChipDelta": 13.967738051118875,
+          "utility": 17.27770278020598,
+          "samples": 24,
+          "rationale": "36% estimated equity, 36% pot odds, 0% estimated foldout; tournament risk ×0.93"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 55
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.33981067311718205,
+          "estimatedFoldout": 0.025990701996953205,
+          "expectedChipDelta": 12.474904093225181,
+          "utility": 16.68095130708224,
+          "samples": 24,
+          "rationale": "34% estimated equity, 36% pot odds, 3% estimated foldout; tournament risk ×0.93"
+        },
+        {
+          "action": {
+            "type": "call",
+            "drawSource": "deck"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.3881201601814288,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 2.168411212700015,
+          "utility": 6.7879848941042,
+          "samples": 24,
+          "rationale": "39% estimated equity after fishing, 36% pot odds, 0% estimated foldout; tournament risk ×0.93"
+        },
+        {
+          "action": {
+            "type": "fold"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.3571810701488812,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 0,
+          "utility": 0,
+          "samples": 24,
+          "rationale": "36% estimated equity, 36% pot odds, 0% estimated foldout; tournament risk ×0.93"
+        }
+      ]
+    },
+    "revised": {
+      "playerId": "p4",
+      "street": 1,
+      "action": {
+        "type": "fold"
+      },
+      "evaluations": [
+        {
+          "action": {
+            "type": "fold"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.008274113085848115,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 0,
+          "utility": 0,
+          "samples": 24,
+          "rationale": "1% estimated equity, 36% pot odds, 0% estimated foldout; tournament risk ×0.93"
+        },
+        {
+          "action": {
+            "type": "call",
+            "drawSource": "deck"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.03465600245251787,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": -22.57407982832375,
+          "utility": -18.130884086548377,
+          "samples": 24,
+          "rationale": "3% estimated equity after fishing, 36% pot odds, 0% estimated foldout; tournament risk ×0.93"
+        }
+      ],
+      "rationale": "1% estimated equity, 36% pot odds, 0% estimated foldout; tournament risk ×0.93"
+    },
+    "reachableUnderLoanCap": true
+  },
+  {
+    "game": 0,
+    "hand": 7,
+    "street": 1,
+    "player": "p4",
+    "chips": 160,
+    "pot": 280,
+    "old": {
+      "action": {
+        "type": "call",
+        "drawSource": "deck"
+      },
+      "rationale": "45% estimated equity after fishing, 33% pot odds, 0% estimated foldout; tournament risk ×0.96",
+      "evaluations": [
+        {
+          "action": {
+            "type": "call",
+            "drawSource": "deck"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.44640864094703353,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 47.491629197754094,
+          "utility": 4.739608029905625,
+          "samples": 24,
+          "rationale": "45% estimated equity after fishing, 33% pot odds, 0% estimated foldout; tournament risk ×0.96"
+        },
+        {
+          "action": {
+            "type": "fold"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.3193046883943771,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 0,
+          "utility": 0,
+          "samples": 24,
+          "rationale": "32% estimated equity, 33% pot odds, 0% estimated foldout; tournament risk ×0.96"
+        }
+      ]
+    },
+    "revised": {
+      "playerId": "p4",
+      "street": 1,
+      "action": {
+        "type": "fold"
+      },
+      "evaluations": [
+        {
+          "action": {
+            "type": "fold"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.0005120330017031618,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 0,
+          "utility": 0,
+          "samples": 24,
+          "rationale": "0% estimated equity, 33% pot odds, 0% estimated foldout; tournament risk ×0.96"
+        },
+        {
+          "action": {
+            "type": "call",
+            "drawSource": "deck"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.001912626881557135,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": -139.196696709746,
+          "utility": -230.72002777779846,
+          "samples": 24,
+          "rationale": "0% estimated equity after fishing, 33% pot odds, 0% estimated foldout; tournament risk ×0.96"
+        }
+      ],
+      "rationale": "0% estimated equity, 33% pot odds, 0% estimated foldout; tournament risk ×0.96"
+    },
+    "reachableUnderLoanCap": true
+  },
+  {
+    "game": 0,
+    "hand": 7,
+    "street": 2,
+    "player": "p4",
+    "chips": 20,
+    "pot": 525,
+    "old": {
+      "action": {
+        "type": "call",
+        "drawSource": "deck"
+      },
+      "rationale": "10% estimated equity, 4% pot odds, 0% estimated foldout; tournament risk ×0.68",
+      "evaluations": [
+        {
+          "action": {
+            "type": "call",
+            "drawSource": "deck"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.10134952996038492,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 26.620783781777064,
+          "utility": 17.37304753688231,
+          "samples": 24,
+          "rationale": "10% estimated equity, 4% pot odds, 0% estimated foldout; tournament risk ×0.68"
+        },
+        {
+          "action": {
+            "type": "fold"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.10134952996038492,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 0,
+          "utility": 0,
+          "samples": 24,
+          "rationale": "10% estimated equity, 4% pot odds, 0% estimated foldout; tournament risk ×0.68"
+        }
+      ]
+    },
+    "revised": {
+      "playerId": "p4",
+      "street": 2,
+      "action": {
+        "type": "fold"
+      },
+      "evaluations": [
+        {
+          "action": {
+            "type": "fold"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 0,
+          "utility": 0,
+          "samples": 24,
+          "rationale": "0% estimated equity, 4% pot odds, 0% estimated foldout; tournament risk ×0.68"
+        },
+        {
+          "action": {
+            "type": "call",
+            "drawSource": "deck"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": -20,
+          "utility": -80.62903225806451,
+          "samples": 24,
+          "rationale": "0% estimated equity, 4% pot odds, 0% estimated foldout; tournament risk ×0.68; next-ante risk cost 50.0"
+        }
+      ],
+      "rationale": "0% estimated equity, 4% pot odds, 0% estimated foldout; tournament risk ×0.68"
+    },
+    "reachableUnderLoanCap": true
+  },
+  {
+    "game": 0,
+    "hand": 9,
+    "street": 2,
+    "player": "p4",
+    "chips": 40,
+    "pot": 500,
+    "old": {
+      "action": {
+        "type": "call",
+        "drawSource": "deck"
+      },
+      "rationale": "73% estimated equity, 27% pot odds, 0% estimated foldout; tournament risk ×0.50",
+      "evaluations": [
+        {
+          "action": {
+            "type": "call",
+            "drawSource": "deck"
+          },
+          "expectedScore": 4,
+          "estimatedWinRate": 0.729211360641081,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 69.38170409616215,
+          "utility": 69.96593130898377,
+          "samples": 24,
+          "rationale": "73% estimated equity, 27% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "fold"
+          },
+          "expectedScore": 4,
+          "estimatedWinRate": 0.729211360641081,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 0,
+          "utility": 0,
+          "samples": 24,
+          "rationale": "73% estimated equity, 27% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        }
+      ]
+    },
+    "revised": {
+      "playerId": "p4",
+      "street": 2,
+      "action": {
+        "type": "fold"
+      },
+      "evaluations": [
+        {
+          "action": {
+            "type": "fold"
+          },
+          "expectedScore": 4,
+          "estimatedWinRate": 0.1854546719158008,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 0,
+          "utility": 0,
+          "samples": 24,
+          "rationale": "19% estimated equity, 27% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "call",
+            "drawSource": "deck"
+          },
+          "expectedScore": 4,
+          "estimatedWinRate": 0.1854546719158008,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": -12.18179921262988,
+          "utility": -38.76361233599785,
+          "samples": 24,
+          "rationale": "19% estimated equity, 27% pot odds, 0% estimated foldout; tournament risk ×0.50; next-ante risk cost 16.3"
+        }
+      ],
+      "rationale": "19% estimated equity, 27% pot odds, 0% estimated foldout; tournament risk ×0.50"
+    },
+    "reachableUnderLoanCap": true
+  },
+  {
+    "game": 1,
+    "hand": 8,
+    "street": 1,
+    "player": "p1",
+    "chips": 240,
+    "pot": 20,
+    "old": {
+      "action": {
+        "type": "check",
+        "drawSource": "discard-b"
+      },
+      "rationale": "36% estimated equity after fishing, 0% pot odds, 0% estimated foldout; tournament risk ×0.50",
+      "evaluations": [
+        {
+          "action": {
+            "type": "check",
+            "drawSource": "discard-b"
+          },
+          "expectedScore": 1,
+          "estimatedWinRate": 0.359375,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 7.1875,
+          "utility": 13.48296875,
+          "samples": 24,
+          "rationale": "36% estimated equity after fishing, 0% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 5
+          },
+          "expectedScore": 1,
+          "estimatedWinRate": 0.10677083333333333,
+          "estimatedFoldout": 0.003535077557700237,
+          "expectedChipDelta": -0.8942465794579698,
+          "utility": -0.1479668175532079,
+          "samples": 24,
+          "rationale": "11% estimated equity, 0% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 25,
+            "useRiichiStick": true,
+            "drawSource": "discard-b"
+          },
+          "expectedScore": 1,
+          "estimatedWinRate": 0.3400593143067583,
+          "estimatedFoldout": 0.032267018354185314,
+          "expectedChipDelta": 8.638870864618806,
+          "utility": -0.9935231835188071,
+          "samples": 24,
+          "rationale": "34% estimated equity after fishing, 0% pot odds, 3% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 15,
+            "useRiichiStick": true,
+            "drawSource": "discard-b"
+          },
+          "expectedScore": 1,
+          "estimatedWinRate": 0.359375,
+          "estimatedFoldout": 0.018485905067867014,
+          "expectedChipDelta": 9.886315801131081,
+          "utility": -1.3468926943863018,
+          "samples": 24,
+          "rationale": "36% estimated equity after fishing, 0% pot odds, 2% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 10
+          },
+          "expectedScore": 1,
+          "estimatedWinRate": 0.10677083333333333,
+          "estimatedFoldout": 0.008710165402233268,
+          "expectedChipDelta": -4.019650130871378,
+          "utility": -2.5363912022999497,
+          "samples": 24,
+          "rationale": "11% estimated equity, 0% pot odds, 1% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 10,
+            "useRiichiStick": true,
+            "drawSource": "discard-b"
+          },
+          "expectedScore": 1,
+          "estimatedWinRate": 0.359375,
+          "estimatedFoldout": 0.011383923229351259,
+          "expectedChipDelta": 9.355181930012815,
+          "utility": -2.705344704294628,
+          "samples": 24,
+          "rationale": "36% estimated equity after fishing, 0% pot odds, 1% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 5,
+            "useRiichiStick": true,
+            "drawSource": "discard-b"
+          },
+          "expectedScore": 1,
+          "estimatedWinRate": 0.359375,
+          "estimatedFoldout": 0.005047391893226579,
+          "expectedChipDelta": 8.531010157001765,
+          "utility": -4.357017112166891,
+          "samples": 24,
+          "rationale": "36% estimated equity after fishing, 0% pot odds, 1% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 15
+          },
+          "expectedScore": 1,
+          "estimatedWinRate": 0.10677083333333333,
+          "estimatedFoldout": 0.014742748253281493,
+          "expectedChipDelta": -7.176241851765759,
+          "utility": -4.970884708908616,
+          "samples": 24,
+          "rationale": "11% estimated equity, 0% pot odds, 1% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 25
+          },
+          "expectedScore": 1,
+          "estimatedWinRate": 0.08745514764009159,
+          "estimatedFoldout": 0.026770004835522852,
+          "expectedChipDelta": -15.37010295082697,
+          "utility": -11.787513665112684,
+          "samples": 24,
+          "rationale": "9% estimated equity, 0% pot odds, 3% estimated foldout; tournament risk ×0.50"
+        }
+      ]
+    },
+    "reachableUnderLoanCap": false
+  },
+  {
+    "game": 1,
+    "hand": 8,
+    "street": 1,
+    "player": "p1",
+    "chips": 240,
+    "pot": 70,
+    "old": {
+      "action": {
+        "type": "bet",
+        "amount": 60
+      },
+      "rationale": "36% estimated equity, 26% pot odds, 1% estimated foldout; tournament risk ×0.50",
+      "evaluations": [
+        {
+          "action": {
+            "type": "bet",
+            "amount": 60
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.35548955720853903,
+          "estimatedFoldout": 0.014676673415540338,
+          "expectedChipDelta": 21.084106494399748,
+          "utility": 28.723145251187457,
+          "samples": 24,
+          "rationale": "36% estimated equity, 26% pot odds, 1% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 85
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.33868308205697495,
+          "estimatedFoldout": 0.026696631278545865,
+          "expectedChipDelta": 17.5309477789085,
+          "utility": 26.584609254444356,
+          "samples": 24,
+          "rationale": "34% estimated equity, 26% pot odds, 3% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 35
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.35548955720853903,
+          "estimatedFoldout": 0.0016755379354959864,
+          "expectedChipDelta": 18.052850952043094,
+          "utility": 23.0022046813532,
+          "samples": 24,
+          "rationale": "36% estimated equity, 26% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 30
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.35548955720853903,
+          "estimatedFoldout": 0.0003057209233049457,
+          "expectedChipDelta": 16.97376601340469,
+          "utility": 21.276466898264445,
+          "samples": 24,
+          "rationale": "36% estimated equity, 26% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "call",
+            "drawSource": "deck"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.3612706024771054,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 9.320707235325017,
+          "utility": 17.4383045722828,
+          "samples": 24,
+          "rationale": "36% estimated equity after fishing, 26% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 60,
+            "useRiichiStick": true,
+            "drawSource": "deck"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.3612706024771054,
+          "estimatedFoldout": 0.014749421426874559,
+          "expectedChipDelta": 22.35853169761377,
+          "utility": 14.725890258962028,
+          "samples": 24,
+          "rationale": "36% estimated equity after fishing, 26% pot odds, 1% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 85,
+            "useRiichiStick": true,
+            "drawSource": "deck"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.3444641273255413,
+          "estimatedFoldout": 0.026804431724121648,
+          "expectedChipDelta": 19.192718096786862,
+          "utility": 13.182652584933876,
+          "samples": 24,
+          "rationale": "34% estimated equity after fishing, 26% pot odds, 3% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 35,
+            "useRiichiStick": true,
+            "drawSource": "deck"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.3612706024771054,
+          "estimatedFoldout": 0.0016883624254939089,
+          "expectedChipDelta": 18.906324165759774,
+          "utility": 8.371874855846581,
+          "samples": 24,
+          "rationale": "36% estimated equity after fishing, 26% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 30,
+            "useRiichiStick": true,
+            "drawSource": "deck"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.3612706024771054,
+          "estimatedFoldout": 0.0003084751133555174,
+          "expectedChipDelta": 17.73211959917839,
+          "utility": 6.528684689862982,
+          "samples": 24,
+          "rationale": "36% estimated equity after fishing, 26% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "fold"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.35548955720853903,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 0,
+          "utility": 0,
+          "samples": 24,
+          "rationale": "36% estimated equity, 26% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        }
+      ]
+    },
+    "reachableUnderLoanCap": false
+  },
+  {
+    "game": 1,
+    "hand": 8,
+    "street": 1,
+    "player": "p1",
+    "chips": 180,
+    "pot": 465,
+    "old": {
+      "action": {
+        "type": "call",
+        "drawSource": "deck"
+      },
+      "rationale": "50% estimated equity, 28% pot odds, 0% estimated foldout; tournament risk ×0.50",
+      "evaluations": [
+        {
+          "action": {
+            "type": "call",
+            "drawSource": "deck"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.5000185146651682,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 140.01184938570765,
+          "utility": 122.01351570557279,
+          "samples": 24,
+          "rationale": "50% estimated equity, 28% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "fold"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.5000185146651682,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 0,
+          "utility": 0,
+          "samples": 24,
+          "rationale": "50% estimated equity, 28% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        }
+      ]
+    },
+    "reachableUnderLoanCap": false
+  },
+  {
+    "game": 4,
+    "hand": 12,
+    "street": 1,
+    "player": "p4",
+    "chips": 195,
+    "pot": 100,
+    "old": {
+      "action": {
+        "type": "call",
+        "drawSource": "discard-a",
+        "useRiichiStick": true,
+        "riichiDrawSource": "discard-a"
+      },
+      "rationale": "63% estimated equity after fishing, 35% pot odds, 0% estimated foldout; tournament risk ×0.50",
+      "evaluations": [
+        {
+          "action": {
+            "type": "call",
+            "drawSource": "discard-a",
+            "useRiichiStick": true,
+            "riichiDrawSource": "discard-a"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.63036543477803,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 42.70664239059465,
+          "utility": 56.541796841670276,
+          "samples": 24,
+          "rationale": "63% estimated equity after fishing, 35% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 90,
+            "useRiichiStick": true,
+            "drawSource": "deck"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.38838015123994385,
+          "estimatedFoldout": 0.012517021049416625,
+          "expectedChipDelta": 39.144494523370994,
+          "utility": 47.999517240328856,
+          "samples": 24,
+          "rationale": "39% estimated equity after fishing, 35% pot odds, 1% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 125,
+            "useRiichiStick": true,
+            "drawSource": "deck"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.36906446554670214,
+          "estimatedFoldout": 0.02330428695839083,
+          "expectedChipDelta": 36.73435148791092,
+          "utility": 40.881545647668304,
+          "samples": 24,
+          "rationale": "37% estimated equity after fishing, 35% pot odds, 2% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 60,
+            "useRiichiStick": true,
+            "drawSource": "deck"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.38838015123994385,
+          "estimatedFoldout": 0.0010210853226784156,
+          "expectedChipDelta": 31.73572821245034,
+          "utility": 40.38075105052414,
+          "samples": 24,
+          "rationale": "39% estimated equity after fishing, 35% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "call",
+            "drawSource": "deck"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.38838015123994385,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 5.198923442191294,
+          "utility": 29.51987567585209,
+          "samples": 24,
+          "rationale": "39% estimated equity after fishing, 35% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "fold"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.05117993847517188,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 0,
+          "utility": 0,
+          "samples": 24,
+          "rationale": "5% estimated equity, 35% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 60
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.05117993847517188,
+          "estimatedFoldout": 0.0006448589039826908,
+          "expectedChipDelta": -47.689704362113446,
+          "utility": -41.696277932070245,
+          "samples": 24,
+          "rationale": "5% estimated equity, 35% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 90
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.05117993847517188,
+          "estimatedFoldout": 0.00934492773777383,
+          "expectedChipDelta": -70.92712513592629,
+          "utility": -67.06061382309557,
+          "samples": 24,
+          "rationale": "5% estimated equity, 35% pot odds, 1% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "bet",
+            "amount": 125
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.03186425278193014,
+          "estimatedFoldout": 0.018481228977428765,
+          "expectedChipDelta": -106.35003195618344,
+          "utility": -112.65481170582343,
+          "samples": 24,
+          "rationale": "3% estimated equity, 35% pot odds, 2% estimated foldout; tournament risk ×0.50"
+        }
+      ]
+    },
+    "revised": {
+      "playerId": "p4",
+      "street": 1,
+      "action": {
+        "type": "fold"
+      },
+      "evaluations": [
+        {
+          "action": {
+            "type": "fold"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 0,
+          "utility": 0,
+          "samples": 24,
+          "rationale": "0% estimated equity, 35% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "call",
+            "drawSource": "deck"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.007697080745396357,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": -53.806952484463565,
+          "utility": -30.42819085027677,
+          "samples": 24,
+          "rationale": "1% estimated equity after fishing, 35% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "call",
+            "drawSource": "discard-a",
+            "useRiichiStick": true,
+            "riichiDrawSource": "discard-a"
+          },
+          "expectedScore": 2,
+          "estimatedWinRate": 0.050948948211973426,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": -47.10291302714412,
+          "utility": -34.70181438031948,
+          "samples": 24,
+          "rationale": "5% estimated equity after fishing, 35% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        }
+      ],
+      "rationale": "0% estimated equity, 35% pot odds, 0% estimated foldout; tournament risk ×0.50"
+    },
+    "reachableUnderLoanCap": true
+  },
+  {
+    "game": 4,
+    "hand": 12,
+    "street": 1,
+    "player": "p4",
+    "chips": 140,
+    "pot": 345,
+    "old": {
+      "action": {
+        "type": "call",
+        "drawSource": "deck"
+      },
+      "rationale": "81% estimated equity, 30% pot odds, 0% estimated foldout; tournament risk ×0.50",
+      "evaluations": [
+        {
+          "action": {
+            "type": "call",
+            "drawSource": "deck"
+          },
+          "expectedScore": 5,
+          "estimatedWinRate": 0.8076715263517829,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 235.56725975357904,
+          "utility": 243.10426659820385,
+          "samples": 24,
+          "rationale": "81% estimated equity, 30% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "fold"
+          },
+          "expectedScore": 5,
+          "estimatedWinRate": 0.8076715263517829,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 0,
+          "utility": 0,
+          "samples": 24,
+          "rationale": "81% estimated equity, 30% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        }
+      ]
+    },
+    "revised": {
+      "playerId": "p4",
+      "street": 1,
+      "action": {
+        "type": "fold"
+      },
+      "evaluations": [
+        {
+          "action": {
+            "type": "fold"
+          },
+          "expectedScore": 5,
+          "estimatedWinRate": 0.3177073742413601,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 0,
+          "utility": 0,
+          "samples": 24,
+          "rationale": "32% estimated equity, 30% pot odds, 0% estimated foldout; tournament risk ×0.50"
+        },
+        {
+          "action": {
+            "type": "call",
+            "drawSource": "deck"
+          },
+          "expectedScore": 5,
+          "estimatedWinRate": 0.3177073742413601,
+          "estimatedFoldout": 0,
+          "expectedChipDelta": 7.733929022232445,
+          "utility": -32.672407296045144,
+          "samples": 24,
+          "rationale": "32% estimated equity, 30% pot odds, 0% estimated foldout; tournament risk ×0.50; next-ante risk cost 13.6"
+        }
+      ],
+      "rationale": "32% estimated equity, 30% pot odds, 0% estimated foldout; tournament risk ×0.50"
+    },
+    "reachableUnderLoanCap": true
+  }
+]

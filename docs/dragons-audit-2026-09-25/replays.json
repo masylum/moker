@@ -1,0 +1,142 @@
+[
+  {
+    "seed": "sticks-20260925-continuous-riichi-0",
+    "hands": 16,
+    "oracleChecks": 128,
+    "handsWithDragons": 2,
+    "playersWithDragons": 2,
+    "handsWithPung": 5,
+    "scores": {
+      "p1": 150,
+      "p2": 380,
+      "p3": 70,
+      "p4": 200
+    }
+  },
+  {
+    "seed": "sticks-20260925-continuous-riichi-1",
+    "hands": 16,
+    "oracleChecks": 128,
+    "handsWithDragons": 2,
+    "playersWithDragons": 2,
+    "handsWithPung": 6,
+    "scores": {
+      "p1": 0,
+      "p2": 355,
+      "p3": 415,
+      "p4": 30
+    }
+  },
+  {
+    "seed": "sticks-20260925-continuous-riichi-2",
+    "hands": 16,
+    "oracleChecks": 128,
+    "handsWithDragons": 1,
+    "playersWithDragons": 1,
+    "handsWithPung": 8,
+    "scores": {
+      "p1": 5,
+      "p2": 320,
+      "p3": 425,
+      "p4": 0
+    }
+  },
+  {
+    "seed": "sticks-20260925-continuous-riichi-3",
+    "hands": 16,
+    "oracleChecks": 128,
+    "handsWithDragons": 0,
+    "playersWithDragons": 0,
+    "handsWithPung": 8,
+    "scores": {
+      "p1": 350,
+      "p2": 330,
+      "p3": -240,
+      "p4": 310
+    }
+  },
+  {
+    "seed": "sticks-20260925-continuous-riichi-4",
+    "hands": 16,
+    "oracleChecks": 128,
+    "handsWithDragons": 3,
+    "playersWithDragons": 3,
+    "handsWithPung": 3,
+    "scores": {
+      "p1": 20,
+      "p2": 300,
+      "p3": 180,
+      "p4": 300
+    }
+  },
+  {
+    "seed": "sticks-20260925-continuous-riichi-5",
+    "hands": 16,
+    "oracleChecks": 128,
+    "handsWithDragons": 4,
+    "playersWithDragons": 4,
+    "handsWithPung": 7,
+    "scores": {
+      "p1": 10,
+      "p2": 170,
+      "p3": 185,
+      "p4": 435
+    }
+  },
+  {
+    "seed": "sticks-20260925-continuous-riichi-6",
+    "hands": 16,
+    "oracleChecks": 128,
+    "handsWithDragons": 7,
+    "playersWithDragons": 7,
+    "handsWithPung": 4,
+    "scores": {
+      "p1": 45,
+      "p2": 465,
+      "p3": 140,
+      "p4": 150
+    }
+  },
+  {
+    "seed": "sticks-20260925-continuous-riichi-7",
+    "hands": 16,
+    "oracleChecks": 128,
+    "handsWithDragons": 1,
+    "playersWithDragons": 1,
+    "handsWithPung": 4,
+    "scores": {
+      "p1": 305,
+      "p2": 120,
+      "p3": 0,
+      "p4": 375
+    }
+  },
+  {
+    "seed": "sticks-20260925-continuous-riichi-8",
+    "hands": 16,
+    "oracleChecks": 128,
+    "handsWithDragons": 1,
+    "playersWithDragons": 1,
+    "handsWithPung": 5,
+    "scores": {
+      "p1": 90,
+      "p2": 150,
+      "p3": 215,
+      "p4": 345
+    }
+  },
+  {
+    "seed": "sticks-20260925-continuous-riichi-9",
+    "hands": 16,
+    "oracleChecks": 128,
+    "handsWithDragons": 3,
+    "playersWithDragons": 3,
+    "handsWithPung": 7,
+    "scores": {
+      "p1": 30,
+      "p2": 445,
+      "p3": -35,
+      "p4": 310
+    }
+  }
+]

@@ -1,0 +1,6 @@
+
+> mahjong-poker-lab@0.1.0 lint
+> oxlint --type-aware --report-unused-disable-directives --deny-warnings .
+
+docs/call-loan-update-2026-09-25/final/src/game/heuristic.ts:1070:28: error eslint(no-unmodified-loop-condition): 'missing' is not modified in this loop.
+scripts/lib/simulation-pool.ts:56:11: error typescript(no-misused-promises): Promise returned in function argument where a void return was expected.

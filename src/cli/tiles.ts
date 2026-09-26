@@ -1,16 +1,20 @@
-import { FLOWERS, type Card } from "../game/types"
+import type { Card } from "../game/types"
 
 export function coloredTile(card: Card): string {
   const ansiColor =
-    card.color === "red"
-      ? 31
-      : card.color === "green"
-        ? 32
-        : card.color === "blue"
-          ? 34
-          : card.color === "black"
-            ? 37
-            : 2
+    card.kind === "flower"
+      ? card.flower === "white-lotus"
+        ? 97
+        : 90
+      : card.color === "red"
+        ? 31
+        : card.color === "green"
+          ? 32
+          : card.color === "blue"
+            ? 34
+            : card.color === "black"
+              ? 37
+              : 2
 
   return `\u001B[${ansiColor}m${tileGlyph(card)}\u001B[0m`
 }
@@ -31,7 +35,7 @@ export function tileGlyph(card: Card): string {
   }
 
   if (card.kind === "flower") {
-    return String.fromCodePoint(0x1f022 + FLOWERS.indexOf(card.flower))
+    return String.fromCodePoint(0x1f025)
   }
 
   return card.kind === "joker" ? "★" : "□"

@@ -1,0 +1,20 @@
+{
+  "scripts/ladder-experiment.ts": "b0f34de0e18ced5085803dcbb23dd950494964669987c15c1c6ea5a8fdda7646",
+  "src/game/heuristic.ts": "479f2c6ae17ce792f57b095857be987a71c90b841471ad745f61216993a8f9d9",
+  "src/game/engine.ts": "55ad5292d51cc6ba1c8e538e22668f9cb04005619483035494d689e1bc4d29b8",
+  "src/game/random.ts": "762d9e84062490b79439706cbe7c377d67ccaf8d737efd9146b0bf8b144c85a3",
+  "src/game/types.ts": "5f7afa0210788f53c17bf5bd420f4bbe653a3dbab5995b737a7afcac86ff6ed0",
+  "src/game/rules.ts": "7a3ae02ee3113198d282fabf163721924038359c0d0cc6c322bc42e637b1965d",
+  "src/game/rulebook.ts": "034a2eb5c19c8626f9245fbec908a09b60b47ea5164548099dfc61013b43f91d",
+  "src/game/cards.ts": "b1133434d4fc65ed88c806e75f49281d3db9a3b23a981a3dfb8382ea973d5968",
+  "src/game/scoring.ts": "bfda7c74a6ae09e5c0d23d9f4c0168ba59a8ee1b293c9fecd88579ff81f1775b",
+  "src/game/automation.ts": "6de8d9593ff3af4d94bbd5922acb5d282a22eec310deda34bd72f72af100380d",
+  "src/game/hand-progress.ts": "3c5a9adbc2341a9a4654efbd636337fd9fe2333ec3b366d2fc04df1da75ac79c",
+  "src/game/information.ts": "daddea5415cf3c7c82249d71f3389659b7d7124fccb0ae00187a0adf09675744",
+  "src/game/melds.ts": "c5d24cb782691ff6f7ad76c06219a870489c271de0e403bf7e5bb082d4400188",
+  "src/game/hand-ranks.ts": "7e6829e1f05626b28d2686af614c3b78cf221d20ea9d376a8793399c26c0b37f",
+  "src/game/simulation.ts": "de5f77a99c2d9e40d2202ee5672b2e34cb5ebb5b63f3c879f7d38a77ed56ceb2",
+  "scripts/lib/simulation-pool.ts": "b31eea058a7d7118950671812a1256c6133e5329f0762a6bb2fe94a9de80fc3e",
+  "scripts/lib/rule-variants.ts": "dfc44b98d5a1cb5a2d5758a17c156f638233816f46ea1857898c4883f566acc4",
+  "scripts/lib/simulation-worker.ts": "1a653b324193e4515655cc212a5791468882ac508f60e640be0f239cb2c1afca"
+}

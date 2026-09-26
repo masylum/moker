@@ -1,17 +1,44 @@
-import type { BettingAction, DebugGameView, PublicGameState } from "../game/types"
+import type { BettingAction, PublicGameState } from "../game/types"
 
-export async function createGame(seed: string) {
+export type SeatKind = "human" | "robot" | "none"
+
+export async function createGame(
+  seed: string,
+  mode: "basic" | "riichi" = "basic",
+  playerCount = 4,
+  tournamentGames: 1 | 2 | 3 | 4 = 1,
+  orbits = 1,
+  humanCount = 1,
+  seats?: SeatKind[],
+) {
+  const names = ["You", "Mori", "Kiko", "Ren", "Hana", "Sora"]
   return request<{ sessionId: string; state: PublicGameState }>("/api/games", {
     method: "POST",
     body: JSON.stringify({
       seed,
-      heuristicSamples: 64,
-      players: [
-        { id: "p1", name: "You", controller: "human" },
-        { id: "p2", name: "Mori", controller: "heuristic" },
-        { id: "p3", name: "Kiko", controller: "heuristic" },
-        { id: "p4", name: "Grok", controller: "llm" },
-      ],
+      mode,
+      tournamentGames,
+      orbits,
+      heuristicSamples: 24,
+      players: (
+        seats ??
+        names.slice(0, playerCount).map((_, index) => (index < humanCount ? "human" : "robot"))
+      )
+        .map((seat, index) => ({
+          id: `p${index + 1}`,
+          name:
+            seat === "human"
+              ? humanCount === 1
+                ? "You"
+                : `Player ${index + 1}`
+              : names[index] === "You"
+                ? "Aki"
+                : names[index],
+          controller: seat === "human" ? "human" : "heuristic",
+          seat,
+        }))
+        .filter((player) => player.seat !== "none")
+        .map(({ seat: _seat, ...player }) => player),
     }),
   })
 }
@@ -20,10 +47,6 @@ export async function loadGame(sessionId: string, viewer = "p1") {
   return request<{ sessionId: string; state: PublicGameState }>(
     `/api/games/${encodeURIComponent(sessionId)}?viewer=${viewer}`,
   )
-}
-
-export async function loadDebugGame(sessionId: string) {
-  return request<DebugGameView>(`/api/games/${encodeURIComponent(sessionId)}/debug`)
 }
 
 export async function gameAction(sessionId: string, action: Record<string, unknown>) {
@@ -37,7 +60,7 @@ export async function gameAction(sessionId: string, action: Record<string, unkno
 }
 
 export async function bettingAction(sessionId: string, playerId: string, action: BettingAction) {
-  return gameAction(sessionId, { kind: "betting", playerId, action })
+  return gameAction(sessionId, { kind: "betting", playerId, action, offerStick: true })
 }
 
 export async function botStep(sessionId: string, kind: "heuristic" | "llm") {
@@ -45,33 +68,6 @@ export async function botStep(sessionId: string, kind: "heuristic" | "llm") {
     `/api/games/${encodeURIComponent(sessionId)}/${kind}-step`,
     { method: "POST" },
   )
-}
-
-export async function getEvents(sessionId: string) {
-  return request<{
-    events: Array<{
-      sequence: number
-      handNumber: number
-      type: string
-      actorId?: string
-      payload: unknown
-    }>
-  }>(`/api/games/${encodeURIComponent(sessionId)}/events?limit=100`)
-}
-
-export async function runSimulations(seedPrefix: string, count: number) {
-  return request<{
-    results: Array<{
-      sessionId: string
-      seed: string
-      finalScores: Record<string, number>
-      eventCount: number
-      decisionCount: number
-    }>
-  }>("/api/simulations", {
-    method: "POST",
-    body: JSON.stringify({ seedPrefix, count, playerCount: 4, heuristicSamples: 12 }),
-  })
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {

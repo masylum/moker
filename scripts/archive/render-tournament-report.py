@@ -1,0 +1,50 @@
+import json
+from pathlib import Path
+r=Path('docs/tournament-bots-2026-09-25');d=json.loads((r/'summary.json').read_text());counts=json.loads((r/'analysis-counts.json').read_text())
+pct=lambda x:f'{100*x:.1f}%'
+lines=['# Tournament-aware bots and shared fishing rules — 25 September 2026','',
+'**The new generation beats the previous generation in both modes.** Check and Call now each fish for free in both modes; Bet/Raise gives no free fish. Riichi sticks still buy one Bet fish or a second Check/Call fish. Existing all-in and declared-Riichi locks remain. The application, CLI and rule sheets agree.','',
+'## Competitive result','',
+'The user stopped the oversized batch. **1,148 competitive tournaments had completed; 1,140 are analyzed**, retaining complete six-seat rotations and excluding eight games in incomplete rotations. No interrupted game is counted. An additional 12 health tournaments completed before stopping, but their unequal, tiny cohorts are not used for population comparisons.','',
+'Four players, 200 starting chips, four continuous orbits, five-chip ante, **24 actual samples per equity projection**. Each table contains two independent new bots and two previous-generation bots. Each seed runs all six assignments of the new seats. The baseline is adapted to the same fishing rules; its previous decision models are retained. Ties split winner credit. The approximate 95% intervals cluster by seed.','',
+'| Mode | Tournaments / seeds | New generation winner share (95% interval) | Previous generation | Mean new-minus-old score per player |','|---|---:|---:|---:|---:|']
+for m in ['basic','riichi']:
+ x=d[f'holdout-{m}'];w=x['winCredit'];lines.append(f"| {m.title()} | {x['games']} / {x['seeds']} | **{pct(w['mean'])}** [{pct(w['low'])}, {pct(w['high'])}] | {pct(1-w['mean'])} | {x['scoreAdvantage']['mean']:+.1f} |")
+lines+=['','Both intervals exclude the 50% parity point. These are combined shares for the two bots of each generation, not individual 50% win probabilities. Development runs and superseded validation prefixes are excluded. The run was stopped for time at the user’s request, not when a favorable score threshold was crossed.','',
+'## Why hands end all-in','',
+'The old bots were mainly optimizing current-hand chip value, with limited tournament awareness. The audit found several avoidable errors:','',
+'- Each raise renewed a risk budget instead of accounting for the entire hand’s committed chips.','- Tiny raises were credited with substantial fold equity even when calling cost about 1% of the pot; some audit hands contained 21–26 raises.','- Opponent hands were insufficiently conditioned on their public betting aggression.','- Uncertainty adjustment invented roughly 6% equity in two Basic calls already beaten by exposed cards, with fishing locked.','- A previously fished card could be counted twice after exposure, manufacturing combinations or Twin Lotus in forecasts.','',
+'The revised bots budget whole-hand exposure, model public aggression and price-sensitive folds, account for reduced effective sample size, preserve proven losses, and remove duplicate known cards. They use cumulative scores, loan penalties and remaining dealer progress. They bank guaranteed leads and prioritize approximate tournament winner credit on the final hand. Known opposing Twin Lotus stops hopeless fishing. Riichi lead guarantees reserve a possible Single Lotus payment.','',
+'All-ins also follow from the rules. **One short stack’s all-in ends fishing for the whole table**, after the remaining calls and folds resolve. A smaller subsequent caller can lower the cap and refund previous contributions; an all-in count therefore does not imply a zero-chip finish. Riichi automatically lends when an ante cannot be funded, keeping depleted players in circulation. A trailer seeking first place may rationally take risks that lower expected chips. Twin Lotus has no reason to allow further development.','',
+'In the ten baseline audit games, the first all-in was caused by **38 Calls, eight Bets and five antes**. The larger mixed-table results below show that the distribution differs by mode:','',
+'| Mixed-table metric | Basic | Riichi |','|---|---:|---:|']
+metrics=[('Hands containing an all-in','allInHands',pct),('Hands reaching Street 4','street4',pct),('All-in before Street 4','earlyAllInHands',pct),('Players marked eliminated','eliminations',pct),('Fishing steps per hand','drawsPerHand',lambda v:f'{v:.2f}'),('Bets/raises per hand','betsPerHand',lambda v:f'{v:.2f}'),('Loans per tournament','loansPerGame',lambda v:f'{v:.2f}'),('Negative final scores','negativeFinishes',pct),('Blank exchanges per hand','blankExchangesPerHand',lambda v:f'{v:.2f}'),('Sticks spent per hand','sticksPerHand',lambda v:f'{v:.2f}'),('Riichi declarations per hand','riichiesPerHand',lambda v:f'{v:.2f}')]
+for label,key,fmt in metrics:lines.append(f'| {label} | '+' | '.join(fmt(d[f'holdout-{m}']['health'][key]) for m in ['basic','riichi'])+' |')
+lines+=['','| First all-in cause | Basic | Riichi |','|---|---:|---:|']
+for k in ['bet','call','ante']:lines.append(f'| {k.title()} | '+' | '.join(str(d[f'holdout-{m}']['health']['allInInitiators'][k]) for m in ['basic','riichi'])+' |')
+lines+=['','These are mixed-generation tables, not a controlled estimate of all-new bot pacing or of the fishing rule alone. Eliminations count failed-ante status; losing the last chips on the final hand may not trigger another ante check. Blank exchanges count as fishing steps.','',
+'## Catch-up by orbit','',
+'The following uses all analyzed mixed tables. It measures the share of final champions who were behind the leader at each checkpoint; ties split credit. Early-ended tournaments retain terminal standings, so eliminated players and early finishes do not disappear from the denominator.','',
+'| Checkpoint | Basic: champion was behind | Riichi: champion was behind |','|---|---:|---:|']
+for i in range(3):lines.append(f'| After Orbit {i+1} | '+' | '.join(pct(d[f'holdout-{m}']['health']['catchup'][i]['behindChampion']['mean']) for m in ['basic','riichi'])+' |')
+lines+=['','For a player-level view, the next table conditions on reaching that orbit and having a unique live leader or trailer. Basic players need five chips for the next ante; Riichi players can continue through loans. The final column asks whether the trailer earned the largest net-score gain during that orbit, splitting tied credit.','',
+'| Mode / entering orbit | Leaders: sample / eventual win | Live trailers: sample / eventual win | Trailer best net gain that orbit |','|---|---:|---:|---:|']
+for m in ['basic','riichi']:
+ for x in d[f'holdout-{m}']['health']['conditionalCatchup']:
+  a,b,c=x['leaderFinalWin'],x['liveTrailerFinalWin'],x['liveTrailerBestOrbitGain'];lines.append(f"| {m.title()} / {x['enteringOrbit']} | {a['n']} / {pct(a['mean'])} | {b['n']} / {pct(b['mean'])} | {pct(c['mean'])} |")
+lines+=['',
+'**Basic has a structural early-lock problem.** With 800 total chips and no earlier game scores, an uncommitted stack above `400 + 5 × remaining hands` can guarantee victory by folding. The bot reserves all future antes before applying this safeguard. In two of the five revised Basic audit games, victory was secured after Hand 3. Better tournament play exposes this incentive; free fishing cannot overcome a leader who can safely fold. Riichi loans prevent the same fixed-chip guarantee before the final hand.','',
+'## Ten-game individual review','',
+'[Baseline reviews](tournament-bots-2026-09-25/baseline-audit.md) and [new-generation reviews](tournament-bots-2026-09-25/selected-audit.md) cover the same five Basic and five Riichi seeds. Each review links to full readable traces and JSON containing decisions, alternatives, known cards and engine events. These seeds were chosen before inspecting outcomes and reused during development; they are not independent validation.','',
+'| Audit-only measure | Basic: previous → new | Riichi: previous → new |','|---|---:|---:|']
+for name,key,fmt in [('All-in hands','allInHands',pct),('Street 4 reach','street4',pct),('Loans per tournament','loansPerGame',lambda v:f'{v:.1f}')]:
+ cells=[]
+ for m in ['basic','riichi']:cells.append(' → '.join(fmt(d[f'audit-{g}-{m}'][key]) for g in ['old','new']))
+ lines.append(f'| {name} | '+' | '.join(cells)+' |')
+lines+=['',
+'The audit shows shorter raise chains, rational lead protection, justified Twin Lotus shoves, and corrected hopeless calls. It also retains unfavorable examples: the revised Riichi games still contain many all-ins and severe loan losses. Some equity estimates against hidden Riichi shoves remain optimistic. **The stronger bots have not demonstrated better Riichi pacing.** Five games per mode cannot establish a population-level pacing change.','',
+'## Checks and limits','',
+'**118 unit tests and four integration tests pass; build, type checking and targeted lint/format checks pass.** The scoring stress test initially exceeded five seconds under simulation load; an isolated rerun and the full suite with a 30-second timeout passed. Every completed simulation checks chip and stick conservation. Source hashes match the frozen version. [Check logs](tournament-bots-2026-09-25/checks/results.json).','',
+'This remains a heuristic, not a solved tournament strategy. Opponent ranges and fold probabilities are approximate, and final-hand loss branches approximate opposing winners, ties and future actions. A win-rate advantage over the previous generation does not establish balance against optimal humans. Catch-up numbers above describe mixed tables; a reliable old-only versus new-only population comparison would require a separate, smaller targeted study. No further simulations are running.','',
+'[Method and archived development](tournament-bots-2026-09-25/README.md) · [Manifest](tournament-bots-2026-09-25/manifest.json) · [Machine-readable results](tournament-bots-2026-09-25/summary.json)']
+(r.parent/'tournament-bots-2026-09-25.md').write_text('\n'.join(lines)+'\n')

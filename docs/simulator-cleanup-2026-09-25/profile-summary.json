@@ -1,0 +1,105 @@
+{
+  "seconds": 10.92925,
+  "topSelfTime": [
+    {
+      "function": "bestAlternativeMatch",
+      "file": "hand-progress.ts",
+      "seconds": 3.546801
+    },
+    {
+      "function": "",
+      "file": "melds.ts",
+      "seconds": 2.400696
+    },
+    {
+      "function": "stripId",
+      "file": "melds.ts",
+      "seconds": 0.937967
+    },
+    {
+      "function": "identicalFace",
+      "file": "melds.ts",
+      "seconds": 0.771664
+    },
+    {
+      "function": "matchesTargets",
+      "file": "melds.ts",
+      "seconds": 0.521049
+    },
+    {
+      "function": "analyzeHandProgress",
+      "file": "hand-progress.ts",
+      "seconds": 0.358288
+    },
+    {
+      "function": "(garbage collector)",
+      "file": "",
+      "seconds": 0.331453
+    },
+    {
+      "function": "addThreeWinds",
+      "file": "melds.ts",
+      "seconds": 0.214373
+    },
+    {
+      "function": "naturalPairFace",
+      "file": "melds.ts",
+      "seconds": 0.1835
+    },
+    {
+      "function": "addTwoEyes",
+      "file": "melds.ts",
+      "seconds": 0.131627
+    },
+    {
+      "function": "addIdentical",
+      "file": "melds.ts",
+      "seconds": 0.121582
+    },
+    {
+      "function": "scoreHandStrength",
+      "file": "scoring.ts",
+      "seconds": 0.092003
+    },
+    {
+      "function": "addFourWinds",
+      "file": "melds.ts",
+      "seconds": 0.087507
+    },
+    {
+      "function": "set TextDecoder",
+      "file": "",
+      "seconds": 0.08729
+    },
+    {
+      "function": "__name",
+      "file": "melds.ts",
+      "seconds": 0.083878
+    },
+    {
+      "function": "faceKey",
+      "file": "cards.ts",
+      "seconds": 0.082954
+    },
+    {
+      "function": "runIdentity",
+      "file": "melds.ts",
+      "seconds": 0.072461
+    },
+    {
+      "function": "addThreeDragons",
+      "file": "melds.ts",
+      "seconds": 0.06733
+    },
+    {
+      "function": "(idle)",
+      "file": "",
+      "seconds": 0.065334
+    },
+    {
+      "function": "",
+      "file": "heuristic.ts",
+      "seconds": 0.063831
+    }
+  ]
+}

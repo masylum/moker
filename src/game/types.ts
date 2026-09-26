@@ -2,7 +2,7 @@ export const SUITS = ["bamboo", "dots", "characters"] as const
 export const WINDS = ["east", "south", "west", "north"] as const
 export const DRAGONS = ["red", "green", "white"] as const
 export const JOKER_COLORS = ["green", "blue", "red", "black"] as const
-export const FLOWERS = ["plum", "orchid", "bamboo", "chrysanthemum"] as const
+export const FLOWERS = ["white-lotus", "black-lotus"] as const
 
 export type Suit = (typeof SUITS)[number]
 export type Wind = (typeof WINDS)[number]
@@ -16,7 +16,7 @@ export type CardFace =
   | { kind: "numbered"; suit: Suit; rank: NumberedRank; color: CardColor }
   | { kind: "wind"; wind: Wind; color: "black" }
   | { kind: "dragon"; dragon: Dragon; color: CardColor }
-  | { kind: "flower"; flower: Flower; color: "black" }
+  | { kind: "flower"; flower: Flower; color: null }
   | { kind: "joker"; color: JokerColor }
   | { kind: "blank"; color: null }
 
@@ -27,19 +27,16 @@ export type DiscardPile = "a" | "b"
 export type CombinationKind =
   | "eye"
   | "chow"
-  | "pure-suit"
+  | "long-chow"
   | "two-eyes"
   | "chow-eye"
   | "pung"
   | "three-dragons"
   | "pung-eye"
-  | "three-dragons-eye"
+  | "three-winds"
   | "four-winds"
-  | "dragon-dancer"
   | "kong"
-  | "crosswinds"
-  | "bouquet"
-  | "imperial-garden"
+  | "three-dragons-eye"
 
 export type HandKind = "high-card" | CombinationKind
 
@@ -58,79 +55,38 @@ export interface HandScore {
   tieBreak: number[]
 }
 
-export type HandWinReason = "showdown" | "uncontested"
-
-export interface HandResultPlayer {
-  playerId: string
-  name: string
-  participated: boolean
-  eliminated: boolean
-  folded: boolean
-  riichi: boolean
-  flowerDisqualified: boolean
-  openingCards: Card[]
-  acquiredCards: Card[]
-  cards: Card[]
-  score: HandScore
-  chips: number
-  blueSticks: number
-  loans: number
-  committed: number
-  payout: number
-}
-
-export interface HandResult {
-  handNumber: number
-  openingPot: number
-  openingBlueCharge: number
-  openingLoanCharge: number
-  pot: number
-  openingCenterBlueSticks: number
-  centerBlueSticks: number
-  participantIds: string[]
-  community: Card[]
-  winnerIds: string[]
-  reason: HandWinReason
-  flowerBonus: { winnerId: string; perOpponent: number; total: number } | null
-  riichiSettlement: {
-    winnerId: string
-    returnedToCenter: number
-    recipientIds: string[]
-  } | null
-  boardResets: number
-  players: HandResultPlayer[]
-}
-
 export type PlayerController = "human" | "heuristic" | "llm"
+type Street = 0 | 1 | 2 | 3 | 4
+type GamePhase =
+  | "between-hands"
+  | "charleston"
+  | "exposing"
+  | "discarding"
+  | "betting"
+  | "showdown"
+  | "finished"
 
 export interface PlayerState {
   id: string
   name: string
   controller: PlayerController
   chips: number
-  eliminated: boolean
-  eliminatedAtHand: number | null
-  blueSticks: number
   loans: number
-  loansCharged: number[]
+  riichiSticks: number
+  /** Reserved v6 save field; current rules always leave this at zero. */
+  curses: number
+  eliminated: boolean
   privateCards: Card[]
+  publicCards: Card[]
   folded: boolean
   riichi: boolean
   roundCommitted: number
   handCommitted: number
+  potCommitted: number
   score?: HandScore
 }
 
-export type Street = 0 | 1 | 2 | 3 | 4
-export type GamePhase =
-  | "between-hands"
-  | "seeding"
-  | "discarding"
-  | "betting"
-  | "showdown"
-  | "finished"
-
-export interface PendingDiscard {
+interface PendingDiscard {
   playerId: string
   drawnCardId: string
   source: CardSource
@@ -149,79 +105,146 @@ export interface DrawDiscardRecord {
   discardedCard: Card
   discardPile: DiscardPile
   discardIndex: number
+  reason: "call" | "riichi-stick"
 }
 
-export interface SeedDiscardRecord {
+interface ExposureRecord {
   playerId: string
-  discardedCard: Card
-  discardPile: DiscardPile
-  discardIndex: number
+  street: Street
+  card: Card
 }
+
+interface CharlestonRecord {
+  fromPlayerId: string
+  toPlayerId: string
+  cards: Card[]
+}
+
+export type BettingAction =
+  | {
+      type: "check"
+      drawSource?: CardSource
+      blankExchange?: BlankExchange
+      useRiichiStick?: boolean
+      riichiDrawSource?: CardSource
+      riichiBlankExchange?: BlankExchange
+      curseTargetId?: string
+      removeCurse?: boolean
+    }
+  | {
+      type: "call"
+      drawSource?: CardSource
+      blankExchange?: BlankExchange
+      useRiichiStick?: boolean
+      riichiDrawSource?: CardSource
+      riichiBlankExchange?: BlankExchange
+      curseTargetId?: string
+      removeCurse?: boolean
+    }
+  | {
+      type: "bet"
+      amount: number
+      riichi?: boolean
+      useRiichiStick?: boolean
+      drawSource?: CardSource
+      blankExchange?: BlankExchange
+      curseTargetId?: string
+      removeCurse?: boolean
+    }
+  | { type: "fold" }
 
 export interface BettingRecord {
   playerId: string
   street: Street
   type: BettingAction["type"]
   amount?: number
+  riichi?: boolean
+  potBefore?: number
+  cost?: number
+  actorChipsBefore?: number
+  curseTargetId?: string
+  removeCurse?: boolean
 }
 
 export interface GameConfig {
   playerCount: number
   seed: string
+  mode: "basic" | "riichi"
+  orbits: number
+  tournamentGames: 1 | 2 | 3 | 4
   startingChips: number
   heuristicSamples: number
 }
 
+export interface DrawContext {
+  reason: "call" | "riichi-stick"
+  actingPlayerId: string
+  remaining: Array<{
+    source: CardSource
+    blankExchange?: BlankExchange
+    reason: "call" | "riichi-stick"
+  }>
+  continuation: {
+    resumeBetting?: boolean
+    aggressive: boolean
+    fullRaise: boolean
+    pendingBefore: string[]
+  }
+}
+
 export interface GameState {
+  rulesVersion: 6
+  stickSpentThisTurn?: boolean
+  stickOfferPlayerId?: string
+  stickWindow?: { playerId: string; continuation: DrawContext["continuation"] }
   id: string
   config: GameConfig
   rngState: number
   handNumber: number
   maxHands: number
   dealerIndex: number
-  orbit: 1 | 2 | 3
-  orbitValue: 5 | 10 | 15
+  startingDealerIndex: number
+  dealerSteps: number
+  gameNumber: number
+  gameScores: Record<string, number>[]
+  orbit: number
+  orbitValue: number
   phase: GamePhase
   street: Street
   players: PlayerState[]
   deck: Card[]
-  community: Card[]
   discardA: Card[]
   discardB: Card[]
   removedCards: Card[]
-  scrappedCommunity: Card[]
+  foldedPrivateCards: Record<string, Card[]>
   openingPrivateCards: Record<string, Card[]>
+  openingChips: Record<string, number>
+  charlestonSelections: Record<string, string[]>
+  charlestonHistory: CharlestonRecord[]
+  exposureSelections: Record<string, string[]>
+  exposureHistory: ExposureRecord[]
+  streetOpenerId: string | null
+  lastAggressorId: string | null
   openingPot: number
-  openingBlueCharge: number
-  openingLoanCharge: number
   pot: number
-  openingCenterBlueSticks: number
-  centerBlueSticks: number
   currentWager: number
   minimumRaise: number
+  allInPlayerIds: string[]
+  currentAllInBettorId: string | null
+  raiseLockedPlayerIds: string[]
   pendingPlayerIds: string[]
   actingPlayerId: string | null
   pendingDiscard: PendingDiscard | null
+  drawContext: DrawContext | null
   drawDiscardHistory: DrawDiscardRecord[]
-  seedDiscardHistory: SeedDiscardRecord[]
   bettingHistory: BettingRecord[]
-  boardResetCount: number
+  /** Reserved v6 save fields; current rules leave these empty. */
+  cursePayments: CursePayment[]
+  curseRemovals: CurseRemoval[]
   handWinners: string[]
   handResults: HandResult[]
   finalScores: Record<string, number> | null
   version: number
-}
-
-export type BettingAction =
-  | { type: "check"; drawSource: CardSource; blankExchange?: BlankExchange }
-  | { type: "call"; drawSource: CardSource; blankExchange?: BlankExchange }
-  | { type: "bet"; amount: number; riichi?: boolean }
-  | { type: "raise"; amount: number; riichi?: boolean }
-  | { type: "fold" }
-
-export interface DrawDecision {
-  discardCardId: string
-  discardPile: DiscardPile
 }
 
 export interface LegalAction {
@@ -230,12 +253,83 @@ export interface LegalAction {
   minimum?: number
   maximum?: number
   canRiichi?: boolean
+  canUseRiichiStick?: boolean
+}
+
+interface CursePayment {
+  playerId: string
+  curseCount: number
+  amount: number
+  burned: number
+}
+
+interface CurseRemoval {
+  playerId: string
+  cursesRemoved: number
+  sticksSpent: number
+}
+
+export interface PotResult {
+  amount: number
+  eligiblePlayerIds: string[]
+  winnerIds: string[]
+  payouts: Record<string, number>
+}
+
+export interface RiichiSettlement {
+  declaredPlayerId: string | null
+  won: boolean
+  sticksAwarded: number
+}
+
+interface HandResultPlayer {
+  playerId: string
+  name: string
+  folded: boolean
+  eliminated: boolean
+  riichi: boolean
+  lotusDisqualified: boolean
+  openingCards: Card[]
+  acquiredCards: Card[]
+  cards: Card[]
+  publicCards: Card[]
+  score: HandScore
+  chips: number
+  loans: number
+  riichiSticks: number
+  /** Reserved v6 save field; current rules always leave this at zero. */
+  curses: number
+  netChips?: number
+  committed: number
+  potCommitted: number
+  payout: number
+  openingChips: number
+}
+
+export interface HandResult {
+  handNumber: number
+  openingPot: number
+  pot: number
+  allInPlayerIds: string[]
+  pots: PotResult[]
+  winnerIds: string[]
+  reason: "showdown" | "uncontested"
+  lotusBluff: { winnerId: string; perOpponent: number; total: number } | null
+  riichiSettlement: RiichiSettlement
+  /** Reserved v6 save fields; current rules leave these empty. */
+  cursePayments: CursePayment[]
+  curseRemovals: CurseRemoval[]
+  orbit: number
+  orbitValue: number
+  bettingHistory: BettingRecord[]
+  players: HandResultPlayer[]
 }
 
 export interface DecisionEvaluation {
   action: BettingAction
   expectedScore: number
   estimatedWinRate: number
+  estimatedFoldout: number
   expectedChipDelta: number
   utility: number
   samples: number
@@ -244,8 +338,10 @@ export interface DecisionEvaluation {
 
 export interface HeuristicDecision {
   playerId: string
+  street: Street
   action: BettingAction
   evaluations: DecisionEvaluation[]
+  strategy?: "lotus-bluff" | "general-bluff"
   rationale: string
 }
 
@@ -261,6 +357,8 @@ export interface HandProgressSummary {
 export interface PokerMathAnalysis {
   playerId: string
   samples: number
+  effectiveSamples?: number
+  certainLoss?: boolean
   opponents: number
   knownOpponentTiles: number
   opponentAggressiveActions: number
@@ -293,6 +391,11 @@ export interface SimulationResult {
   state: GameState
   events: GameEvent[]
   decisions: HeuristicDecision[]
+  gameSummaries?: {
+    gameNumber: number
+    scores: Record<string, number>
+    players: Pick<PlayerState, "id" | "chips" | "loans" | "riichiSticks" | "eliminated">[]
+  }[]
 }
 
 export interface PublicPlayerState extends Omit<PlayerState, "privateCards"> {
@@ -302,9 +405,21 @@ export interface PublicPlayerState extends Omit<PlayerState, "privateCards"> {
 
 export interface PublicGameState extends Omit<
   GameState,
-  "players" | "deck" | "drawDiscardHistory" | "openingPrivateCards"
+  | "players"
+  | "deck"
+  | "removedCards"
+  | "foldedPrivateCards"
+  | "drawContext"
+  | "drawDiscardHistory"
+  | "openingPrivateCards"
+  | "charlestonSelections"
+  | "charlestonHistory"
+  | "exposureSelections"
 > {
   players: PublicPlayerState[]
+  /** Charleston cards received by this viewer only; never another player’s hand. */
+  charlestonReceivedCards?: Card[]
+  publicDrawDiscards?: Array<Omit<DrawDiscardRecord, "drawnCard"> & { drawnCard?: Card }>
   deck: { count: number }
 }
 

@@ -1,0 +1,520 @@
+{
+  "basic": {
+    "current": {
+      "games": 500,
+      "totals": {
+        "hands": 5434,
+        "street4": 1826,
+        "showdowns": 2952,
+        "street1Ends": 1494,
+        "street0Ends": 115,
+        "uncontested": 2482,
+        "allInHands": 1823,
+        "actions": 50265,
+        "checks": 30047,
+        "calls": 2958,
+        "bets": 10846,
+        "folds": 6414,
+        "facingWager": 15581,
+        "foldToWager": 6414,
+        "draws": 30047,
+        "deckDraws": 21102,
+        "laneDraws": 8945,
+        "blanks": 0,
+        "freeCheck": 30047,
+        "freeCall": 0,
+        "freeBet": 0,
+        "stickCheck": 0,
+        "stickCall": 0,
+        "stickBet": 0,
+        "sticksSpent": 0,
+        "sticksAwarded": 0,
+        "loans": 0,
+        "laneOccupancy": 227894,
+        "laneObservations": 50265,
+        "showdownPlayers": 7715,
+        "improvedShowdownPlayers": 4858,
+        "openingLeaderWinCredit": 3663.0,
+        "showdownRankSum": 28122,
+        "decisions": 50265,
+        "decisionsMs": 5109204.581450999,
+        "eliminations": 976,
+        "negativeFinishes": 0,
+        "minDeck": 56
+      },
+      "metrics": {
+        "street4Rate": 0.3360323886639676,
+        "drawsPerHand": 5.529444239970556,
+        "deckDrawsPerHand": 3.883327199116673,
+        "laneDrawsPerHand": 1.646117040853883,
+        "averageLaneCards": 4.533850591863126,
+        "foldToWagerRate": 0.411655221102625,
+        "uncontestedRate": 0.45675377254324623,
+        "street1EndRate": 0.2749355907250644,
+        "street0EndRate": 0.021163047478836954,
+        "allInHandRate": 0.3354803091645197,
+        "openingLeaderWinRate": 0.6740890688259109,
+        "improvedShowdownRate": 0.6296824368114063,
+        "meanShowdownRank": 3.6451069345430978,
+        "actionsPerHand": 9.250092013249908,
+        "loansPerGame": 0.0,
+        "eliminatedPerPlayer": 0.488,
+        "negativePerPlayer": 0.0,
+        "handsPerGame": 10.868
+      },
+      "scores": {
+        "0.1": 0.0,
+        "0.5": 0.0,
+        "0.9": 730.0
+      },
+      "medianWinnerLastGap": 625.0,
+      "showdownRanks": {
+        "1": 365,
+        "2": 2011,
+        "3": 1324,
+        "4": 1954,
+        "5": 1072,
+        "7": 364,
+        "6": 489,
+        "8": 119,
+        "9": 17
+      }
+    },
+    "proposed": {
+      "games": 500,
+      "totals": {
+        "hands": 3535,
+        "street4": 638,
+        "showdowns": 2044,
+        "street1Ends": 1258,
+        "street0Ends": 82,
+        "uncontested": 1491,
+        "allInHands": 1759,
+        "actions": 27557,
+        "checks": 8496,
+        "calls": 4839,
+        "bets": 11248,
+        "folds": 2974,
+        "facingWager": 14392,
+        "foldToWager": 2974,
+        "draws": 21457,
+        "deckDraws": 15270,
+        "laneDraws": 6187,
+        "blanks": 0,
+        "freeCheck": 8496,
+        "freeCall": 2835,
+        "freeBet": 10126,
+        "stickCheck": 0,
+        "stickCall": 0,
+        "stickBet": 0,
+        "sticksSpent": 0,
+        "sticksAwarded": 0,
+        "loans": 0,
+        "laneOccupancy": 129387,
+        "laneObservations": 27557,
+        "showdownPlayers": 4927,
+        "improvedShowdownPlayers": 3648,
+        "openingLeaderWinCredit": 2279.0,
+        "showdownRankSum": 19635,
+        "decisions": 27557,
+        "decisionsMs": 3989978.4688639976,
+        "eliminations": 1288,
+        "negativeFinishes": 0,
+        "minDeck": 42
+      },
+      "metrics": {
+        "street4Rate": 0.18048090523338048,
+        "drawsPerHand": 6.0698727015558696,
+        "deckDrawsPerHand": 4.31966053748232,
+        "laneDrawsPerHand": 1.7502121640735502,
+        "averageLaneCards": 4.695249845774214,
+        "foldToWagerRate": 0.20664257921067258,
+        "uncontestedRate": 0.42178217821782177,
+        "street1EndRate": 0.35586987270155584,
+        "street0EndRate": 0.023196605374823195,
+        "allInHandRate": 0.4975954738330976,
+        "openingLeaderWinRate": 0.6446958981612447,
+        "improvedShowdownRate": 0.7404099857925716,
+        "meanShowdownRank": 3.9851836817536026,
+        "actionsPerHand": 7.795473833097596,
+        "loansPerGame": 0.0,
+        "eliminatedPerPlayer": 0.644,
+        "negativePerPlayer": 0.0,
+        "handsPerGame": 7.07
+      },
+      "scores": {
+        "0.1": 0.0,
+        "0.5": 0.0,
+        "0.9": 800.0
+      },
+      "medianWinnerLastGap": 800.0,
+      "showdownRanks": {
+        "2": 946,
+        "3": 706,
+        "4": 1456,
+        "5": 912,
+        "7": 277,
+        "6": 340,
+        "8": 108,
+        "1": 155,
+        "9": 27
+      }
+    },
+    "pairedChanges": {
+      "street4Rate": {
+        "difference": -0.15555148343058714,
+        "lower": -0.17408045894511937,
+        "upper": -0.13769756930197619
+      },
+      "drawsPerHand": {
+        "difference": 0.5404284615853134,
+        "lower": 0.35368700901545247,
+        "upper": 0.7343321610560729
+      },
+      "deckDrawsPerHand": {
+        "difference": 0.4363333383656469,
+        "lower": 0.29234881041686794,
+        "upper": 0.5827042931319878
+      },
+      "laneDrawsPerHand": {
+        "difference": 0.10409512321966718,
+        "lower": 0.03757475640657454,
+        "upper": 0.17175997417393785
+      },
+      "averageLaneCards": {
+        "difference": 0.161399253911088,
+        "lower": 0.05170656365905206,
+        "upper": 0.2797823604307751
+      },
+      "foldToWagerRate": {
+        "difference": -0.2050126418919524,
+        "lower": -0.21956094797948103,
+        "upper": -0.1905991912842424
+      },
+      "uncontestedRate": {
+        "difference": -0.03497159432542446,
+        "lower": -0.057460014871162673,
+        "upper": -0.01250204751709235
+      },
+      "street1EndRate": {
+        "difference": 0.08093428197649144,
+        "lower": 0.06246764629917971,
+        "upper": 0.09953697008311221
+      },
+      "street0EndRate": {
+        "difference": 0.002033557895986242,
+        "lower": -0.005197860900505606,
+        "upper": 0.00935879324743867
+      },
+      "allInHandRate": {
+        "difference": 0.1621151646685779,
+        "lower": 0.1420493965161433,
+        "upper": 0.18299472052212784
+      },
+      "openingLeaderWinRate": {
+        "difference": -0.02939317066466618,
+        "lower": -0.04909233811152101,
+        "upper": -0.009552538138600145
+      },
+      "improvedShowdownRate": {
+        "difference": 0.11072754898116521,
+        "lower": 0.09104354832756248,
+        "upper": 0.13090579757501267
+      },
+      "meanShowdownRank": {
+        "difference": 0.34007674721050485,
+        "lower": 0.2782499122233742,
+        "upper": 0.4037300096035263
+      },
+      "actionsPerHand": {
+        "difference": -1.4546181801523126,
+        "lower": -1.6359362677888352,
+        "upper": -1.267135513485958
+      },
+      "loansPerGame": {
+        "difference": 0.0,
+        "lower": 0.0,
+        "upper": 0.0
+      },
+      "eliminatedPerPlayer": {
+        "difference": 0.15600000000000003,
+        "lower": 0.1365,
+        "upper": 0.17500000000000004
+      },
+      "negativePerPlayer": {
+        "difference": 0.0,
+        "lower": 0.0,
+        "upper": 0.0
+      },
+      "handsPerGame": {
+        "difference": -3.798,
+        "lower": -4.159999999999999,
+        "upper": -3.426
+      }
+    }
+  },
+  "riichi": {
+    "current": {
+      "games": 500,
+      "totals": {
+        "hands": 2000,
+        "street4": 959,
+        "showdowns": 1681,
+        "street1Ends": 771,
+        "street0Ends": 24,
+        "uncontested": 319,
+        "allInHands": 770,
+        "actions": 28370,
+        "checks": 9973,
+        "calls": 3503,
+        "bets": 11782,
+        "folds": 3112,
+        "facingWager": 15844,
+        "foldToWager": 2902,
+        "draws": 14333,
+        "deckDraws": 10527,
+        "laneDraws": 3806,
+        "blanks": 387,
+        "freeCheck": 9390,
+        "freeCall": 0,
+        "freeBet": 0,
+        "stickCheck": 292,
+        "stickCall": 614,
+        "stickBet": 4037,
+        "sticksSpent": 4943,
+        "sticksAwarded": 886,
+        "loans": 364,
+        "laneOccupancy": 147970,
+        "laneObservations": 28370,
+        "showdownPlayers": 4569,
+        "improvedShowdownPlayers": 3015,
+        "openingLeaderWinCredit": 1049.5,
+        "showdownRankSum": 23532,
+        "decisions": 28370,
+        "decisionsMs": 4644988.797257983,
+        "eliminations": 0,
+        "negativeFinishes": 263,
+        "minDeck": 59
+      },
+      "metrics": {
+        "street4Rate": 0.4795,
+        "drawsPerHand": 7.1665,
+        "deckDrawsPerHand": 5.2635,
+        "laneDrawsPerHand": 1.903,
+        "averageLaneCards": 5.215720831864646,
+        "foldToWagerRate": 0.18316081797525877,
+        "uncontestedRate": 0.1595,
+        "street1EndRate": 0.3855,
+        "street0EndRate": 0.012,
+        "allInHandRate": 0.385,
+        "openingLeaderWinRate": 0.52475,
+        "improvedShowdownRate": 0.659881812212738,
+        "meanShowdownRank": 5.150361129349967,
+        "actionsPerHand": 14.185,
+        "loansPerGame": 0.728,
+        "eliminatedPerPlayer": 0.0,
+        "negativePerPlayer": 0.1315,
+        "handsPerGame": 4.0
+      },
+      "scores": {
+        "0.1": -55.0,
+        "0.5": 105.0,
+        "0.9": 575.0
+      },
+      "medianWinnerLastGap": 597.5,
+      "showdownRanks": {
+        "2": 569,
+        "3": 738,
+        "4": 840,
+        "5": 810,
+        "6": 307,
+        "12": 35,
+        "7": 325,
+        "8": 114,
+        "9": 424,
+        "13": 88,
+        "1": 97,
+        "11": 121,
+        "10": 94,
+        "-1": 7
+      }
+    },
+    "proposed": {
+      "games": 500,
+      "totals": {
+        "hands": 2000,
+        "street4": 999,
+        "showdowns": 1697,
+        "street1Ends": 641,
+        "street0Ends": 42,
+        "uncontested": 303,
+        "allInHands": 750,
+        "actions": 27256,
+        "checks": 9772,
+        "calls": 5267,
+        "bets": 9427,
+        "folds": 2790,
+        "facingWager": 14487,
+        "foldToWager": 2614,
+        "draws": 17695,
+        "deckDraws": 12348,
+        "laneDraws": 5347,
+        "blanks": 458,
+        "freeCheck": 9245,
+        "freeCall": 4146,
+        "freeBet": 0,
+        "stickCheck": 380,
+        "stickCall": 422,
+        "stickBet": 3502,
+        "sticksSpent": 4304,
+        "sticksAwarded": 944,
+        "loans": 372,
+        "laneOccupancy": 155840,
+        "laneObservations": 27256,
+        "showdownPlayers": 4907,
+        "improvedShowdownPlayers": 3547,
+        "openingLeaderWinCredit": 971.5,
+        "showdownRankSum": 26766,
+        "decisions": 27256,
+        "decisionsMs": 5250689.93368,
+        "eliminations": 0,
+        "negativeFinishes": 276,
+        "minDeck": 56
+      },
+      "metrics": {
+        "street4Rate": 0.4995,
+        "drawsPerHand": 8.8475,
+        "deckDrawsPerHand": 6.174,
+        "laneDrawsPerHand": 2.6735,
+        "averageLaneCards": 5.717640152626944,
+        "foldToWagerRate": 0.18043763374059502,
+        "uncontestedRate": 0.1515,
+        "street1EndRate": 0.3205,
+        "street0EndRate": 0.021,
+        "allInHandRate": 0.375,
+        "openingLeaderWinRate": 0.48575,
+        "improvedShowdownRate": 0.7228449154269411,
+        "meanShowdownRank": 5.454656613001834,
+        "actionsPerHand": 13.628,
+        "loansPerGame": 0.744,
+        "eliminatedPerPlayer": 0.0,
+        "negativePerPlayer": 0.138,
+        "handsPerGame": 4.0
+      },
+      "scores": {
+        "0.1": -60.0,
+        "0.5": 110.0,
+        "0.9": 595.0
+      },
+      "medianWinnerLastGap": 600.0,
+      "showdownRanks": {
+        "2": 455,
+        "3": 689,
+        "4": 854,
+        "5": 967,
+        "6": 333,
+        "7": 371,
+        "9": 564,
+        "1": 114,
+        "8": 139,
+        "12": 41,
+        "13": 121,
+        "-1": 14,
+        "10": 105,
+        "11": 140
+      }
+    },
+    "pairedChanges": {
+      "street4Rate": {
+        "difference": 0.020000000000000018,
+        "lower": -0.0030000000000000027,
+        "upper": 0.04299999999999993
+      },
+      "drawsPerHand": {
+        "difference": 1.681,
+        "lower": 1.4014874999999996,
+        "upper": 1.9585125000000005
+      },
+      "deckDrawsPerHand": {
+        "difference": 0.9105000000000008,
+        "lower": 0.6814875000000007,
+        "upper": 1.1280374999999996
+      },
+      "laneDrawsPerHand": {
+        "difference": 0.7705000000000002,
+        "lower": 0.6754875000000002,
+        "upper": 0.8665
+      },
+      "averageLaneCards": {
+        "difference": 0.5019193207622985,
+        "lower": 0.3601334313175387,
+        "upper": 0.6367134019191809
+      },
+      "foldToWagerRate": {
+        "difference": -0.0027231842346637503,
+        "lower": -0.01065449049150051,
+        "upper": 0.005359821108973171
+      },
+      "uncontestedRate": {
+        "difference": -0.008000000000000007,
+        "lower": -0.027999999999999997,
+        "upper": 0.01150000000000001
+      },
+      "street1EndRate": {
+        "difference": -0.065,
+        "lower": -0.09150000000000003,
+        "upper": -0.03848750000000016
+      },
+      "street0EndRate": {
+        "difference": 0.009000000000000001,
+        "lower": 0.0015000000000000013,
+        "upper": 0.0165
+      },
+      "allInHandRate": {
+        "difference": -0.010000000000000009,
+        "lower": -0.033999999999999975,
+        "upper": 0.015000000000000013
+      },
+      "openingLeaderWinRate": {
+        "difference": -0.039000000000000035,
+        "lower": -0.0635,
+        "upper": -0.014249999999999985
+      },
+      "improvedShowdownRate": {
+        "difference": 0.06296310321420306,
+        "lower": 0.045147572108598696,
+        "upper": 0.08135079415196522
+      },
+      "meanShowdownRank": {
+        "difference": 0.30429548365186676,
+        "lower": 0.212588884608286,
+        "upper": 0.3985588391293132
+      },
+      "actionsPerHand": {
+        "difference": -0.5570000000000004,
+        "lower": -0.8830125000000009,
+        "upper": -0.24050000000000082
+      },
+      "loansPerGame": {
+        "difference": 0.016000000000000014,
+        "lower": -0.07200000000000006,
+        "upper": 0.09999999999999998
+      },
+      "eliminatedPerPlayer": {
+        "difference": 0.0,
+        "lower": 0.0,
+        "upper": 0.0
+      },
+      "negativePerPlayer": {
+        "difference": 0.006500000000000006,
+        "lower": -0.011499999999999982,
+        "upper": 0.024499999999999994
+      },
+      "handsPerGame": {
+        "difference": 0.0,
+        "lower": 0.0,
+        "upper": 0.0
+      }
+    }
+  }
+}

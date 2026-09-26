@@ -20,6 +20,9 @@
     "deploy": "npm run build && wrangler deploy",
     "deploy:dry": "npm run build && wrangler deploy --dry-run",
     "simulate": "tsx scripts/simulate.ts",
+    "inspect:games": "tsx scripts/inspect-games.ts",
+    "analyze:ladder": "tsx scripts/analyze-ladder.ts",
+    "train:bots": "tsx scripts/train-bots.ts",
     "play": "tsx scripts/play.ts"
   },
   "dependencies": {

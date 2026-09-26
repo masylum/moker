@@ -1,0 +1,356 @@
+/* Base — component styles and their responsive states. */
+:root {
+  font-family: var(--font-body);
+  color: var(--color-text);
+  background: var(--color-canvas);
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  color: var(--color-text);
+  background: var(--color-canvas);
+  min-width: 360px;
+  margin: 0;
+}
+
+button {
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  min-height: var(--control-height);
+  color: var(--color-text);
+  background: var(--color-canvas);
+  border-radius: var(--radius-control);
+  padding: 8px 15px;
+  font-weight: var(--font-weight-emphasis);
+  transition:
+    background-color var(--duration-fast) ease-out,
+    color var(--duration-fast) ease-out,
+    border-color var(--duration-fast) ease-out,
+    box-shadow var(--duration-fast) ease-out;
+}
+
+b,
+strong {
+  font-weight: var(--font-weight-emphasis);
+}
+
+input {
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+  width: 100%;
+  min-height: var(--control-height);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  background: var(--color-canvas);
+  border-radius: var(--radius-control);
+  padding: var(--space-2-half) var(--space-3);
+  font-size: var(--font-sm);
+}
+
+select {
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+  width: 100%;
+  min-height: var(--control-height);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  background: var(--color-canvas);
+  border-radius: var(--radius-control);
+  padding: var(--space-2-half) var(--space-3);
+  font-size: var(--font-sm);
+}
+
+a {
+  -webkit-tap-highlight-color: transparent;
+  color: inherit;
+}
+
+summary {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 4px;
+}
+
+h1 {
+  font-family: var(--font-display);
+  margin-top: 0;
+  font-weight: 400;
+}
+
+h2 {
+  font-family: var(--font-display);
+  letter-spacing: -0.8px;
+  margin-top: 0;
+  font-size: var(--font-title);
+  font-weight: 400;
+}
+
+h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  margin-top: 0;
+  font-size: var(--font-lg);
+}
+
+p {
+  margin-top: 0;
+  line-height: 1.65;
+}
+
+.eyebrow {
+  letter-spacing: 1.8px;
+  margin-bottom: var(--space-3-half);
+  font-size: var(--font-xs);
+  font-weight: 400;
+}
+
+.masthead {
+  color: var(--color-text);
+  background: none;
+  border-bottom: 0;
+  justify-content: space-between;
+  align-items: center;
+  gap: 30px;
+  height: 91px;
+  padding: 0 4%;
+  display: flex;
+}
+
+.brand {
+  flex-shrink: 0;
+  width: 174px;
+  display: block;
+}
+
+.brand img {
+  width: 174px;
+  height: auto;
+  display: block;
+}
+
+.masthead nav {
+  gap: var(--space-6);
+  display: flex;
+}
+
+.text-button {
+  min-height: 36px;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: var(--space-1-half) 0;
+  font-size: var(--font-sm);
+  font-weight: 400;
+}
+
+.text-button span {
+  margin-left: var(--space-4);
+}
+
+.masthead .text-button {
+  color: var(--color-text);
+  border-color: var(--color-border);
+  border-bottom-style: solid;
+  border-bottom-width: 1px;
+}
+
+label {
+  font-size: var(--font-xs);
+  font-weight: 400;
+  display: block;
+}
+
+.primary {
+  background: var(--color-action);
+  border-color: var(--color-action);
+  color: var(--color-on-action);
+}
+
+.primary:hover:not(:disabled) {
+  background-color: var(--color-action-hover);
+}
+
+.button-row {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2-half);
+  display: flex;
+}
+
+.fold-button {
+  color: var(--color-danger);
+  background: none;
+  border-color: transparent;
+  margin-left: auto;
+}
+
+.bet-button {
+  background: var(--color-text);
+  border-color: var(--color-text);
+  color: var(--color-canvas);
+}
+
+.wager-input {
+  font-size: var(--font-xs);
+  position: relative;
+}
+
+.wager-input input {
+  width: 80px;
+  min-height: 38px;
+  margin-top: var(--space-1);
+  font-size: var(--font-sm);
+}
+
+.fishing-row {
+  align-items: center;
+  gap: var(--space-5);
+  margin-bottom: 17px;
+  display: flex;
+}
+
+.fishing-row label {
+  min-width: 220px;
+  font-size: var(--font-xs);
+}
+
+.fishing-row select {
+  margin-top: var(--space-1-half);
+}
+
+.fishing-row > span {
+  color: var(--color-muted);
+  font-size: var(--font-xs);
+}
+
+.expansion-actions {
+  flex-wrap: wrap;
+  gap: var(--space-4-half);
+  margin-top: 22px;
+  display: flex;
+}
+
+.check-label {
+  color: var(--color-muted);
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-xs);
+  font-weight: 400;
+  display: flex;
+}
+
+.check-label input {
+  width: 15px;
+  min-height: 15px;
+  accent-color: var(--color-chip-coral);
+}
+
+.rank {
+  color: var(--color-muted);
+  min-width: 19px;
+  font-size: var(--font-xs);
+}
+
+.mini-hand {
+  flex-wrap: wrap;
+  gap: 3px;
+  display: flex;
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+.reserved-empty {
+  visibility: hidden;
+}
+
+.sr-only {
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  position: absolute !important;
+  overflow: hidden !important;
+}
+
+@media (width <= 1100px) {
+  .fishing-row > span {
+    max-width: 150px;
+  }
+}
+
+@media (width <= 640px) {
+  .masthead {
+    gap: 15px;
+    height: 76px;
+    padding: 0 5%;
+  }
+
+  .brand,
+  .brand img {
+    width: 145px;
+  }
+
+  .masthead nav {
+    gap: 15px;
+  }
+
+  .masthead .text-button {
+    font-size: var(--font-xs);
+  }
+
+  .wager-input input {
+    width: 63px;
+  }
+
+  .fold-button {
+    margin-left: 0;
+  }
+
+  .fishing-row {
+    gap: 13px;
+  }
+
+  .fishing-row label {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .fishing-row > span {
+    max-width: 100px;
+    font-size: var(--font-xs);
+  }
+
+  .fishing-row select {
+    font-size: var(--font-xs);
+  }
+
+  .rank {
+    min-width: 15px;
+    font-size: var(--font-xs);
+  }
+}

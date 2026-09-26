@@ -1,0 +1,14 @@
+{
+  "two-eyes / chow-eye": {
+    "higherMinusLowerCI95": [
+      -0.12771301120815687,
+      0.08557024572649574
+    ]
+  },
+  "three-winds / pung-eye": {
+    "higherMinusLowerCI95": [
+      -0.4114365411436541,
+      0.0705627705627706
+    ]
+  }
+}

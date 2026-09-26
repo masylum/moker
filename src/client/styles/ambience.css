@@ -1,0 +1,80 @@
+/* Original Whatajong artwork, softened with white rather than recolored files. */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+body {
+  isolation: isolate;
+}
+body::before {
+  width: 90vw;
+  height: 60vw;
+  margin: auto;
+  background: url("/assets/whatajong/mountains.webp") center / 100% 100% no-repeat;
+  mask-image: radial-gradient(ellipse closest-side at center, black 30%, transparent 100%);
+  filter: saturate(1.2);
+  opacity: 0.18;
+}
+body::after {
+  /* A non-interactive paper layer over the entire interface, including panels. */
+  z-index: 10000;
+  background: url("/assets/whatajong/paper.webp") repeat;
+  mix-blend-mode: multiply;
+  opacity: 0.38;
+}
+.home-page,
+.game-page,
+.welcome {
+  background: transparent;
+}
+.audio-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.audio-toggle {
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  display: grid;
+  place-items: center;
+  padding: var(--space-2);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  background: var(--color-seat);
+  border-color: transparent;
+}
+.audio-toggle[aria-pressed="false"] {
+  color: var(--color-muted);
+  background: transparent;
+}
+@media (width <= 640px) {
+  .masthead {
+    height: auto;
+    min-height: 91px;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding-block: var(--space-3);
+  }
+  .masthead nav {
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+}
+
+.audio-toggle svg {
+  width: 22px;
+  height: 22px;
+}
+.launch-card,
+.opponent,
+.hand-panel {
+  background: var(--color-seat);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}

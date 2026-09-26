@@ -1,0 +1,102 @@
+/* Shared design tokens. Change a role here instead of overriding a component. */
+:root {
+  --color-rules-example: rgb(219 227 178 / 0.2);
+  --color-drawer-overlay: rgb(24 59 37 / 0.16);
+  --color-betting-seat: rgb(200 221 193 / 0.7);
+  --color-canvas: #ffffff;
+  --color-text: #183b25;
+  --color-muted: #526c56;
+  --color-surface: #eff7ed;
+  --color-seat: rgb(222 241 222 / 38%);
+  --color-surface-raised: #f5faf3;
+  --color-control: #e0eddd;
+  --color-control-hover: #d3e7d0;
+  --color-selected: #214c32;
+  --color-action: #214c32;
+  --color-action-hover: #183b25;
+  --color-on-action: #ffffff;
+  --color-border: #cadcc8;
+  --color-border-strong: #719777;
+  --color-focus: #287a35;
+  --color-card-highlight: #23728b;
+  --color-card-highlight-glow: rgb(0 152 255 / 14%);
+  --color-danger: #ad3046;
+  --color-danger-surface: #fff3f4;
+  --color-overlay: rgb(255 255 255 / 65%);
+  --color-card-edge: #b9cec0;
+  --color-chip-coral: #ff5061;
+  --color-chip-blue: #0098ff;
+  --color-chip-green: #00ad3d;
+  --color-chip-silver: #b2b2b2;
+  --color-avatar-pink: #ffc4e9;
+  --color-avatar-blue: #b2e4f0;
+  --color-avatar-lime: #dbe3b2;
+  --color-avatar-peach: #f6d1b7;
+  --color-avatar-lavender: #d9cef2;
+  --color-avatar-mint: #c3e7ce;
+  --font-body: gelica, Georgia, serif;
+  --font-display: "dela-gothic-one", sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-emphasis: 500;
+  --font-xs: 10px;
+  --font-sm: 12px;
+  --font-md: 14px;
+  --font-lg: 16px;
+  --font-xl: 20px;
+  --font-title: 30px;
+  --font-display-size: clamp(36px, 4.05vw, 64px);
+  --radius-card: 4px;
+  --radius-control: 9px;
+  --radius-panel: 16px;
+  --radius-dialog: 20px;
+  --radius-pill: 999px;
+  --shadow-decor: 0 5px 12px rgb(24 59 37 / 12%);
+  --shadow-chip: 0 2px 0 var(--color-card-edge);
+  --gradient-button: linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 16%),
+    transparent 55%,
+    rgb(24 59 37 / 5%)
+  );
+  --shadow-button: inset 0 -1px 0 rgb(24 59 37 / 12%), 0 2px 3px rgb(24 59 37 / 9%);
+  --shadow-button-pressed: inset 0 1px 3px rgb(24 59 37 / 15%);
+  --shadow-card: 0 3px 0 var(--color-card-edge), 0 7px 12px rgb(24 59 37 / 10%);
+  --shadow-card-small: 0 2px 3px rgb(24 59 37 / 9%);
+  --shadow-popover: 0 8px 24px rgb(24 59 37 / 12%);
+  --shadow-dialog: 0 20px 64px rgb(24 59 37 / 16%);
+  --shadow-deck:
+    1px 3px var(--color-card-edge), 2px 5px var(--color-canvas), 2px 6px var(--color-card-edge),
+    3px 8px var(--color-canvas), 3px 9px var(--color-card-edge), 4px 11px var(--color-canvas),
+    4px 12px var(--color-card-edge), 5px 14px var(--color-canvas), 5px 15px var(--color-card-edge),
+    6px 17px var(--color-canvas), 6px 18px var(--color-card-edge), 7px 20px var(--color-canvas),
+    7px 21px var(--color-card-edge), 8px 25px 18px rgb(24 59 37 / 14%);
+  --duration-fast: 160ms;
+  --duration-standard: 220ms;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --card-aspect: 825 / 1125;
+  --shared-card-width: 74px;
+  --hand-public-tilt: 30deg;
+  --hand-card-height: clamp(80px, 10vw, 142px);
+  --table-depth: 1500px;
+  --table-tilt: 14deg;
+  --table-transform: perspective(var(--table-depth)) rotateX(var(--table-tilt));
+  --control-height: 40px;
+  --z-popover: 20;
+  --z-overlay: 100;
+  --space-0-half: 2px;
+  --space-1: 4px;
+  --space-1-half: 6px;
+  --space-2: 8px;
+  --space-2-half: 10px;
+  --space-3: 12px;
+  --space-3-half: 14px;
+  --space-4: 16px;
+  --space-4-half: 18px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-15: 60px;
+}

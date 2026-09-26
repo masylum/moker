@@ -1,0 +1,114 @@
+[
+  {
+    "label": "screen-basic-continuous-swap-chow-two-eyes",
+    "pairedRuns": 16,
+    "baselineMismatch": 0,
+    "candidateMismatch": 0.3414254390805574,
+    "delta": 0.3414254390805574
+  },
+  {
+    "label": "screen-basic-continuous-swap-two-eyes-chow-eye",
+    "pairedRuns": 16,
+    "baselineMismatch": 0,
+    "candidateMismatch": 0.8969263646923639,
+    "delta": 0.8969263646923639
+  },
+  {
+    "label": "screen-basic-continuous-swap-chow-eye-three-winds",
+    "pairedRuns": 16,
+    "baselineMismatch": 0,
+    "candidateMismatch": 0.8960988562616339,
+    "delta": 0.8960988562616339
+  },
+  {
+    "label": "screen-basic-continuous-swap-three-winds-pung",
+    "pairedRuns": 16,
+    "baselineMismatch": 0,
+    "candidateMismatch": 0.2436220826577505,
+    "delta": 0.2436220826577505
+  },
+  {
+    "label": "screen-basic-continuous-swap-pung-three-dragons",
+    "pairedRuns": 16,
+    "baselineMismatch": 0,
+    "candidateMismatch": 0.7335187266925894,
+    "delta": 0.7335187266925894
+  },
+  {
+    "label": "screen-basic-continuous-swap-three-dragons-four-winds",
+    "pairedRuns": 16,
+    "baselineMismatch": 0,
+    "candidateMismatch": 1.1686233759494404,
+    "delta": 1.1686233759494404
+  },
+  {
+    "label": "screen-riichi-continuous-swap-chow-two-eyes",
+    "pairedRuns": 16,
+    "baselineMismatch": 0,
+    "candidateMismatch": 0.594798087139923,
+    "delta": 0.594798087139923
+  },
+  {
+    "label": "screen-riichi-continuous-swap-two-eyes-chow-eye",
+    "pairedRuns": 16,
+    "baselineMismatch": 0,
+    "candidateMismatch": 0.8394415404489046,
+    "delta": 0.8394415404489046
+  },
+  {
+    "label": "screen-riichi-continuous-swap-chow-eye-pung",
+    "pairedRuns": 16,
+    "baselineMismatch": 0,
+    "candidateMismatch": 0.5600376274562683,
+    "delta": 0.5600376274562683
+  },
+  {
+    "label": "screen-riichi-continuous-swap-pung-three-winds",
+    "pairedRuns": 16,
+    "baselineMismatch": 0,
+    "candidateMismatch": 1.0321884428044652,
+    "delta": 1.0321884428044652
+  },
+  {
+    "label": "screen-riichi-continuous-swap-three-winds-pung-eye",
+    "pairedRuns": 16,
+    "baselineMismatch": 0,
+    "candidateMismatch": 0.1208364731432737,
+    "delta": 0.1208364731432737
+  },
+  {
+    "label": "screen-riichi-continuous-swap-pung-eye-three-dragons",
+    "pairedRuns": 16,
+    "baselineMismatch": 0,
+    "candidateMismatch": 0.8091070616548137,
+    "delta": 0.8091070616548137
+  },
+  {
+    "label": "screen-riichi-continuous-swap-three-dragons-long-chow",
+    "pairedRuns": 16,
+    "baselineMismatch": 0,
+    "candidateMismatch": 0.31659997274758933,
+    "delta": 0.31659997274758933
+  },
+  {
+    "label": "screen-riichi-continuous-swap-long-chow-three-dragons-eye",
+    "pairedRuns": 16,
+    "baselineMismatch": 0,
+    "candidateMismatch": 1.0666965828307262,
+    "delta": 1.0666965828307262
+  },
+  {
+    "label": "screen-riichi-continuous-swap-three-dragons-eye-four-winds",
+    "pairedRuns": 16,
+    "baselineMismatch": 0,
+    "candidateMismatch": 1.2656663733312759,
+    "delta": 1.2656663733312759
+  },
+  {
+    "label": "screen-riichi-continuous-swap-four-winds-kong",
+    "pairedRuns": 16,
+    "baselineMismatch": 0,
+    "candidateMismatch": 1.466337068793427,
+    "delta": 1.466337068793427
+  }
+]

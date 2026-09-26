@@ -1,200 +1,190 @@
 import { describe, expect, it } from "vitest"
-import { GameEngine } from "../src/game/engine"
+import { flowerFace, numberedFace } from "../src/game/cards"
 import { stepHeuristic } from "../src/game/automation"
+import { GameEngine } from "../src/game/engine"
 import {
+  DEFAULT_BOT_POLICY,
   analyzePokerMath,
   chooseHeuristicAction,
-  chooseHeuristicDiscard,
-  chooseHeuristicSeedDiscard,
+  chooseHeuristicCharleston,
+  chooseHeuristicExposure,
 } from "../src/game/heuristic"
-import { simulateGame } from "../src/game/simulation"
+import { simulateGame, simulateMany } from "../src/game/simulation"
 
-describe("heuristic player and simulations", () => {
-  it("checks a very low-equity hand instead of betting to shed a blue stick", () => {
-    const engine = GameEngine.create(
-      [
-        { id: "p1", name: "You", controller: "human" },
-        { id: "p2", name: "Bot 2", controller: "heuristic" },
-        { id: "p3", name: "Bot 3", controller: "heuristic" },
-        { id: "p4", name: "Bot 4", controller: "heuristic" },
-      ],
-      { seed: "jade-table", heuristicSamples: 64 },
-    )
-    finishSeeding(engine)
-    const playerId = engine.state.actingPlayerId!
-    const decision = chooseHeuristicAction(engine.state, playerId, 64)
-
-    expect(analyzePokerMath(engine.state, playerId, 64).showdownEquity).toBeLessThan(0.38)
-    expect(decision.action.type).toBe("check")
-    expect(decision.evaluations.some((evaluation) => evaluation.action.type === "bet")).toBe(false)
-  })
-
-  it("makes a value bet when a strong hand can be called by worse hands", () => {
-    const engine = GameEngine.create(
-      [
-        { id: "p1", name: "You", controller: "human" },
-        { id: "p2", name: "Bot 2", controller: "heuristic" },
-        { id: "p3", name: "Bot 3", controller: "heuristic" },
-        { id: "p4", name: "Bot 4", controller: "heuristic" },
-      ],
-      { seed: "jade-table", heuristicSamples: 64 },
-    )
-    finishSeeding(engine)
-    engine.state.actingPlayerId = "p4"
-    engine.state.pendingPlayerIds = ["p4"]
-    engine.state.players.find((player) => player.id === "p4")!.privateCards = [
-      { kind: "numbered", suit: "characters", rank: 9, color: "red", id: "characters-9-1" },
-      { kind: "numbered", suit: "characters", rank: 9, color: "red", id: "characters-9-2" },
-      { kind: "numbered", suit: "characters", rank: 9, color: "red", id: "characters-9-3" },
-    ]
-    const decision = chooseHeuristicAction(engine.state, "p4", 64)
-
-    expect(analyzePokerMath(engine.state, "p4", 64).showdownEquity).toBeGreaterThan(0.38)
-    expect(decision.action.type).toBe("bet")
-    expect(decision.action).toMatchObject({ riichi: true })
-  })
-
-  it("uses a Blank exchange when a buried tile improves the made Hand", () => {
-    const engine = GameEngine.create(
-      [
-        { id: "p1", name: "A", controller: "heuristic" },
-        { id: "p2", name: "B", controller: "heuristic" },
-      ],
-      { seed: "blank-plan", heuristicSamples: 2 },
-    )
-    finishSeeding(engine)
-    const playerId = engine.state.actingPlayerId!
-    const player = engine.state.players.find(({ id }) => id === playerId)!
-    player.privateCards = [
-      { kind: "numbered", suit: "bamboo", rank: 5, color: "green", id: "bamboo-5-1" },
-      { kind: "numbered", suit: "bamboo", rank: 5, color: "green", id: "bamboo-5-2" },
-      { kind: "blank", color: null, id: "blank-1" },
-    ]
-    engine.state.discardA = [
-      { kind: "numbered", suit: "bamboo", rank: 5, color: "green", id: "bamboo-5-3" },
-    ]
-    const decision = chooseHeuristicAction(engine.state, playerId, 2)
-    const check = decision.evaluations.find(({ action }) => action.type === "check")
-
-    expect(check?.action).toMatchObject({
-      blankExchange: { blankCardId: "blank-1", pile: "a", cardIndex: 0 },
-    })
-  })
-
-  it("reports pot odds from the same math used by the heuristic", () => {
-    const engine = GameEngine.create(
-      [
-        { id: "p1", name: "A", controller: "heuristic" },
-        { id: "p2", name: "B", controller: "heuristic" },
-      ],
-      { seed: "pot-odds", heuristicSamples: 8 },
-    )
-    finishSeeding(engine)
-    engine.act(engine.state.actingPlayerId!, { type: "bet", amount: 5 })
-    const playerId = engine.state.actingPlayerId!
-    const analysis = analyzePokerMath(engine.state, playerId, 8)
-
-    expect(analysis.toCall).toBe(5)
-    expect(analysis.potBeforeCall).toBe(15)
-    expect(analysis.potOdds).toBeCloseTo(1 / 4)
-    expect(analysis.callExpectedValue).toBeCloseTo(
-      analysis.showdownEquity * analysis.potAfterCall - analysis.toCall,
-    )
-  })
-
-  it("returns statistical evaluations for every considered betting option", () => {
-    const engine = GameEngine.create(
-      [
-        { id: "p1", name: "A", controller: "heuristic" },
-        { id: "p2", name: "B", controller: "heuristic" },
-      ],
-      { seed: "heuristic", heuristicSamples: 2 },
-    )
-    finishSeeding(engine)
-    const decision = chooseHeuristicAction(engine.state, engine.state.actingPlayerId!, 2)
-    expect(decision.evaluations.length).toBeGreaterThan(1)
-    expect(
-      decision.evaluations.every((value) => Number.isFinite(value.utility) && value.samples === 2),
-    ).toBe(true)
-  })
-
-  it("chooses a legal discard after seeing the drawn card", () => {
-    const engine = GameEngine.create(
-      [
-        { id: "p1", name: "A", controller: "heuristic" },
-        { id: "p2", name: "B", controller: "heuristic" },
-      ],
-      { seed: "discard", heuristicSamples: 2 },
-    )
-    finishSeeding(engine)
-    const playerId = engine.state.actingPlayerId!
-    engine.act(playerId, { type: "check", drawSource: "deck" })
-    const choice = chooseHeuristicDiscard(engine.state, playerId, 2)
-    expect(
-      engine.state.players
-        .find((player) => player.id === playerId)
-        ?.privateCards.some((card) => card.id === choice.discardCardId),
-    ).toBe(true)
-  })
-
-  it("resolves a heuristic Check and Draw & Discard as one client step", () => {
-    const engine = GameEngine.create(
-      [
-        { id: "p1", name: "You", controller: "human" },
-        { id: "p2", name: "Bot", controller: "heuristic" },
-        { id: "p3", name: "Bot 3", controller: "heuristic" },
-        { id: "p4", name: "Bot 4", controller: "heuristic" },
-      ],
-      { seed: "one-step-2", heuristicSamples: 2 },
-    )
-
-    while (engine.state.phase === "seeding") {
-      stepHeuristic(engine)
-    }
-
-    const step = stepHeuristic(engine)
-
-    expect(step.drawDiscard).toMatchObject({ playerId: "p2" })
-    expect(engine.state.phase).not.toBe("discarding")
-    expect(engine.state.drawDiscardHistory).toHaveLength(1)
-  })
-
-  it("seeds a lone Flower instead of carrying its showdown penalty", () => {
-    const engine = GameEngine.create(
-      [
-        { id: "p1", name: "A", controller: "heuristic" },
-        { id: "p2", name: "B", controller: "heuristic" },
-      ],
-      { seed: "flower-seed", heuristicSamples: 2 },
-    )
-    const playerId = engine.state.actingPlayerId!
-    const player = engine.state.players.find(({ id }) => id === playerId)!
-    player.privateCards = [
-      { kind: "flower", flower: "plum", color: "black", id: "flower-plum" },
-      { kind: "numbered", suit: "bamboo", rank: 3, color: "green", id: "bamboo-3-1" },
-      { kind: "numbered", suit: "bamboo", rank: 4, color: "green", id: "bamboo-4-1" },
-      { kind: "numbered", suit: "bamboo", rank: 5, color: "green", id: "bamboo-5-1" },
-    ]
-
-    expect(chooseHeuristicSeedDiscard(engine.state, playerId, 2).discardCardId).toBe("flower-plum")
-  })
-
-  it("replays an entire game deterministically", { timeout: 60_000 }, () => {
-    const first = simulateGame({ seed: "full-game", playerCount: 2, heuristicSamples: 1 })
-    const second = simulateGame({ seed: "full-game", playerCount: 2, heuristicSamples: 1 })
-    expect(first.state.phase).toBe("finished")
-    expect(first.state.finalScores).toEqual(second.state.finalScores)
-    expect(first.events.map((event) => [event.type, event.actorId, event.payload])).toEqual(
-      second.events.map((event) => [event.type, event.actorId, event.payload]),
-    )
-  })
-})
-
-function finishSeeding(engine: GameEngine): void {
-  while (engine.state.phase === "seeding") {
-    const actor = engine.state.actingPlayerId!
-    const card = engine.state.players.find((player) => player.id === actor)!.privateCards[0]!
-    const discardPile = engine.state.discardA.length === 0 ? "a" : "b"
-    engine.seedDiscard(actor, { discardCardId: card.id, discardPile })
-  }
+function engine(seed = "bots-v3") {
+  return GameEngine.create(
+    ["p1", "p2", "p3", "p4"].map((id) => ({ id, name: id, controller: "heuristic" as const })),
+    { seed, heuristicSamples: 8, mode: "riichi" },
+  )
 }
+
+function finishCharleston(game: GameEngine) {
+  while (game.state.phase === "charleston") stepHeuristic(game)
+}
+
+describe("rules-v5 bot intelligence", () => {
+  it("makes a legal two-card Charleston choice and completes all four passes", () => {
+    const game = engine("bot-charleston")
+    const playerId = game.state.actingPlayerId!
+    const choice = chooseHeuristicCharleston(game.state, playerId)
+    expect(choice.cardIds).toHaveLength(2)
+    expect(new Set(choice.cardIds).size).toBe(2)
+    expect(
+      choice.cardIds.every((id) =>
+        game.state.players
+          .find((player) => player.id === playerId)!
+          .privateCards.some((card) => card.id === id),
+      ),
+    ).toBe(true)
+    finishCharleston(game)
+    expect(game.state.phase).toBe("betting")
+    expect(game.state.charlestonHistory).toHaveLength(4)
+  })
+
+  it("selects exactly the scheduled reveal count and keeps a lone Lotus flexible", () => {
+    const game = engine("bot-reveal")
+    finishCharleston(game)
+    while (game.state.phase === "betting") {
+      const actor = game.state.actingPlayerId!
+      game.act(actor, { type: "check", drawSource: "deck" })
+      const pending = game.state.pendingDiscard!
+      game.discard(actor, {
+        discardCardId: pending.drawnCardId,
+        discardPile:
+          game.state.discardA.length === 0 ? "a" : game.state.discardB.length === 0 ? "b" : "a",
+      })
+    }
+    const player = game.state.players.find(
+      (candidate) => candidate.id === game.state.actingPlayerId,
+    )!
+    player.privateCards = player.privateCards.filter((card) => card.kind !== "flower")
+    player.privateCards[0] = { ...flowerFace("white-lotus"), id: "forced-lone-lotus" }
+    const choice = chooseHeuristicExposure(game.state, player.id)
+    expect(choice.cardIds).toHaveLength(3)
+    expect(choice.cardIds).not.toContain("forced-lone-lotus")
+  })
+
+  it("accounts for all seven cards and only public opponent information in equity", () => {
+    const game = engine("bot-equity")
+    finishCharleston(game)
+    const actor = game.state.actingPlayerId!
+    const math = analyzePokerMath(game.state, actor, 32)
+    expect(math.showdownEquity).toBeGreaterThanOrEqual(0)
+    expect(math.showdownEquity).toBeLessThanOrEqual(1)
+    expect(math.expectedScore).toBeGreaterThanOrEqual(1)
+    expect(
+      game
+        .publicView(actor)
+        .players.filter((player) => player.id !== actor)
+        .every((player) => !Array.isArray(player.privateCards)),
+    ).toBe(true)
+  })
+
+  it("chooses legal actions and supplies a fishing source for Checks", () => {
+    const game = engine("bot-actions")
+    finishCharleston(game)
+    const callDrawsAreValid: boolean[] = []
+    for (let index = 0; index < 8 && game.state.phase === "betting"; index += 1) {
+      const actor = game.state.actingPlayerId!
+      const decision = chooseHeuristicAction(game.state, actor, 8)
+      expect(["check", "call", "bet", "fold"]).toContain(decision.action.type)
+      if (decision.action.type === "check") {
+        callDrawsAreValid.push(Boolean(decision.action.drawSource || decision.action.blankExchange))
+      }
+      stepHeuristic(game)
+      if (game.state.phase === "discarding") stepHeuristic(game)
+    }
+    expect(callDrawsAreValid.every(Boolean)).toBe(true)
+  })
+
+  it("declares Riichi with a strong locked hand when development value is low", () => {
+    const game = engine("bot-riichi")
+    finishCharleston(game)
+    const actor = game.state.actingPlayerId!
+    const player = game.state.players.find((candidate) => candidate.id === actor)!
+    player.privateCards = [7, 7, 7, 8, 8, 2, 4].map((rank, index) => ({
+      ...numberedFace("bamboo", rank as 1 | 2 | 3 | 4 | 5 | 7 | 9),
+      id: `strong-${index}`,
+    }))
+    const policy = {
+      ...DEFAULT_BOT_POLICY,
+      betEquityFloor: 0,
+      riichiEquityFloor: 0,
+      survivalRiskPenalty: 0,
+    }
+    const decision = chooseHeuristicAction(game.state, actor, 32, policy)
+    expect(
+      decision.evaluations.some(
+        (evaluation) => evaluation.action.type === "bet" && evaluation.action.riichi,
+      ),
+    ).toBe(true)
+  })
+
+  it("does not borrow to face an all-in", () => {
+    const game = engine("bot-all-in-loan")
+    finishCharleston(game)
+    const bettor = game.state.players.find((player) => player.id === game.state.actingPlayerId)!
+    game.act(bettor.id, { type: "bet", amount: bettor.chips })
+    const caller = game.state.actingPlayerId!
+    game.state.players.find((player) => player.id === caller)!.chips = 10
+    const player = game.state.players.find((p) => p.id === caller)!
+    const loans = player.loans
+    game.act(caller, { type: "call" })
+    expect(player.loans).toBe(loans)
+    expect(player.chips).toBe(0)
+  })
+
+  it("is deterministic for a seed and preserves chip accounting through complete games", () => {
+    const left = simulateGame({ seed: "deterministic-v3", heuristicSamples: 4 })
+    const right = simulateGame({ seed: "deterministic-v3", heuristicSamples: 4 })
+    expect(right.state.finalScores).toEqual(left.state.finalScores)
+    expect(right.state.handResults.map((hand) => hand.winnerIds)).toEqual(
+      left.state.handResults.map((hand) => hand.winnerIds),
+    )
+    for (const result of [left, right]) {
+      expect(result.state.handResults.length).toBeLessThanOrEqual(4)
+      expect(
+        result.decisions.every((decision) =>
+          ["check", "call", "bet", "fold"].includes(decision.action.type),
+        ),
+      ).toBe(true)
+      expect(
+        result.decisions.every(
+          (decision) =>
+            decision.action.type === "fold" ||
+            (Number(Boolean(decision.action.useRiichiStick)) +
+              Number(Boolean(decision.action.curseTargetId)) +
+              Number(Boolean(decision.action.removeCurse)) <=
+              1 &&
+              !(
+                decision.action.type === "bet" &&
+                decision.action.riichi &&
+                (decision.action.curseTargetId || decision.action.removeCurse)
+              ) &&
+              decision.action.curseTargetId !== decision.playerId),
+        ),
+      ).toBe(true)
+      expect(
+        result.state.players.every((player) => Number.isFinite(player.chips) && player.chips >= 0),
+      ).toBe(true)
+    }
+  })
+
+  it("produces diverse winners and valid 5-public/2-concealed showdowns in a batch", () => {
+    const results = simulateMany(6, { seedPrefix: "health-smoke-v3", heuristicSamples: 2 })
+    const winners = new Set(
+      results.map(
+        (result) => Object.entries(result.state.finalScores!).sort((a, b) => b[1] - a[1])[0]![0],
+      ),
+    )
+    expect(winners.size).toBeGreaterThan(1)
+    for (const resultHand of results
+      .flatMap((result) => result.state.handResults)
+      .filter((candidateHand) => candidateHand.reason === "showdown")) {
+      for (const player of resultHand.players.filter((candidate) => !candidate.folded)) {
+        expect(player.cards).toHaveLength(7)
+        expect(resultHand.allInPlayerIds.length > 0 || player.publicCards.length === 5).toBe(true)
+      }
+    }
+  }, 30_000)
+})

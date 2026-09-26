@@ -1,434 +1,537 @@
 import { describe, expect, it } from "vitest"
-import { ensureOpeningLiquidity } from "../src/game/automation"
 import { GameEngine } from "../src/game/engine"
-import { blankFace, flowerFace, jokerFace, numberedFace } from "../src/game/cards"
-import { agentRulebook } from "../src/game/rulebook"
+import { createDeck, flowerFace, numberedFace, windFace } from "../src/game/cards"
+import { stepHeuristic } from "../src/game/automation"
+import type { Card, GameConfig } from "../src/game/types"
 
-const players = [
-  { id: "p1", name: "A", controller: "human" as const },
-  { id: "p2", name: "B", controller: "heuristic" as const },
-  { id: "p3", name: "C", controller: "heuristic" as const },
-  { id: "p4", name: "D", controller: "llm" as const },
-]
-
-describe("game lifecycle", () => {
-  it("gives the LLM the complete revised street and ladder rules", () => {
-    const rules = agentRulebook()
-
-    expect(rules).toContain("four betting streets")
-    expect(rules).toContain("Street 1 reveals no community cards")
-    expect(rules).toContain("14 Crosswinds")
-    expect(rules).toContain("16 Imperial Garden")
-    expect(rules).toContain("two different natural Flowers plus a separate natural Eye")
-    expect(rules).toContain("fold gains two blue sticks")
-    expect(rules).toContain("scrap the entire current board")
-    expect(rules).toContain("20-chip Flower bluff bonus")
-    expect(rules).toContain("never the final street")
-    expect(rules).toContain("Bams")
-    expect(rules).toContain("Dots")
-    expect(rules).toContain("Cracks")
-    expect(rules).toContain("Only one player may declare Riichi")
-    expect(rules).toContain("Whether the win reaches showdown or everyone folds")
-  })
-
-  it("deals, charges, reveals, and preserves blue-stick conservation", () => {
-    const engine = GameEngine.create(players, { seed: "setup" })
-    expect(engine.state.handNumber).toBe(1)
-    expect(engine.state.phase).toBe("seeding")
-    expect(engine.state.street).toBe(0)
-    expect(engine.state.community).toHaveLength(0)
-    expect(engine.state.players.every((player) => player.privateCards.length === 4)).toBe(true)
-    expect(engine.state.players.every((player) => player.chips === 505)).toBe(true)
-    expect(engine.state.pot).toBe(20)
-    expect(totalBlue(engine)).toBe(8)
-
-    finishSeeding(engine)
-    expect(engine.state.phase).toBe("betting")
-    expect(engine.state.street).toBe(1)
-    expect(engine.state.players.every((player) => player.privateCards.length === 3)).toBe(true)
-    expect(engine.state.seedDiscardHistory).toHaveLength(4)
-    expect(engine.state.discardA.length + engine.state.discardB.length).toBe(4)
-  })
-
-  it("models draw then discard without revealing the deck early", () => {
-    const engine = GameEngine.create(players, { seed: "draw" })
-    finishSeeding(engine)
-    const actor = engine.state.actingPlayerId!
-    engine.act(actor, { type: "check", drawSource: "deck" })
-    expect(engine.state.phase).toBe("discarding")
-    expect(engine.state.players.find((player) => player.id === actor)?.privateCards).toHaveLength(4)
-    const discard = engine.state.players.find((player) => player.id === actor)!.privateCards[0]!
-    engine.discard(actor, { discardCardId: discard.id, discardPile: "a" })
-    expect(engine.state.players.find((player) => player.id === actor)?.privateCards).toHaveLength(3)
-    expect(engine.state.discardA.at(-1)?.id).toBe(discard.id)
-  })
-
-  it("makes betting shed a blue stick and folding gain two", () => {
-    const engine = GameEngine.create(players, { seed: "sticks" })
-    finishSeeding(engine)
-    const bettor = engine.state.actingPlayerId!
-    engine.act(bettor, { type: "bet", amount: 5 })
-    expect(engine.state.players.find((player) => player.id === bettor)?.blueSticks).toBe(0)
-    const folder = engine.state.actingPlayerId!
-    const before = engine.state.players.find((player) => player.id === folder)!.blueSticks
-    engine.act(folder, { type: "fold" })
-    expect(engine.state.players.find((player) => player.id === folder)?.blueSticks).toBe(before + 2)
-    expect(totalBlue(engine)).toBe(8)
-  })
-
-  it("repays a seasoned Loan while preserving the next opening charge", () => {
-    const engine = GameEngine.create(players, { seed: "loan-repayment" })
-    const player = engine.state.players[0]!
-    engine.takeLoan(player.id)
-    player.loansCharged[0] = 1
-
-    ensureOpeningLiquidity(engine)
-
-    expect(player.loans).toBe(0)
-    expect(player.chips).toBe(505)
-    expect(engine.events.at(-1)).toMatchObject({ type: "loan-repaid", actorId: player.id })
-  })
-
-  it("enforces chip denominations and poker-style minimum raises", () => {
-    const engine = GameEngine.create(players, { seed: "bet-sizing" })
-    finishSeeding(engine)
-    const bettor = engine.state.actingPlayerId!
-
-    expect(engine.legalActions(bettor).find((action) => action.type === "bet")).toMatchObject({
-      minimum: 5,
-    })
-    expect(() => engine.act(bettor, { type: "bet", amount: 1 })).toThrow(/multiple of 5/)
-
-    engine.act(bettor, { type: "bet", amount: 5 })
-    const raiser = engine.state.actingPlayerId!
-
-    expect(engine.legalActions(raiser).find((action) => action.type === "raise")).toMatchObject({
-      minimum: 10,
-    })
-    expect(() => engine.act(raiser, { type: "raise", amount: 7 })).toThrow(/multiple of 5/)
-
-    engine.act(raiser, { type: "raise", amount: 15 })
-    const next = engine.state.actingPlayerId!
-
-    expect(engine.legalActions(next).find((action) => action.type === "raise")).toMatchObject({
-      minimum: 25,
-    })
-  })
-
-  it("allows Riichi with an early-street bet and locks the three-card hand", () => {
-    const engine = GameEngine.create(players, { seed: "riichi" })
-    finishSeeding(engine)
-    const actor = engine.state.actingPlayerId!
-    engine.act(actor, { type: "bet", amount: 5, riichi: true })
-    const player = engine.state.players.find((candidate) => candidate.id === actor)!
-    expect(player.riichi).toBe(true)
-    expect(player.privateCards).toHaveLength(3)
-  })
-
-  it("allows only one Riichi declaration in a hand", () => {
-    const engine = GameEngine.create(players, { seed: "single-riichi" })
-    finishSeeding(engine)
-    const declarer = engine.state.actingPlayerId!
-    engine.act(declarer, { type: "bet", amount: 5, riichi: true })
-    const challenger = engine.state.actingPlayerId!
-
-    expect(engine.legalActions(challenger).find((action) => action.type === "raise")).toMatchObject(
-      {
-        canRiichi: false,
-      },
+function engine(config: Partial<GameConfig> = {}, count = 4) {
+  return GameEngine.create(
+    Array.from({ length: count }, (_, i) => ({
+      id: `p${i + 1}`,
+      name: `Player ${i + 1}`,
+      controller: "heuristic" as const,
+    })),
+    { seed: "moker-v5", heuristicSamples: 2, ...config },
+  )
+}
+function actor(game: GameEngine) {
+  return game.state.players.find((p) => p.id === game.state.actingPlayerId)!
+}
+function finishPass(game: GameEngine) {
+  while (game.state.phase === "charleston") {
+    const p = actor(game)
+    game.passCharleston(
+      p.id,
+      p.privateCards.slice(0, 2).map((c) => c.id),
     )
-    expect(() => engine.act(challenger, { type: "raise", amount: 10, riichi: true })).toThrow(
-      /Riichi is not available/,
+  }
+}
+function checkStreet(game: GameEngine) {
+  while (game.state.phase === "betting") {
+    game.act(actor(game).id, { type: "check" })
+    finishFishing(game)
+  }
+}
+function reveal(game: GameEngine) {
+  while (game.state.phase === "exposing") {
+    const p = actor(game)
+    game.exposeCards(
+      p.id,
+      p.privateCards.slice(0, game.state.street === 1 ? 3 : 1).map((c) => c.id),
     )
+  }
+}
+function discardDrawn(game: GameEngine) {
+  const pending = game.state.pendingDiscard!
+  game.discard(pending.playerId, {
+    discardCardId: pending.drawnCardId,
+    discardPile: game.state.discardB.length ? "a" : "b",
   })
+}
+function finishFishing(game: GameEngine) {
+  while (game.state.phase === "discarding") discardDrawn(game)
+}
+function callStreet(game: GameEngine) {
+  while (game.state.phase === "betting") {
+    game.act(actor(game).id, { type: "call" })
+    finishFishing(game)
+  }
+}
+function foldToWinner(game: GameEngine) {
+  while (game.state.phase === "betting") game.act(actor(game).id, { type: "fold" })
+}
+function playToEnd(game: GameEngine) {
+  let steps = 0
+  while (game.state.phase !== "finished") {
+    if (++steps > 2000) throw Error("stalled")
+    stepHeuristic(game)
+  }
+}
+function highHand(prefix: string, wind: "east" | "north"): Card[] {
+  return [
+    { ...windFace(wind), id: `${prefix}-wind` },
+    ...([1, 3, 5, 7, 9, 2] as const).map((rank, i) => ({
+      ...numberedFace(i % 2 ? "dots" : "bamboo", rank),
+      id: `${prefix}-${i}`,
+    })),
+  ]
+}
 
-  it("settles a Riichi win at showdown and records every recipient", () => {
-    const engine = GameEngine.create(players, { seed: "riichi-showdown" })
-    finishSeeding(engine)
-    const winner = engine.state.players[0]!
-    winner.privateCards = [
-      { id: "flower-plum", ...flowerFace("plum") },
-      { id: "flower-orchid", ...flowerFace("orchid") },
-      { id: "flower-bamboo", ...flowerFace("bamboo") },
-    ]
-    engine.state.deck = engine.state.deck.filter(
-      (card) => !winner.privateCards.some((privateCard) => privateCard.id === card.id),
+describe("Moker v5 setup and streets", () => {
+  it.each([2, 3, 4, 5, 6])(
+    "sets up a %i-player Basic game with 102 cards, two seeded lanes and dealer first",
+    (count) => {
+      const g = engine({}, count)
+      expect(g.state.phase).toBe("betting")
+      expect(g.state.pot).toBe(count * 5)
+      expect(
+        g.state.players.every(
+          (p) => p.chips === 195 && p.privateCards.length === 7 && p.riichiSticks === 0,
+        ),
+      ).toBe(true)
+      expect(
+        g.state.deck.length + count * 7 + g.state.discardA.length + g.state.discardB.length,
+      ).toBe(102)
+      expect(g.state.discardA).toHaveLength(1)
+      expect(g.state.discardB).toHaveLength(1)
+      expect(actor(g).id).toBe(g.state.players[g.state.dealerIndex]!.id)
+    },
+  )
+  it("rejects unsupported player counts and obsolete saves", () => {
+    expect(() => engine({}, 1)).toThrow(/./)
+    expect(() => engine({}, 7)).toThrow(/./)
+    const g = engine()
+    expect(() => GameEngine.restore({ ...g.state, rulesVersion: 5 } as never)).toThrow(/obsolete/)
+  })
+  it("passes two cards simultaneously only in Riichi", () => {
+    const g = engine({ mode: "riichi" })
+    expect(g.state.phase).toBe("charleston")
+    expect(g.state.players.every((p) => p.riichiSticks === 2)).toBe(true)
+    const before = structuredClone(g.state.players)
+    const p = actor(g)
+    const ids = p.privateCards.slice(0, 2).map((c) => c.id)
+    g.passCharleston(p.id, ids)
+    expect(g.state.players.map((candidate) => candidate.privateCards)).toEqual(
+      before.map((candidate) => candidate.privateCards),
     )
-    winner.riichi = true
-    winner.blueSticks = 3
-    for (const opponent of engine.state.players.filter((player) => player.id !== winner.id)) {
-      opponent.blueSticks = 1
-    }
-    engine.state.centerBlueSticks = 2
-    engine.state.street = 4
-    engine.state.phase = "betting"
-    engine.state.currentWager = 0
-    engine.state.pendingPlayerIds = engine.state.players.map((player) => player.id)
-    engine.state.actingPlayerId = winner.id
-
-    finishCheckingRound(engine)
-
-    const result = engine.state.handResults.at(-1)!
-    expect(result.winnerIds).toContain(winner.id)
-    expect(result.riichiSettlement).toEqual({
-      winnerId: winner.id,
-      returnedToCenter: 3,
-      recipientIds: ["p2", "p3", "p4"],
-    })
-    expect(winner.blueSticks).toBe(0)
-    expect(engine.state.players.slice(1).every((player) => player.blueSticks === 2)).toBe(true)
-    expect(engine.state.centerBlueSticks).toBe(2)
-    expect(totalBlue(engine)).toBe(8)
-  })
-
-  it("returns remaining Riichi sticks after an uncontested win", () => {
-    const engine = GameEngine.create(players.slice(0, 2), { seed: "riichi-foldout" })
-    finishSeeding(engine)
-    const winnerId = engine.state.actingPlayerId!
-    const winner = engine.state.players.find((player) => player.id === winnerId)!
-    const opponent = engine.state.players.find((player) => player.id !== winnerId)!
-    winner.blueSticks = 3
-    opponent.blueSticks = 0
-    engine.state.centerBlueSticks = 1
-
-    engine.act(winnerId, { type: "bet", amount: 5, riichi: true })
-    engine.act(opponent.id, { type: "fold" })
-
-    expect(engine.state.handResults.at(-1)?.riichiSettlement).toEqual({
-      winnerId,
-      returnedToCenter: 2,
-      recipientIds: [],
-    })
-    expect(winner.blueSticks).toBe(0)
-    expect(engine.state.centerBlueSticks).toBe(2)
-    expect(totalBlue(engine)).toBe(4)
-  })
-
-  it("reveals 3-1-1 community cards and forbids Riichi on the final street", () => {
-    const engine = GameEngine.create(players, { seed: "streets" })
-    finishSeeding(engine)
-
-    finishCheckingRound(engine)
-    expect(engine.state.street).toBe(2)
-    expect(engine.state.community).toHaveLength(3)
-
-    finishCheckingRound(engine)
-    expect(engine.state.street).toBe(3)
-    expect(engine.state.community).toHaveLength(4)
-
-    finishCheckingRound(engine)
-    expect(engine.state.street).toBe(4)
-    expect(engine.state.community).toHaveLength(5)
-
-    const actor = engine.state.actingPlayerId!
-    expect(engine.legalActions(actor).find((action) => action.type === "bet")).toMatchObject({
-      canRiichi: false,
-    })
-    expect(() => engine.act(actor, { type: "bet", amount: 5, riichi: true })).toThrow(
-      /Riichi is not available/,
-    )
-  })
-
-  it("enforces Loan cap, interest, and repayment", () => {
-    const engine = GameEngine.create(players, { seed: "loans" })
-    engine.takeLoan("p1")
-    expect(() => engine.repayLoan("p1")).toThrow(/interest/)
-    engine.takeLoan("p1")
-    engine.takeLoan("p1")
-    expect(() => engine.takeLoan("p1")).toThrow(/at most 3/)
-    engine.state.players.find((player) => player.id === "p1")!.loansCharged[0] = 1
-    const chips = engine.state.players.find((player) => player.id === "p1")!.chips
-    engine.repayLoan("p1")
-    expect(engine.state.players.find((player) => player.id === "p1")!.chips).toBe(chips - 200)
-  })
-
-  it("eliminates a fully loaned player who cannot pay the next opening charge", () => {
-    const engine = GameEngine.create(players, { seed: "mandatory-debt" })
-    engine.state.phase = "between-hands"
-    const player = engine.state.players[0]!
-    player.chips = 0
-    player.loans = 3
-    player.loansCharged = [1, 1, 1]
-    player.blueSticks = 3
-
-    engine.startNextHand()
-
-    expect(player.eliminated).toBe(true)
-    expect(player.eliminatedAtHand).toBe(2)
-    expect(player.blueSticks).toBe(0)
-    expect(engine.state.centerBlueSticks).toBe(7)
-    expect(engine.state.players.filter((candidate) => !candidate.eliminated)).toHaveLength(3)
-    expect(engine.state.phase).toBe("seeding")
-  })
-
-  it("exchanges a private Blank for a buried discard without changing lane order", () => {
-    const engine = GameEngine.create(players, { seed: "blank" })
-    finishSeeding(engine)
-    const actor = engine.state.actingPlayerId!
-    const player = engine.state.players.find((candidate) => candidate.id === actor)!
-    player.privateCards[0] = { id: "forced-blank", ...blankFace() }
-    engine.state.discardA = [
-      { id: "lane-1", ...numberedFace("bamboo", 3) },
-      { id: "buried", ...numberedFace("dots", 7) },
-      { id: "lane-top", ...numberedFace("characters", 9) },
-    ]
-
-    engine.act(actor, {
-      type: "check",
-      drawSource: "deck",
-      blankExchange: { blankCardId: "forced-blank", pile: "a", cardIndex: 1 },
-    })
-
-    expect(player.privateCards).toHaveLength(3)
-    expect(player.privateCards.some((card) => card.id === "buried")).toBe(true)
-    expect(engine.state.discardA.map((card) => card.id)).toEqual([
-      "lane-1",
-      "forced-blank",
-      "lane-top",
-    ])
-    expect(engine.state.phase).not.toBe("discarding")
-    expect(engine.state.drawDiscardHistory.at(-1)).toMatchObject({
-      playerId: actor,
-      source: "blank-exchange",
-      discardIndex: 1,
-    })
-  })
-
-  it("splits an uncontested hand and advances the dealer", () => {
-    const engine = GameEngine.create(players, { seed: "foldout" })
-    finishSeeding(engine)
-    const originalDealer = engine.state.dealerIndex
-    while (engine.state.phase === "betting")
-      engine.act(engine.state.actingPlayerId!, { type: "fold" })
-    expect(engine.state.phase).toBe("between-hands")
-    expect(engine.state.dealerIndex).toBe((originalDealer + 1) % players.length)
-    expect(engine.state.handWinners).toHaveLength(1)
-    expect(engine.state.handResults).toHaveLength(1)
-    expect(engine.state.handResults[0]).toMatchObject({ reason: "uncontested", pot: 20 })
-    expect(engine.state.handResults[0]?.players.every((player) => player.cards.length === 3)).toBe(
-      true,
-    )
-    expect(
-      engine.state.handResults[0]?.players.reduce((sum, player) => sum + player.payout, 0),
-    ).toBe(20)
-    expect(engine.state.players.every((player) => player.chips % 5 === 0)).toBe(true)
-  })
-
-  it("pays the single-Flower fold bonus from every opponent", () => {
-    const engine = GameEngine.create(players, { seed: "flower-bluff" })
-    finishSeeding(engine)
-    const winnerId = engine.state.actingPlayerId!
-    const winner = engine.state.players.find((player) => player.id === winnerId)!
-    winner.privateCards[0] = { id: "forced-flower", ...flowerFace("plum") }
-    const before = Object.fromEntries(
-      engine.state.players.map((player) => [player.id, player.chips]),
-    )
-
-    while (engine.state.phase === "betting") {
-      const actor = engine.state.actingPlayerId!
-      if (actor === winnerId) {
-        engine.act(actor, { type: "bet", amount: 5 })
-      } else {
-        engine.act(actor, { type: "fold" })
-      }
-    }
-
-    const result = engine.state.handResults.at(-1)!
-    expect(result.flowerBonus).toEqual({ winnerId, perOpponent: 20, total: 60 })
-    expect(winner.chips).toBe(before[winnerId]! - 5 + 25 + 60)
-    for (const opponent of engine.state.players.filter((player) => player.id !== winnerId)) {
-      expect(opponent.chips).toBe(before[opponent.id]! - 20)
+    expect("charlestonSelections" in g.publicView()).toBe(false)
+    finishPass(g)
+    expect(g.state.charlestonHistory).toHaveLength(4)
+    for (const transfer of g.state.charlestonHistory) {
+      const index = g.state.players.findIndex((candidate) => candidate.id === transfer.fromPlayerId)
+      expect(transfer.toPlayerId).toBe(g.state.players[(index + 1) % 4]!.id)
     }
   })
-
-  it("scraps a Flower board and resumes from a fresh flop without resetting the pot", () => {
-    const engine = GameEngine.create(players, { seed: "flower-board" })
-    finishSeeding(engine)
-    for (const player of engine.state.players) player.riichi = true
-    const flower = engine.state.deck.find((card) => card.kind === "flower")!
-    const normals = engine.state.deck.filter((card) => card.kind !== "flower").slice(0, 5)
-    const chosen = new Set([flower.id, ...normals.map((card) => card.id)])
-    const remaining = engine.state.deck.filter((card) => !chosen.has(card.id))
-    const replacement = normals.slice(0, 3)
-    const failedFlop = [normals[3]!, flower, normals[4]!]
-    engine.state.deck = [...remaining, ...replacement.toReversed(), ...failedFlop.toReversed()]
-    const potBefore = engine.state.pot
-
-    finishCheckingRound(engine)
-
-    expect(engine.state.phase).toBe("betting")
-    expect(engine.state.street).toBe(2)
-    expect(engine.state.community.map((card) => card.id)).toEqual(
-      replacement.map((card) => card.id),
-    )
-    expect(engine.state.community.every((card) => card.kind !== "flower")).toBe(true)
-    expect(engine.state.scrappedCommunity.map((card) => card.id)).toEqual(
-      failedFlop.map((card) => card.id),
-    )
-    expect(engine.state.boardResetCount).toBe(1)
-    expect(engine.state.pot).toBe(potBefore)
+  it("reveals 3/1/1 simultaneously before the next betting street", () => {
+    const g = engine()
+    for (const count of [3, 4, 5]) {
+      checkStreet(g)
+      expect(g.state.phase).toBe("exposing")
+      reveal(g)
+      expect(g.state.players.every((p) => p.publicCards.length === count)).toBe(true)
+    }
+    checkStreet(g)
+    expect(g.state.handResults[0]?.reason).toBe("showdown")
+    expect(g.state.handResults[0]?.players.every((p) => p.cards.length === 7)).toBe(true)
   })
-
-  it("disqualifies exactly one private Flower at showdown", () => {
-    const engine = GameEngine.create(players, { seed: "flower-showdown" })
-    finishSeeding(engine)
-    engine.state.street = 4
-    engine.state.phase = "betting"
-    engine.state.community = [
-      { id: "board-nine", ...numberedFace("characters", 9) },
-      { id: "board-joker", ...jokerFace("red") },
-      { id: "board-b1", ...numberedFace("bamboo", 1) },
-      { id: "board-d4", ...numberedFace("dots", 4) },
-      { id: "board-d7", ...numberedFace("dots", 7) },
-    ]
-    const disqualified = engine.state.players[0]!
-    disqualified.privateCards = [
-      { id: "hole-flower", ...flowerFace("plum") },
-      { id: "hole-nine-1", ...numberedFace("characters", 9) },
-      { id: "hole-nine-2", ...numberedFace("characters", 9) },
-    ]
-    for (const player of engine.state.players) player.riichi = true
-    engine.state.pendingPlayerIds = engine.state.players.map((player) => player.id)
-    engine.state.actingPlayerId = engine.state.pendingPlayerIds[0]!
-
-    finishCheckingRound(engine)
-
-    expect(disqualified.score?.total).toBe(13)
-    expect(engine.state.handWinners).not.toContain(disqualified.id)
-    expect(engine.state.handResults.at(-1)?.reason).toBe("showdown")
-    expect(
-      engine.state.handResults.at(-1)?.players.find((player) => player.playerId === disqualified.id)
-        ?.flowerDisqualified,
-    ).toBe(true)
+  it("Check and Call fish for free, defaulting to the deck", () => {
+    const g = engine()
+    let p = actor(g)
+    expect(g.legalActions(p.id).map((a) => a.type)).toEqual(["fold", "check", "bet"])
+    const deck = g.state.deck.length
+    g.act(p.id, { type: "check" })
+    expect(g.state.deck).toHaveLength(deck - 1)
+    finishFishing(g)
+    p = actor(g)
+    g.act(p.id, { type: "check", drawSource: "deck" })
+    expect(p.privateCards).toHaveLength(8)
+    discardDrawn(g)
+    expect(p.privateCards).toHaveLength(7)
+    p = actor(g)
+    g.act(p.id, { type: "bet", amount: 10 })
+    const caller = actor(g)
+    const before = g.state.deck.length
+    g.act(caller.id, { type: "call" })
+    expect(g.state.deck).toHaveLength(before - 1)
+    expect(caller.roundCommitted).toBe(10)
+  })
+  it("requires bets in five-chip increments", () => {
+    const g = engine()
+    const p = actor(g)
+    for (const amount of [1, 3, 6, 18])
+      expect(() => g.act(p.id, { type: "bet", amount })).toThrow(/multiple of 5/)
+    expect(g.legalActions(p.id).find((a) => a.type === "bet")?.minimum).toBe(5)
+    g.act(p.id, { type: "bet", amount: 5 })
+    expect(p.roundCommitted).toBe(5)
+  })
+  it("reopens betting after a raise and charges only the difference", () => {
+    const g = engine()
+    const first = actor(g)
+    g.act(first.id, { type: "check" })
+    finishFishing(g)
+    g.act(actor(g).id, { type: "bet", amount: 10 })
+    g.act(actor(g).id, { type: "call" })
+    finishFishing(g)
+    g.act(actor(g).id, { type: "call" })
+    finishFishing(g)
+    expect(actor(g).id).toBe(first.id)
+    g.act(first.id, { type: "bet", amount: 15 })
+    callStreet(g)
+    expect(g.state.players.every((p) => p.chips === 180)).toBe(true)
+    reveal(g)
+    expect(actor(g).id).toBe(first.id)
+    checkStreet(g)
+    reveal(g)
+    expect(actor(g).id).toBe(g.state.players[g.state.dealerIndex]!.id)
+  })
+  it("does not allow public cards to be discarded or selected twice", () => {
+    const g = engine()
+    checkStreet(g)
+    const p = actor(g)
+    expect(() =>
+      g.exposeCards(p.id, [p.privateCards[0]!.id, p.privateCards[0]!.id, p.privateCards[1]!.id]),
+    ).toThrow(/./)
+    reveal(g)
+    const fisher = actor(g)
+    g.act(fisher.id, { type: "check", drawSource: "deck" })
+    expect(() =>
+      g.discard(fisher.id, { discardCardId: fisher.publicCards[0]!.id, discardPile: "a" }),
+    ).toThrow(/concealed/)
   })
 })
 
-function totalBlue(engine: GameEngine) {
-  return (
-    engine.state.centerBlueSticks +
-    engine.state.players.reduce((sum, player) => sum + player.blueSticks, 0)
-  )
-}
+describe("Riichi fishing and locks", () => {
+  it("spends one stick for a second check fish, then completes both actions separately", () => {
+    const g = engine({ mode: "riichi" })
+    finishPass(g)
+    const p = actor(g)
+    g.act(p.id, {
+      type: "check",
+      drawSource: "discard-a",
+      useRiichiStick: true,
+      riichiDrawSource: "discard-a",
+    })
+    expect(p.riichiSticks).toBe(1)
+    expect(g.state.discardA).toHaveLength(0)
+    discardDrawn(g)
+    expect(g.state.phase).toBe("discarding")
+    discardDrawn(g)
+    expect(p.privateCards).toHaveLength(7)
+    expect(g.state.drawDiscardHistory).toHaveLength(2)
+  })
+  it("uses a Blank at the exact buried position instead of drawing and discarding", () => {
+    const g = engine({ mode: "riichi" })
+    finishPass(g)
+    const p = actor(g)
+    const blank = createDeck().find((c) => c.kind === "blank")!
+    p.privateCards[0] = blank
+    g.state.discardA.push(g.state.deck.pop()!)
+    const target = g.state.discardA[0]!
+    const deck = g.state.deck.length
+    g.act(p.id, {
+      type: "check",
+      blankExchange: { blankCardId: blank.id, pile: "a", cardIndex: 0 },
+    })
+    expect(g.state.discardA[0]).toEqual(blank)
+    expect(p.privateCards).toContainEqual(target)
+    expect(g.state.deck).toHaveLength(deck)
+    expect(g.state.phase).toBe("betting")
+  })
+  it("Call + stick fishes twice; a bet may declare Riichi but cannot also fish", () => {
+    const g = engine({ mode: "riichi" })
+    finishPass(g)
+    g.act(actor(g).id, { type: "bet", amount: 10 })
+    const p = actor(g)
+    g.act(p.id, { type: "call", useRiichiStick: true, drawSource: "deck" })
+    expect(g.state.phase).toBe("discarding")
+    discardDrawn(g)
+    expect(g.state.phase).toBe("discarding")
+    discardDrawn(g)
+    expect(p.riichiSticks).toBe(1)
+    const bettor = actor(g)
+    expect(() =>
+      g.act(bettor.id, {
+        type: "bet",
+        amount: 20,
+        riichi: true,
+        useRiichiStick: true,
+        drawSource: "deck",
+      }),
+    ).toThrow(/./)
+    g.act(bettor.id, { type: "bet", amount: 20, riichi: true })
+    expect(bettor.riichi).toBe(true)
+    expect(g.legalActions(actor(g).id).find((a) => a.type === "bet")?.canRiichi).toBe(false)
+    callStreet(g)
+    reveal(g)
+    expect(actor(g).id).toBe(bettor.id)
+    expect(g.legalActions(bettor.id).find((a) => a.type === "check")?.canUseRiichiStick).toBe(false)
+    g.act(bettor.id, { type: "fold" })
+    expect(bettor.riichi).toBe(false)
+    expect(g.legalActions(actor(g).id).find((a) => a.type === "bet")?.canRiichi).toBe(true)
+  })
+  it("rejects curses and voluntary loans without changing the economy", () => {
+    const g = engine({ mode: "riichi" })
+    finishPass(g)
+    const snapshot = structuredClone(g.state)
+    expect(() => g.act(actor(g).id, { type: "bet", amount: 10, curseTargetId: "p1" })).toThrow(/./)
+    expect(() => g.takeLoan(actor(g).id)).toThrow(/./)
+    expect(() => g.repayLoan(actor(g).id)).toThrow(/./)
+    expect(g.state).toEqual(snapshot)
+  })
+})
 
-function finishCheckingRound(engine: GameEngine): void {
-  const street = engine.state.street
-
-  while (engine.state.phase === "betting" && engine.state.street === street) {
-    const actor = engine.state.actingPlayerId!
-    engine.act(actor, { type: "check", drawSource: "deck" })
-    if (engine.state.phase === "discarding") {
-      const discard = engine.state.players.find((player) => player.id === actor)!.privateCards[0]!
-      const discardPile = engine.state.discardA.length === 0 ? "a" : "b"
-      engine.discard(actor, { discardCardId: discard.id, discardPile })
+describe("All-in, Lotuses and exact ties", () => {
+  it("caps the street, refunds overpayments, lowers a short call again, and skips to showdown", () => {
+    const g = engine()
+    const first = actor(g)
+    g.act(first.id, { type: "bet", amount: 100 })
+    const second = actor(g)
+    second.chips = 30
+    g.act(second.id, { type: "call" })
+    expect(g.state.currentWager).toBe(30)
+    expect(first.roundCommitted).toBe(30)
+    expect(first.chips).toBe(165)
+    const third = actor(g)
+    third.chips = 12
+    g.act(third.id, { type: "call" })
+    expect(g.state.currentWager).toBe(12)
+    expect(second.chips).toBe(18)
+    expect(first.roundCommitted).toBe(12)
+    expect(g.legalActions(actor(g).id).map((a) => a.type)).toEqual(["fold", "call"])
+    g.act(actor(g).id, { type: "call" })
+    finishFishing(g)
+    expect(g.state.phase).toBe("between-hands")
+    expect(g.state.handResults[0]?.pots).toHaveLength(1)
+    expect(g.state.handResults[0]?.pot).toBe(68)
+  })
+  it("ante all-in finishes setup then immediately compares seven-card hands", () => {
+    const g = engine({ mode: "riichi", startingChips: 5 })
+    expect(g.state.handResults).toHaveLength(1)
+    expect(g.state.charlestonHistory).toHaveLength(0)
+    expect(g.state.discardA).toHaveLength(1)
+    expect(g.state.handResults[0]?.players.every((p) => p.cards.length === 7)).toBe(true)
+  })
+  it("splits ties equally without unused-card kickers or dealer remainder bonuses", () => {
+    const g = engine({}, 3)
+    g.state.players.forEach((p, i) => {
+      p.privateCards = highHand(`p${i}`, i % 2 ? "east" : "north")
+    })
+    for (let i = 0; i < 4; i++) {
+      checkStreet(g)
+      if (g.state.phase === "exposing") reveal(g)
     }
-  }
-}
+    expect(g.state.handResults[0]?.winnerIds).toHaveLength(3)
+    expect(g.state.players.map((p) => p.chips)).toEqual([200, 200, 200])
+  })
+  it("two Lotuses beat Four Winds; all single-Lotus players split equally", () => {
+    const g = engine({ mode: "riichi" }, 2)
+    finishPass(g)
+    g.state.players[0]!.privateCards = [
+      { ...flowerFace("white-lotus"), id: "lw" },
+      { ...flowerFace("black-lotus"), id: "lb" },
+      ...highHand("a", "east").slice(0, 5),
+    ]
+    g.state.players[1]!.privateCards = [
+      ...(["east", "north", "south", "west"] as const).map((w) => ({ ...windFace(w), id: w })),
+      ...highHand("b", "north").slice(1, 4),
+    ]
+    for (let i = 0; i < 4; i++) {
+      checkStreet(g)
+      if (g.state.phase === "exposing") reveal(g)
+    }
+    expect(g.state.handWinners).toEqual(["p1"])
+    const tied = engine({ mode: "riichi" }, 2)
+    finishPass(tied)
+    tied.state.players.forEach((p, i) => {
+      p.privateCards = [
+        { ...flowerFace(i ? "black-lotus" : "white-lotus"), id: `lotus${i}` },
+        ...highHand(`t${i}`, "east").slice(1),
+      ]
+    })
+    for (let i = 0; i < 4; i++) {
+      checkStreet(tied)
+      if (tied.state.phase === "exposing") reveal(tied)
+    }
+    expect(tied.state.handWinners).toHaveLength(2)
+  })
+  it("pays a public Lotus bonus of three antes, limited to remaining chips without loans", () => {
+    const g = engine({ mode: "riichi" })
+    finishPass(g)
+    const winner = g.state.players[(g.state.dealerIndex + 3) % 4]!
+    winner.publicCards = [{ ...flowerFace("white-lotus"), id: "lotus" }]
+    winner.privateCards = highHand("lotus-winner", "east").slice(0, 6)
+    g.state.players
+      .filter((p) => p !== winner)
+      .forEach((p) => {
+        p.chips = 7
+      })
+    foldToWinner(g)
+    expect(g.state.handResults[0]?.lotusBluff).toEqual({
+      winnerId: winner.id,
+      perOpponent: 15,
+      total: 21,
+    })
+    expect(g.state.players.every((p) => p.loans === 0)).toBe(true)
+  })
+  it("awards two Riichi supply sticks only for a sole pot win", () => {
+    const g = engine({ mode: "riichi" })
+    finishPass(g)
+    const p = actor(g)
+    g.act(p.id, { type: "bet", amount: 10, riichi: true })
+    foldToWinner(g)
+    expect(p.riichiSticks).toBe(4)
+    const t = engine({ mode: "riichi" }, 2)
+    finishPass(t)
+    t.state.players.forEach((candidate, i) => (candidate.privateCards = highHand(`t${i}`, "east")))
+    const r = actor(t)
+    t.act(r.id, { type: "bet", amount: 10, riichi: true })
+    t.act(actor(t).id, { type: "call" })
+    finishFishing(t)
+    reveal(t)
+    for (let i = 0; i < 3; i++) {
+      checkStreet(t)
+      if (t.state.phase === "exposing") reveal(t)
+    }
+    expect(r.riichiSticks).toBe(2)
+    expect(t.state.handResults[0]?.riichiSettlement.won).toBe(false)
+  })
+})
 
-function finishSeeding(engine: GameEngine): void {
-  while (engine.state.phase === "seeding") {
-    const actor = engine.state.actingPlayerId!
-    const card = engine.state.players.find((player) => player.id === actor)!.privateCards[0]!
-    const discardPile = engine.state.discardA.length === 0 ? "a" : "b"
-    engine.seedDiscard(actor, { discardCardId: card.id, discardPile })
-  }
-}
+describe("Game length, elimination and tournaments", () => {
+  it("starts with two sticks and adds two only when a new tournament game starts", () => {
+    const g = engine({ mode: "riichi", tournamentGames: 3 }, 2)
+    expect(g.state.players.map((p) => p.riichiSticks)).toEqual([2, 2])
+    // Represent one spent stick and a Riichi win before the next game.
+    g.state.players[0]!.riichiSticks = 1
+    g.state.players[1]!.riichiSticks = 4
+    for (let game = 1; game <= 2; game++) {
+      for (let hand = 0; hand < 2; hand++) {
+        finishPass(g)
+        foldToWinner(g)
+        g.startNextHand()
+        const additions = game - 1 + (hand === 1 ? 1 : 0)
+        expect(g.state.players.map((p) => p.riichiSticks)).toEqual([
+          1 + additions * 2,
+          4 + additions * 2,
+        ])
+      }
+      expect(g.state.gameNumber).toBe(game + 1)
+      expect(g.publicView(g.state.players[0]!.id).players[0]!.riichiSticks).toBe(1 + game * 2)
+    }
+  })
+  it.each([2, 3, 4])("plays %i complete dealer orbits without resetting chips", (orbits) => {
+    const g = engine({ orbits }, 2)
+    const initialDealer = g.state.dealerIndex
+    for (let round = 1; round < orbits * 2; round += 1) {
+      expect(g.state.handNumber).toBe(round)
+      expect(g.state.orbit).toBe(Math.ceil(round / 2))
+      foldToWinner(g)
+      const balances = g.state.players.map((p) => p.chips)
+      expect(g.state.phase).toBe("between-hands")
+      g.startNextHand()
+      expect(g.state.players.map((p) => p.chips)).toEqual(balances.map((chips) => chips - 5))
+    }
+    expect(g.state.handNumber).toBe(orbits * 2)
+    expect(g.state.orbit).toBe(orbits)
+    foldToWinner(g)
+    expect(g.state.phase).toBe("finished")
+    expect(g.state.dealerIndex).toBe(initialDealer)
+    expect(g.state.gameScores).toHaveLength(1)
+  })
+  it("defaults older saved configurations to one orbit", () => {
+    const g = engine()
+    const saved = structuredClone(g.state)
+    Reflect.deleteProperty(saved.config, "orbits")
+    expect(GameEngine.restore(saved).state.config.orbits).toBe(1)
+  })
+  it("eliminates only at the next ante and skips a departed dealer seat", () => {
+    const g = engine()
+    foldToWinner(g)
+    const next = g.state.players[g.state.dealerIndex]!
+    next.chips = 3
+    g.startNextHand()
+    expect(next.eliminated).toBe(true)
+    expect(next.chips).toBe(3)
+    expect(next.privateCards).toHaveLength(0)
+    expect(actor(g).id).not.toBe(next.id)
+    playToEnd(g)
+    expect(g.state.gameScores).toHaveLength(1)
+    expect(g.state.handNumber).toBeLessThanOrEqual(4)
+  })
+  it("issues a 200 loan only for an unaffordable ante and scores a 250 penalty", () => {
+    const g = engine({ mode: "riichi" })
+    finishPass(g)
+    foldToWinner(g)
+    const borrower = g.state.players[0]!
+    borrower.chips = 3
+    g.startNextHand()
+    expect(borrower.loans).toBe(1)
+    expect(borrower.chips).toBe(198)
+    playToEnd(g)
+    for (const p of g.state.players)
+      expect(g.state.finalScores?.[p.id]).toBe(p.chips - 250 * p.loans)
+  })
+  it.each([2, 3, 4] as const)(
+    "resets economy and sums adjusted scores across %i tournament games",
+    (count) => {
+      const g = engine({ mode: "riichi", tournamentGames: count }, 2)
+      playToEnd(g)
+      expect(g.state.gameScores).toHaveLength(count)
+      expect(g.state.gameNumber).toBe(count)
+      expect(g.state.orbitValue).toBe(count * 5)
+      for (const p of g.state.players)
+        expect(g.state.finalScores?.[p.id]).toBe(
+          g.state.gameScores.reduce((sum, s) => sum + s[p.id]!, 0),
+        )
+      const starts = g.events.filter((e) => e.type === "hand-started")
+      expect(new Set(starts.map((e) => (e.payload as { ante: number }).ante)).size).toBe(count)
+    },
+    30000,
+  )
+})
+
+describe("Public information and rejected actions", () => {
+  it("keeps folded and uncontested opponent hands private, even in the result history", () => {
+    const g = engine()
+    foldToWinner(g)
+    const winner = g.state.handWinners[0]!
+    const viewer = g.state.players.find((p) => p.id !== winner)!.id
+    const view = g.publicView(viewer)
+    expect(Array.isArray(view.players.find((p) => p.id === winner)!.privateCards)).toBe(false)
+    expect(view.handResults[0]!.players.find((p) => p.playerId === winner)!.cards).toHaveLength(0)
+    expect(
+      view.handResults[0]!.players.find((p) => p.playerId === winner)!.openingCards,
+    ).toHaveLength(0)
+    expect(
+      g.publicView(undefined, true).handResults[0]!.players.find((p) => p.playerId === winner)!
+        .cards,
+    ).toHaveLength(7)
+  })
+  it("rejects an invalid fishing source atomically", () => {
+    const g = engine()
+    g.state.discardA = []
+    const snapshot = structuredClone(g.state)
+    const events = g.events.length
+    expect(() => g.act(actor(g).id, { type: "check", drawSource: "discard-a" })).toThrow(/empty/)
+    expect(g.state).toEqual(snapshot)
+    expect(g.events).toHaveLength(events)
+  })
+  it("leaves previous streets in the pot when the next street is capped", () => {
+    const g = engine()
+    g.act(actor(g).id, { type: "bet", amount: 10 })
+    callStreet(g)
+    reveal(g)
+    const p = actor(g)
+    p.chips = 3
+    g.act(p.id, { type: "bet", amount: 3 })
+    callStreet(g)
+    expect(g.state.handResults[0]!.pot).toBe(20 + 40 + 12)
+  })
+  it("allows an all-in with fractional chips received from an exact pot split", () => {
+    const g = engine()
+    const p = actor(g)
+    p.chips = 10 / 3
+    g.act(p.id, { type: "bet", amount: p.chips })
+    expect(g.state.currentWager).toBe(10 / 3)
+  })
+})

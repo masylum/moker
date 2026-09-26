@@ -1,0 +1,1410 @@
+{
+  "rulesVersion": 6,
+  "id": "game-tournament-audit:riichi:4",
+  "config": {
+    "orbits": 4,
+    "playerCount": 4,
+    "seed": "tournament-audit:riichi:4",
+    "mode": "riichi",
+    "tournamentGames": 1,
+    "startingChips": 200,
+    "heuristicSamples": 24
+  },
+  "rngState": 1333,
+  "handNumber": 12,
+  "maxHands": 16,
+  "dealerIndex": 0,
+  "startingDealerIndex": 1,
+  "dealerSteps": 11,
+  "gameNumber": 1,
+  "gameScores": [],
+  "orbit": 3,
+  "orbitValue": 5,
+  "phase": "betting",
+  "street": 1,
+  "players": [
+    {
+      "id": "p1",
+      "name": "P1",
+      "controller": "heuristic",
+      "chips": 225,
+      "loans": 1,
+      "riichiSticks": 1,
+      "curses": 0,
+      "eliminated": false,
+      "privateCards": [],
+      "publicCards": [],
+      "folded": true,
+      "riichi": false,
+      "roundCommitted": 0,
+      "handCommitted": 5,
+      "potCommitted": 5
+    },
+    {
+      "id": "p2",
+      "name": "P2",
+      "controller": "heuristic",
+      "chips": 235,
+      "loans": 1,
+      "riichiSticks": 0,
+      "curses": 0,
+      "eliminated": false,
+      "privateCards": [
+        {
+          "kind": "numbered",
+          "suit": "bamboo",
+          "rank": 8,
+          "color": "green",
+          "id": "bamboo-8-2"
+        },
+        {
+          "kind": "joker",
+          "color": "red",
+          "id": "joker-red"
+        },
+        {
+          "kind": "numbered",
+          "suit": "dots",
+          "rank": 4,
+          "color": "blue",
+          "id": "dots-4-1"
+        },
+        {
+          "kind": "numbered",
+          "suit": "characters",
+          "rank": 5,
+          "color": "red",
+          "id": "characters-5-1"
+        },
+        {
+          "kind": "numbered",
+          "suit": "bamboo",
+          "rank": 2,
+          "color": "green",
+          "id": "bamboo-2-3"
+        },
+        {
+          "kind": "dragon",
+          "dragon": "white",
+          "color": "blue",
+          "id": "dragon-white-1"
+        },
+        {
+          "kind": "dragon",
+          "dragon": "green",
+          "color": "green",
+          "id": "dragon-green-3"
+        }
+      ],
+      "publicCards": [],
+      "folded": false,
+      "riichi": true,
+      "roundCommitted": 215,
+      "handCommitted": 220,
+      "potCommitted": 220
+    },
+    {
+      "id": "p3",
+      "name": "P3",
+      "controller": "heuristic",
+      "chips": 455,
+      "loans": 0,
+      "riichiSticks": 1,
+      "curses": 0,
+      "eliminated": false,
+      "privateCards": [],
+      "publicCards": [],
+      "folded": true,
+      "riichi": false,
+      "roundCommitted": 55,
+      "handCommitted": 60,
+      "potCommitted": 60
+    },
+    {
+      "id": "p4",
+      "name": "P4",
+      "controller": "heuristic",
+      "chips": 140,
+      "loans": 1,
+      "riichiSticks": 0,
+      "curses": 0,
+      "eliminated": false,
+      "privateCards": [
+        {
+          "kind": "wind",
+          "wind": "west",
+          "color": "black",
+          "id": "wind-west-2"
+        },
+        {
+          "kind": "wind",
+          "wind": "west",
+          "color": "black",
+          "id": "wind-west-3"
+        },
+        {
+          "kind": "numbered",
+          "suit": "dots",
+          "rank": 1,
+          "color": "blue",
+          "id": "dots-1-3"
+        },
+        {
+          "kind": "numbered",
+          "suit": "characters",
+          "rank": 4,
+          "color": "red",
+          "id": "characters-4-1"
+        },
+        {
+          "kind": "numbered",
+          "suit": "dots",
+          "rank": 2,
+          "color": "blue",
+          "id": "dots-2-3"
+        },
+        {
+          "kind": "numbered",
+          "suit": "characters",
+          "rank": 8,
+          "color": "red",
+          "id": "characters-8-1"
+        },
+        {
+          "kind": "numbered",
+          "suit": "dots",
+          "rank": 3,
+          "color": "blue",
+          "id": "dots-3-2"
+        }
+      ],
+      "publicCards": [],
+      "folded": false,
+      "riichi": false,
+      "roundCommitted": 55,
+      "handCommitted": 60,
+      "potCommitted": 60
+    }
+  ],
+  "deck": [
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 5,
+      "color": "red",
+      "id": "characters-5-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "dots",
+      "rank": 5,
+      "color": "blue",
+      "id": "dots-5-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 3,
+      "color": "red",
+      "id": "characters-3-1"
+    },
+    {
+      "kind": "joker",
+      "color": "blue",
+      "id": "joker-blue"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 2,
+      "color": "green",
+      "id": "bamboo-2-2"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 7,
+      "color": "green",
+      "id": "bamboo-7-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 3,
+      "color": "green",
+      "id": "bamboo-3-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 4,
+      "color": "green",
+      "id": "bamboo-4-2"
+    },
+    {
+      "kind": "dragon",
+      "dragon": "red",
+      "color": "red",
+      "id": "dragon-red-1"
+    },
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 7,
+      "color": "red",
+      "id": "characters-7-2"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 6,
+      "color": "green",
+      "id": "bamboo-6-1"
+    },
+    {
+      "kind": "numbered",
+      "suit": "dots",
+      "rank": 8,
+      "color": "blue",
+      "id": "dots-8-2"
+    },
+    {
+      "kind": "blank",
+      "color": null,
+      "id": "blank-3"
+    },
+    {
+      "kind": "blank",
+      "color": null,
+      "id": "blank-2"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 7,
+      "color": "green",
+      "id": "bamboo-7-2"
+    },
+    {
+      "kind": "wind",
+      "wind": "east",
+      "color": "black",
+      "id": "wind-east-1"
+    },
+    {
+      "kind": "numbered",
+      "suit": "dots",
+      "rank": 9,
+      "color": "blue",
+      "id": "dots-9-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 2,
+      "color": "red",
+      "id": "characters-2-1"
+    },
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 2,
+      "color": "red",
+      "id": "characters-2-2"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 7,
+      "color": "green",
+      "id": "bamboo-7-1"
+    },
+    {
+      "kind": "numbered",
+      "suit": "dots",
+      "rank": 5,
+      "color": "blue",
+      "id": "dots-5-1"
+    },
+    {
+      "kind": "dragon",
+      "dragon": "green",
+      "color": "green",
+      "id": "dragon-green-1"
+    },
+    {
+      "kind": "numbered",
+      "suit": "dots",
+      "rank": 1,
+      "color": "blue",
+      "id": "dots-1-2"
+    },
+    {
+      "kind": "dragon",
+      "dragon": "white",
+      "color": "blue",
+      "id": "dragon-white-2"
+    },
+    {
+      "kind": "wind",
+      "wind": "south",
+      "color": "black",
+      "id": "wind-south-1"
+    },
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 7,
+      "color": "red",
+      "id": "characters-7-3"
+    },
+    {
+      "kind": "wind",
+      "wind": "north",
+      "color": "black",
+      "id": "wind-north-2"
+    },
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 8,
+      "color": "red",
+      "id": "characters-8-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 6,
+      "color": "red",
+      "id": "characters-6-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "dots",
+      "rank": 4,
+      "color": "blue",
+      "id": "dots-4-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 9,
+      "color": "red",
+      "id": "characters-9-2"
+    },
+    {
+      "kind": "dragon",
+      "dragon": "red",
+      "color": "red",
+      "id": "dragon-red-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "dots",
+      "rank": 2,
+      "color": "blue",
+      "id": "dots-2-2"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 9,
+      "color": "green",
+      "id": "bamboo-9-2"
+    },
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 6,
+      "color": "red",
+      "id": "characters-6-2"
+    },
+    {
+      "kind": "wind",
+      "wind": "east",
+      "color": "black",
+      "id": "wind-east-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 8,
+      "color": "red",
+      "id": "characters-8-2"
+    },
+    {
+      "kind": "numbered",
+      "suit": "dots",
+      "rank": 4,
+      "color": "blue",
+      "id": "dots-4-2"
+    },
+    {
+      "kind": "wind",
+      "wind": "south",
+      "color": "black",
+      "id": "wind-south-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "dots",
+      "rank": 2,
+      "color": "blue",
+      "id": "dots-2-1"
+    },
+    {
+      "kind": "numbered",
+      "suit": "dots",
+      "rank": 7,
+      "color": "blue",
+      "id": "dots-7-2"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 9,
+      "color": "green",
+      "id": "bamboo-9-1"
+    },
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 9,
+      "color": "red",
+      "id": "characters-9-1"
+    },
+    {
+      "kind": "wind",
+      "wind": "west",
+      "color": "black",
+      "id": "wind-west-1"
+    },
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 7,
+      "color": "red",
+      "id": "characters-7-1"
+    },
+    {
+      "kind": "numbered",
+      "suit": "dots",
+      "rank": 9,
+      "color": "blue",
+      "id": "dots-9-2"
+    },
+    {
+      "kind": "joker",
+      "color": "green",
+      "id": "joker-green"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 6,
+      "color": "green",
+      "id": "bamboo-6-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 2,
+      "color": "red",
+      "id": "characters-2-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 1,
+      "color": "green",
+      "id": "bamboo-1-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 4,
+      "color": "green",
+      "id": "bamboo-4-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 1,
+      "color": "green",
+      "id": "bamboo-1-1"
+    },
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 5,
+      "color": "red",
+      "id": "characters-5-2"
+    },
+    {
+      "kind": "numbered",
+      "suit": "dots",
+      "rank": 6,
+      "color": "blue",
+      "id": "dots-6-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "dots",
+      "rank": 5,
+      "color": "blue",
+      "id": "dots-5-2"
+    },
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 4,
+      "color": "red",
+      "id": "characters-4-2"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 4,
+      "color": "green",
+      "id": "bamboo-4-1"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 2,
+      "color": "green",
+      "id": "bamboo-2-1"
+    },
+    {
+      "kind": "numbered",
+      "suit": "dots",
+      "rank": 6,
+      "color": "blue",
+      "id": "dots-6-1"
+    },
+    {
+      "kind": "joker",
+      "color": "black",
+      "id": "joker-black"
+    },
+    {
+      "kind": "dragon",
+      "dragon": "white",
+      "color": "blue",
+      "id": "dragon-white-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "dots",
+      "rank": 3,
+      "color": "blue",
+      "id": "dots-3-1"
+    },
+    {
+      "kind": "numbered",
+      "suit": "dots",
+      "rank": 3,
+      "color": "blue",
+      "id": "dots-3-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "dots",
+      "rank": 8,
+      "color": "blue",
+      "id": "dots-8-1"
+    },
+    {
+      "kind": "numbered",
+      "suit": "dots",
+      "rank": 9,
+      "color": "blue",
+      "id": "dots-9-1"
+    },
+    {
+      "kind": "wind",
+      "wind": "south",
+      "color": "black",
+      "id": "wind-south-2"
+    },
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 3,
+      "color": "red",
+      "id": "characters-3-2"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 5,
+      "color": "green",
+      "id": "bamboo-5-1"
+    },
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 3,
+      "color": "red",
+      "id": "characters-3-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "dots",
+      "rank": 6,
+      "color": "blue",
+      "id": "dots-6-2"
+    },
+    {
+      "kind": "flower",
+      "flower": "black-lotus",
+      "color": null,
+      "id": "flower-black-lotus"
+    },
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 6,
+      "color": "red",
+      "id": "characters-6-1"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 9,
+      "color": "green",
+      "id": "bamboo-9-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 1,
+      "color": "red",
+      "id": "characters-1-2"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 8,
+      "color": "green",
+      "id": "bamboo-8-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 4,
+      "color": "red",
+      "id": "characters-4-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 5,
+      "color": "green",
+      "id": "bamboo-5-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "dots",
+      "rank": 1,
+      "color": "blue",
+      "id": "dots-1-1"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 1,
+      "color": "green",
+      "id": "bamboo-1-2"
+    },
+    {
+      "kind": "numbered",
+      "suit": "dots",
+      "rank": 7,
+      "color": "blue",
+      "id": "dots-7-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 3,
+      "color": "green",
+      "id": "bamboo-3-2"
+    }
+  ],
+  "discardA": [
+    {
+      "kind": "flower",
+      "flower": "white-lotus",
+      "color": null,
+      "id": "flower-white-lotus"
+    }
+  ],
+  "discardB": [
+    {
+      "kind": "dragon",
+      "dragon": "red",
+      "color": "red",
+      "id": "dragon-red-2"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 5,
+      "color": "green",
+      "id": "bamboo-5-2"
+    }
+  ],
+  "removedCards": [
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 1,
+      "color": "red",
+      "id": "characters-1-1"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 6,
+      "color": "green",
+      "id": "bamboo-6-2"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 8,
+      "color": "green",
+      "id": "bamboo-8-1"
+    },
+    {
+      "kind": "wind",
+      "wind": "east",
+      "color": "black",
+      "id": "wind-east-2"
+    },
+    {
+      "kind": "blank",
+      "color": null,
+      "id": "blank-1"
+    },
+    {
+      "kind": "numbered",
+      "suit": "bamboo",
+      "rank": 3,
+      "color": "green",
+      "id": "bamboo-3-1"
+    },
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 1,
+      "color": "red",
+      "id": "characters-1-3"
+    },
+    {
+      "kind": "wind",
+      "wind": "north",
+      "color": "black",
+      "id": "wind-north-3"
+    },
+    {
+      "kind": "numbered",
+      "suit": "characters",
+      "rank": 9,
+      "color": "red",
+      "id": "characters-9-3"
+    },
+    {
+      "kind": "dragon",
+      "dragon": "green",
+      "color": "green",
+      "id": "dragon-green-2"
+    },
+    {
+      "kind": "numbered",
+      "suit": "dots",
+      "rank": 7,
+      "color": "blue",
+      "id": "dots-7-1"
+    },
+    {
+      "kind": "blank",
+      "color": null,
+      "id": "blank-4"
+    },
+    {
+      "kind": "numbered",
+      "suit": "dots",
+      "rank": 8,
+      "color": "blue",
+      "id": "dots-8-3"
+    },
+    {
+      "kind": "wind",
+      "wind": "north",
+      "color": "black",
+      "id": "wind-north-1"
+    }
+  ],
+  "foldedPrivateCards": {
+    "p1": [
+      {
+        "kind": "numbered",
+        "suit": "characters",
+        "rank": 1,
+        "color": "red",
+        "id": "characters-1-1"
+      },
+      {
+        "kind": "numbered",
+        "suit": "bamboo",
+        "rank": 6,
+        "color": "green",
+        "id": "bamboo-6-2"
+      },
+      {
+        "kind": "numbered",
+        "suit": "bamboo",
+        "rank": 8,
+        "color": "green",
+        "id": "bamboo-8-1"
+      },
+      {
+        "kind": "wind",
+        "wind": "east",
+        "color": "black",
+        "id": "wind-east-2"
+      },
+      {
+        "kind": "blank",
+        "color": null,
+        "id": "blank-1"
+      },
+      {
+        "kind": "numbered",
+        "suit": "bamboo",
+        "rank": 3,
+        "color": "green",
+        "id": "bamboo-3-1"
+      },
+      {
+        "kind": "numbered",
+        "suit": "characters",
+        "rank": 1,
+        "color": "red",
+        "id": "characters-1-3"
+      }
+    ],
+    "p3": [
+      {
+        "kind": "wind",
+        "wind": "north",
+        "color": "black",
+        "id": "wind-north-3"
+      },
+      {
+        "kind": "numbered",
+        "suit": "characters",
+        "rank": 9,
+        "color": "red",
+        "id": "characters-9-3"
+      },
+      {
+        "kind": "dragon",
+        "dragon": "green",
+        "color": "green",
+        "id": "dragon-green-2"
+      },
+      {
+        "kind": "numbered",
+        "suit": "dots",
+        "rank": 7,
+        "color": "blue",
+        "id": "dots-7-1"
+      },
+      {
+        "kind": "blank",
+        "color": null,
+        "id": "blank-4"
+      },
+      {
+        "kind": "numbered",
+        "suit": "dots",
+        "rank": 8,
+        "color": "blue",
+        "id": "dots-8-3"
+      },
+      {
+        "kind": "wind",
+        "wind": "north",
+        "color": "black",
+        "id": "wind-north-1"
+      }
+    ]
+  },
+  "openingPrivateCards": {
+    "p2": [
+      {
+        "kind": "numbered",
+        "suit": "bamboo",
+        "rank": 8,
+        "color": "green",
+        "id": "bamboo-8-2"
+      },
+      {
+        "kind": "numbered",
+        "suit": "dots",
+        "rank": 8,
+        "color": "blue",
+        "id": "dots-8-3"
+      },
+      {
+        "kind": "joker",
+        "color": "red",
+        "id": "joker-red"
+      },
+      {
+        "kind": "numbered",
+        "suit": "characters",
+        "rank": 8,
+        "color": "red",
+        "id": "characters-8-1"
+      },
+      {
+        "kind": "numbered",
+        "suit": "dots",
+        "rank": 3,
+        "color": "blue",
+        "id": "dots-3-2"
+      },
+      {
+        "kind": "numbered",
+        "suit": "dots",
+        "rank": 4,
+        "color": "blue",
+        "id": "dots-4-1"
+      },
+      {
+        "kind": "numbered",
+        "suit": "characters",
+        "rank": 5,
+        "color": "red",
+        "id": "characters-5-1"
+      }
+    ],
+    "p3": [
+      {
+        "kind": "wind",
+        "wind": "north",
+        "color": "black",
+        "id": "wind-north-3"
+      },
+      {
+        "kind": "numbered",
+        "suit": "characters",
+        "rank": 9,
+        "color": "red",
+        "id": "characters-9-3"
+      },
+      {
+        "kind": "dragon",
+        "dragon": "green",
+        "color": "green",
+        "id": "dragon-green-2"
+      },
+      {
+        "kind": "flower",
+        "flower": "white-lotus",
+        "color": null,
+        "id": "flower-white-lotus"
+      },
+      {
+        "kind": "numbered",
+        "suit": "dots",
+        "rank": 7,
+        "color": "blue",
+        "id": "dots-7-1"
+      },
+      {
+        "kind": "blank",
+        "color": null,
+        "id": "blank-4"
+      },
+      {
+        "kind": "numbered",
+        "suit": "dots",
+        "rank": 2,
+        "color": "blue",
+        "id": "dots-2-3"
+      }
+    ],
+    "p4": [
+      {
+        "kind": "wind",
+        "wind": "west",
+        "color": "black",
+        "id": "wind-west-2"
+      },
+      {
+        "kind": "numbered",
+        "suit": "bamboo",
+        "rank": 5,
+        "color": "green",
+        "id": "bamboo-5-2"
+      },
+      {
+        "kind": "wind",
+        "wind": "west",
+        "color": "black",
+        "id": "wind-west-3"
+      },
+      {
+        "kind": "numbered",
+        "suit": "dots",
+        "rank": 1,
+        "color": "blue",
+        "id": "dots-1-3"
+      },
+      {
+        "kind": "numbered",
+        "suit": "characters",
+        "rank": 4,
+        "color": "red",
+        "id": "characters-4-1"
+      },
+      {
+        "kind": "numbered",
+        "suit": "bamboo",
+        "rank": 3,
+        "color": "green",
+        "id": "bamboo-3-1"
+      },
+      {
+        "kind": "wind",
+        "wind": "north",
+        "color": "black",
+        "id": "wind-north-1"
+      }
+    ],
+    "p1": [
+      {
+        "kind": "numbered",
+        "suit": "bamboo",
+        "rank": 2,
+        "color": "green",
+        "id": "bamboo-2-3"
+      },
+      {
+        "kind": "dragon",
+        "dragon": "white",
+        "color": "blue",
+        "id": "dragon-white-1"
+      },
+      {
+        "kind": "numbered",
+        "suit": "characters",
+        "rank": 1,
+        "color": "red",
+        "id": "characters-1-1"
+      },
+      {
+        "kind": "numbered",
+        "suit": "bamboo",
+        "rank": 6,
+        "color": "green",
+        "id": "bamboo-6-2"
+      },
+      {
+        "kind": "numbered",
+        "suit": "bamboo",
+        "rank": 8,
+        "color": "green",
+        "id": "bamboo-8-1"
+      },
+      {
+        "kind": "wind",
+        "wind": "east",
+        "color": "black",
+        "id": "wind-east-2"
+      },
+      {
+        "kind": "blank",
+        "color": null,
+        "id": "blank-1"
+      }
+    ]
+  },
+  "openingChips": {
+    "p1": 230,
+    "p2": 455,
+    "p3": 515,
+    "p4": 0
+  },
+  "charlestonSelections": {},
+  "charlestonHistory": [
+    {
+      "fromPlayerId": "p1",
+      "toPlayerId": "p2",
+      "cards": [
+        {
+          "kind": "numbered",
+          "suit": "bamboo",
+          "rank": 2,
+          "color": "green",
+          "id": "bamboo-2-3"
+        },
+        {
+          "kind": "dragon",
+          "dragon": "white",
+          "color": "blue",
+          "id": "dragon-white-1"
+        }
+      ]
+    },
+    {
+      "fromPlayerId": "p2",
+      "toPlayerId": "p3",
+      "cards": [
+        {
+          "kind": "numbered",
+          "suit": "dots",
+          "rank": 8,
+          "color": "blue",
+          "id": "dots-8-3"
+        },
+        {
+          "kind": "numbered",
+          "suit": "characters",
+          "rank": 8,
+          "color": "red",
+          "id": "characters-8-1"
+        }
+      ]
+    },
+    {
+      "fromPlayerId": "p3",
+      "toPlayerId": "p4",
+      "cards": [
+        {
+          "kind": "flower",
+          "flower": "white-lotus",
+          "color": null,
+          "id": "flower-white-lotus"
+        },
+        {
+          "kind": "numbered",
+          "suit": "dots",
+          "rank": 2,
+          "color": "blue",
+          "id": "dots-2-3"
+        }
+      ]
+    },
+    {
+      "fromPlayerId": "p4",
+      "toPlayerId": "p1",
+      "cards": [
+        {
+          "kind": "numbered",
+          "suit": "bamboo",
+          "rank": 3,
+          "color": "green",
+          "id": "bamboo-3-1"
+        },
+        {
+          "kind": "wind",
+          "wind": "north",
+          "color": "black",
+          "id": "wind-north-1"
+        }
+      ]
+    }
+  ],
+  "exposureSelections": {},
+  "exposureHistory": [],
+  "streetOpenerId": "p1",
+  "lastAggressorId": "p2",
+  "openingPot": 20,
+  "pot": 345,
+  "currentWager": 215,
+  "minimumRaise": 160,
+  "allInPlayerIds": [],
+  "currentAllInBettorId": null,
+  "raiseLockedPlayerIds": [],
+  "pendingPlayerIds": ["p4"],
+  "actingPlayerId": "p4",
+  "pendingDiscard": null,
+  "drawContext": null,
+  "drawDiscardHistory": [
+    {
+      "playerId": "p1",
+      "source": "deck",
+      "drawnCard": {
+        "kind": "numbered",
+        "suit": "characters",
+        "rank": 1,
+        "color": "red",
+        "id": "characters-1-3"
+      },
+      "discardedCard": {
+        "kind": "wind",
+        "wind": "north",
+        "color": "black",
+        "id": "wind-north-1"
+      },
+      "discardPile": "b",
+      "discardIndex": 1,
+      "reason": "call"
+    },
+    {
+      "playerId": "p2",
+      "source": "discard-a",
+      "drawnCard": {
+        "kind": "dragon",
+        "dragon": "green",
+        "color": "green",
+        "id": "dragon-green-3"
+      },
+      "discardedCard": {
+        "kind": "numbered",
+        "suit": "dots",
+        "rank": 3,
+        "color": "blue",
+        "id": "dots-3-2"
+      },
+      "discardPile": "a",
+      "discardIndex": 0,
+      "reason": "riichi-stick"
+    },
+    {
+      "playerId": "p3",
+      "source": "discard-b",
+      "drawnCard": {
+        "kind": "wind",
+        "wind": "north",
+        "color": "black",
+        "id": "wind-north-1"
+      },
+      "discardedCard": {
+        "kind": "numbered",
+        "suit": "characters",
+        "rank": 8,
+        "color": "red",
+        "id": "characters-8-1"
+      },
+      "discardPile": "a",
+      "discardIndex": 1,
+      "reason": "riichi-stick"
+    },
+    {
+      "playerId": "p4",
+      "source": "discard-a",
+      "drawnCard": {
+        "kind": "numbered",
+        "suit": "characters",
+        "rank": 8,
+        "color": "red",
+        "id": "characters-8-1"
+      },
+      "discardedCard": {
+        "kind": "numbered",
+        "suit": "bamboo",
+        "rank": 5,
+        "color": "green",
+        "id": "bamboo-5-2"
+      },
+      "discardPile": "b",
+      "discardIndex": 1,
+      "reason": "call"
+    },
+    {
+      "playerId": "p4",
+      "source": "discard-a",
+      "drawnCard": {
+        "kind": "numbered",
+        "suit": "dots",
+        "rank": 3,
+        "color": "blue",
+        "id": "dots-3-2"
+      },
+      "discardedCard": {
+        "kind": "flower",
+        "flower": "white-lotus",
+        "color": null,
+        "id": "flower-white-lotus"
+      },
+      "discardPile": "a",
+      "discardIndex": 0,
+      "reason": "riichi-stick"
+    }
+  ],
+  "bettingHistory": [
+    {
+      "playerId": "p1",
+      "street": 1,
+      "type": "check",
+      "potBefore": 20,
+      "actorChipsBefore": 225,
+      "cost": 0
+    },
+    {
+      "playerId": "p2",
+      "street": 1,
+      "type": "bet",
+      "potBefore": 20,
+      "actorChipsBefore": 450,
+      "cost": 25,
+      "amount": 25
+    },
+    {
+      "playerId": "p3",
+      "street": 1,
+      "type": "bet",
+      "potBefore": 45,
+      "actorChipsBefore": 510,
+      "cost": 55,
+      "amount": 55
+    },
+    {
+      "playerId": "p4",
+      "street": 1,
+      "type": "call",
+      "potBefore": 100,
+      "actorChipsBefore": 195,
+      "cost": 55
+    },
+    {
+      "playerId": "p1",
+      "street": 1,
+      "type": "fold",
+      "potBefore": 155,
+      "actorChipsBefore": 225,
+      "cost": 0
+    },
+    {
+      "playerId": "p2",
+      "street": 1,
+      "type": "bet",
+      "potBefore": 155,
+      "actorChipsBefore": 425,
+      "cost": 190,
+      "amount": 215,
+      "riichi": true
+    },
+    {
+      "playerId": "p3",
+      "street": 1,
+      "type": "fold",
+      "potBefore": 345,
+      "actorChipsBefore": 455,
+      "cost": 0
+    }
+  ],
+  "cursePayments": [],
+  "curseRemovals": [],
+  "handWinners": [],
+  "handResults": [],
+  "finalScores": null,
+  "version": 445
+}

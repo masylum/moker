@@ -1,0 +1,51 @@
+{
+  "node": "v23.11.0",
+  "samples": 24,
+  "orbits": 1,
+  "games": 6,
+  "seconds": 14.755252708,
+  "rows": [
+    {
+      "mode": "basic",
+      "seed": "cpu-benchmark-0",
+      "seconds": 3.1840425830000005,
+      "hands": 4,
+      "hash": "95f842d0378101c4128ba58b51a5d089e7a22f5aabd205e623f8724197f7a623"
+    },
+    {
+      "mode": "basic",
+      "seed": "cpu-benchmark-1",
+      "seconds": 2.0656030409999997,
+      "hands": 4,
+      "hash": "a7f29045c3636c5fcfc920747ec32b19e15007c085ea35f0930964db4243d3d4"
+    },
+    {
+      "mode": "basic",
+      "seed": "cpu-benchmark-2",
+      "seconds": 2.2113516249999994,
+      "hands": 4,
+      "hash": "259704df455d4f212c084444c582ace544b8eafe7ac1fbefd0e0d4dc24eaaeb6"
+    },
+    {
+      "mode": "riichi",
+      "seed": "cpu-benchmark-0",
+      "seconds": 2.1275592080000005,
+      "hands": 4,
+      "hash": "9148dabc59afc0b050c2d050f059c7c7238e355e4e01f61ad372545828a2ab03"
+    },
+    {
+      "mode": "riichi",
+      "seed": "cpu-benchmark-1",
+      "seconds": 2.771093791000001,
+      "hands": 4,
+      "hash": "bd7ce39a9da3e49de896e595a32f376d29f957104c065224be04db0f4d4ee790"
+    },
+    {
+      "mode": "riichi",
+      "seed": "cpu-benchmark-2",
+      "seconds": 2.3920772919999997,
+      "hands": 4,
+      "hash": "e8b40bae3b06571178cfc750e41569accfd1e54a63c94a936256ab91b0fb217c"
+    }
+  ]
+}

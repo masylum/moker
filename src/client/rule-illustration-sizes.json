@@ -1,0 +1,102 @@
+{
+  "fishing-42593": {
+    "width": 16,
+    "height": 16
+  },
+  "fishing-42587": {
+    "width": 44,
+    "height": 58
+  },
+  "fishing-42579": {
+    "width": 44,
+    "height": 58
+  },
+  "fishing-42592": {
+    "width": 16,
+    "height": 19
+  },
+  "fishing-42590": {
+    "width": 16,
+    "height": 16
+  },
+  "fishing-42591": {
+    "width": 16,
+    "height": 19
+  },
+  "fishing-42585": {
+    "width": 44,
+    "height": 58
+  },
+  "fishing-42581": {
+    "width": 44,
+    "height": 58
+  },
+  "fishing-42595": {
+    "width": 8,
+    "height": 195
+  },
+  "fishing-42594": {
+    "width": 8,
+    "height": 195
+  },
+  "lotuses": {
+    "width": 104,
+    "height": 79
+  },
+  "fishing-42596": {
+    "width": 101,
+    "height": 9
+  },
+  "fishing-42583": {
+    "width": 44,
+    "height": 58
+  },
+  "streets": {
+    "width": 250,
+    "height": 250
+  },
+  "declare-riichi": {
+    "width": 181,
+    "height": 114
+  },
+  "loan-sticks": {
+    "width": 127,
+    "height": 87
+  },
+  "fishing-42513": {
+    "width": 117,
+    "height": 296
+  },
+  "riichi-sticks": {
+    "width": 127,
+    "height": 84
+  },
+  "blanks": {
+    "width": 164,
+    "height": 81
+  },
+  "jokers": {
+    "width": 171,
+    "height": 96
+  },
+  "fishing-42514": {
+    "width": 61,
+    "height": 65
+  },
+  "starting-chips": {
+    "width": 156,
+    "height": 132
+  },
+  "fishing-42589": {
+    "width": 16,
+    "height": 16
+  },
+  "card-families": {
+    "width": 304,
+    "height": 181
+  },
+  "table-setup": {
+    "width": 141,
+    "height": 277
+  }
+}

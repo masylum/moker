@@ -4,22 +4,24 @@ import { cardLabel, createDeck, jokerCanRepresent } from "../src/game/cards"
 import { SeededRandom } from "../src/game/random"
 
 describe("deck and seeded randomness", () => {
-  it("builds the exact 114-tile Flower deck", () => {
+  it("builds the exact 112-card deck described by its component list", () => {
     const deck = createDeck()
-    expect(deck).toHaveLength(114)
-    expect(new Set(deck.map((card) => card.id))).toHaveLength(114)
+    expect(deck).toHaveLength(112)
+    expect(new Set(deck.map((card) => card.id))).toHaveLength(112)
     expect(deck.filter((card) => card.kind === "numbered")).toHaveLength(81)
     expect(deck.filter((card) => card.kind === "dragon")).toHaveLength(9)
     expect(deck.filter((card) => card.kind === "wind")).toHaveLength(12)
     expect(deck.filter((card) => card.kind === "joker")).toHaveLength(4)
     expect(deck.filter((card) => card.kind === "blank")).toHaveLength(4)
-    expect(deck.filter((card) => card.kind === "flower")).toHaveLength(4)
+    expect(deck.filter((card) => card.kind === "flower")).toHaveLength(2)
     expect(deck.find((card) => card.id === "bamboo-1-1")?.color).toBe("green")
     expect(deck.find((card) => card.id === "dots-1-1")?.color).toBe("blue")
     expect(deck.find((card) => card.id === "dragon-white-1")?.color).toBe("blue")
     expect(deck.find((card) => card.id === "wind-east-1")?.color).toBe("black")
     expect(deck.find((card) => card.id === "blank-1")?.color).toBeNull()
-    expect(deck.find((card) => card.id === "flower-plum")?.color).toBe("black")
+    expect(deck.find((card) => card.id === "flower-white-lotus")?.color).toBeNull()
+    expect(deck.find((card) => card.id === "flower-black-lotus")?.color).toBeNull()
+    expect(cardLabel(deck.find((card) => card.id === "flower-white-lotus")!)).toBe("White Lotus")
   })
 
   it("replays the same shuffle from the same seed", () => {
@@ -30,20 +32,20 @@ describe("deck and seeded randomness", () => {
     expect(first).not.toEqual(different)
   })
 
-  it("lets the Black Joker represent Flowers by color", () => {
+  it("gives neither Lotus a Joker equivalent", () => {
     const deck = createDeck()
     const flower = deck.find((card) => card.kind === "flower")!
 
-    expect(jokerCanRepresent({ kind: "joker", color: "black" }, flower)).toBe(true)
+    expect(jokerCanRepresent({ kind: "joker", color: "black" }, flower)).toBe(false)
     expect(jokerCanRepresent({ kind: "joker", color: "red" }, flower)).toBe(false)
   })
 
-  it("uses the table names Bams, Dots, and Cracks", () => {
+  it("uses the table names Bams, Dots, and Craks", () => {
     const deck = createDeck()
 
     expect(cardLabel(deck.find((card) => card.id === "bamboo-1-1")!)).toBe("1 Bams")
     expect(cardLabel(deck.find((card) => card.id === "dots-1-1")!)).toBe("1 Dots")
-    expect(cardLabel(deck.find((card) => card.id === "characters-1-1")!)).toBe("1 Cracks")
+    expect(cardLabel(deck.find((card) => card.id === "characters-1-1")!)).toBe("1 Craks")
   })
 
   it("can serialize and resume PRNG state", () => {
@@ -61,6 +63,8 @@ describe("deck and seeded randomness", () => {
     expect(tileGlyph(bambooOne)).toBe("🀐")
     expect(coloredTile(bambooOne)).toContain("\u001B[32m🀐\u001B[0m")
     expect(tileGlyph(blank)).toBe("□")
-    expect(flowers.map(tileGlyph)).toEqual(["🀢", "🀣", "🀤", "🀥"])
+    expect(flowers.map(tileGlyph)).toEqual(["🀥", "🀥"])
+    expect(coloredTile(flowers[0]!)).toContain("\u001B[97m🀥\u001B[0m")
+    expect(coloredTile(flowers[1]!)).toContain("\u001B[90m🀥\u001B[0m")
   })
 })

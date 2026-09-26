@@ -1,0 +1,65 @@
+{
+  "completed": "2026-09-25T18:08:10.239604+00:00",
+  "status": "complete",
+  "runs": 1160,
+  "games": 1520,
+  "hands": 18467,
+  "samples": 24,
+  "workers": 10,
+  "phases": {
+    "screen": 400,
+    "round2": 160,
+    "heldOut": 480,
+    "resetTournamentRuns": 120
+  },
+  "scoreAndFlowChecksPassed": true,
+  "sourceEngineProjectionChange": "See source-change-note.json; no gameplay effect.",
+  "cohortSeconds": {
+    "reset-basic-baseline": 66.2,
+    "reset-riichi-baseline": 81.0,
+    "reset-riichi-selected": 81.6,
+    "round2-riichi-baseline": 167.1,
+    "round2-riichi-combined": 179.1,
+    "screen-basic-baseline": 73.7,
+    "screen-basic-pairs-below-chow": 82.3,
+    "screen-basic-pung-below-winds": 71.7,
+    "screen-basic-winds-below-chow-eye": 81.8,
+    "screen-riichi-baseline": 90.4,
+    "screen-riichi-four-winds-above-dragons-eye": 93.4,
+    "screen-riichi-pairs-below-chow": 92.4,
+    "screen-riichi-pung-below-winds": 92.3,
+    "screen-riichi-pung-eye-below-dragons": 89.3,
+    "screen-riichi-winds-below-chow-eye": 89.9,
+    "validation-basic-baseline": 273.1,
+    "validation-riichi-baseline": 352.7,
+    "validation-riichi-selected": 331.9
+  },
+  "totalCohortSeconds": 2389.9,
+  "checks": {
+    "unitTests": 143,
+    "integrationTests": 4,
+    "lint": "passed",
+    "types": "passed",
+    "knip": "passed",
+    "repositoryFormat": "flags concurrent App.tsx formatting; experiment script formatting passes"
+  },
+  "sampleAudit": {
+    "runs": 36,
+    "playerHandScoresVerified": 2300,
+    "loanCapVerified": true,
+    "sticksVerified": true,
+    "productionBaselineExactMatches": 2
+  },
+  "conclusion": {
+    "basic": "retain original",
+    "riichi": "locked three-swap candidate",
+    "heldOutRarityMismatch": 0,
+    "heldOutShowdownPointInversions": 0,
+    "limits": [
+      "Opening Pung + Eye potential remains imprecise (20 observations).",
+      "Four Winds versus Three Dragons + Eye remains uncertain in the smaller reset sample.",
+      "Held-out Riichi Street 4 rate fell 3.4 percentage points."
+    ],
+    "productionChanged": false
+  }
+}

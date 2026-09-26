@@ -1,0 +1,54 @@
+{
+  "completed": [],
+  "running": [
+    [
+      "holdout",
+      "basic",
+      "mixed",
+      0,
+      30,
+      "tournament-validation-v7"
+    ],
+    [
+      "holdout",
+      "riichi",
+      "mixed",
+      0,
+      30,
+      "tournament-validation-v7"
+    ],
+    [
+      "holdout",
+      "basic",
+      "mixed",
+      30,
+      30,
+      "tournament-validation-v7"
+    ],
+    [
+      "holdout",
+      "riichi",
+      "mixed",
+      30,
+      30,
+      "tournament-validation-v7"
+    ],
+    [
+      "holdout",
+      "basic",
+      "mixed",
+      60,
+      30,
+      "tournament-validation-v7"
+    ],
+    [
+      "holdout",
+      "riichi",
+      "mixed",
+      60,
+      30,
+      "tournament-validation-v7"
+    ]
+  ],
+  "pending": 50
+}

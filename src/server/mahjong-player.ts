@@ -7,8 +7,9 @@ import { analyzeHandProgress, summarizeHandProgress } from "../game/hand-progres
 import { CHIP_UNIT } from "../game/rules"
 import {
   chooseHeuristicAction,
+  chooseHeuristicCharleston,
   chooseHeuristicDiscard,
-  chooseHeuristicSeedDiscard,
+  chooseHeuristicExposure,
 } from "../game/heuristic"
 import { agentRulebook } from "../game/rulebook"
 import type { GameState } from "../game/types"
@@ -18,8 +19,19 @@ const BettingOperationSchema = z.object({
   action: z.discriminatedUnion("type", [
     z.object({
       type: z.literal("check"),
-      drawSource: z.enum(["deck", "discard-a", "discard-b"]),
+      curseTargetId: z.string().optional(),
+      removeCurse: z.boolean().optional(),
+      drawSource: z.enum(["deck", "discard-a", "discard-b"]).optional(),
       blankExchange: z
+        .object({
+          blankCardId: z.string(),
+          pile: z.enum(["a", "b"]),
+          cardIndex: z.int().nonnegative(),
+        })
+        .optional(),
+      useRiichiStick: z.boolean().optional(),
+      riichiDrawSource: z.enum(["deck", "discard-a", "discard-b"]).optional(),
+      riichiBlankExchange: z
         .object({
           blankCardId: z.string(),
           pile: z.enum(["a", "b"]),
@@ -29,7 +41,7 @@ const BettingOperationSchema = z.object({
     }),
     z.object({
       type: z.literal("call"),
-      drawSource: z.enum(["deck", "discard-a", "discard-b"]),
+      drawSource: z.enum(["deck", "discard-a", "discard-b"]).optional(),
       blankExchange: z
         .object({
           blankCardId: z.string(),
@@ -37,16 +49,19 @@ const BettingOperationSchema = z.object({
           cardIndex: z.int().nonnegative(),
         })
         .optional(),
+      useRiichiStick: z.boolean().optional(),
+      riichiDrawSource: z.enum(["deck", "discard-a", "discard-b"]).optional(),
+      curseTargetId: z.string().optional(),
+      removeCurse: z.boolean().optional(),
     }),
     z.object({
       type: z.literal("bet"),
-      amount: z.int().positive(),
+      amount: z.number().positive(),
       riichi: z.boolean().optional(),
-    }),
-    z.object({
-      type: z.literal("raise"),
-      amount: z.int().positive(),
-      riichi: z.boolean().optional(),
+      useRiichiStick: z.boolean().optional(),
+      drawSource: z.enum(["deck", "discard-a", "discard-b"]).optional(),
+      curseTargetId: z.string().optional(),
+      removeCurse: z.boolean().optional(),
     }),
     z.object({ type: z.literal("fold") }),
   ]),
@@ -56,15 +71,19 @@ const DiscardOperationSchema = z.object({
   discardCardId: z.string(),
   discardPile: z.enum(["a", "b"]),
 })
-const SeedDiscardOperationSchema = z.object({
-  kind: z.literal("seed-discard"),
-  discardCardId: z.string(),
-  discardPile: z.enum(["a", "b"]),
+const ExposureOperationSchema = z.object({
+  kind: z.literal("expose"),
+  cardIds: z.array(z.string()).min(1).max(3),
+})
+const CharlestonOperationSchema = z.object({
+  kind: z.literal("charleston"),
+  cardIds: z.array(z.string()).length(2),
 })
 const OperationSchema = z.discriminatedUnion("kind", [
   BettingOperationSchema,
   DiscardOperationSchema,
-  SeedDiscardOperationSchema,
+  ExposureOperationSchema,
+  CharlestonOperationSchema,
 ])
 type AgentOperation = z.infer<typeof OperationSchema>
 
@@ -108,7 +127,7 @@ export class MahjongPlayer extends Think<Env> {
   override getSystemPrompt(): string {
     return [
       "You are an expert Mahjong Poker player.",
-      "Maximize final chips and the highest single Hand on the fixed ladder, accounting for pot equity, future blue-stick charges, loan penalties, live discards, Riichi, and information hidden from you.",
+      "Maximize final score and each Hand's expected value, accounting for pot equity, automatic ante-only 200-chip loans and their 250-point penalties, current standings, Riichi hand locking, finite stick economy, Charleston hand shaping, and information hidden from you.",
       "Use only legal public information about opponents. The position's knownPrivateCards records tiles retained after public Fishing or Blank exchanges, and bettingHistory records public action strength; compare those ranges with your Hand instead of treating every opponent as fully unknown. Inspect the canonical rules, position, pattern progress, and statistical baseline with tools, then call commit_decision exactly once.",
       "The reasoning_summary must be a concise, auditable strategic explanation, not hidden chain-of-thought.",
       agentRulebook(),
@@ -157,11 +176,19 @@ export class MahjongPlayer extends Think<Env> {
         execute: async () => {
           const { state, playerId } = this.turnContext()
           if (state.phase === "betting")
-            return chooseHeuristicAction(state, playerId, state.config.heuristicSamples)
+            return {
+              choice: chooseHeuristicAction(state, playerId, state.config.heuristicSamples),
+            }
           if (state.phase === "discarding")
             return chooseHeuristicDiscard(state, playerId, state.config.heuristicSamples)
-          if (state.phase === "seeding")
-            return chooseHeuristicSeedDiscard(state, playerId, state.config.heuristicSamples)
+          if (state.phase === "exposing")
+            return {
+              choice: chooseHeuristicExposure(state, playerId),
+            }
+          if (state.phase === "charleston")
+            return {
+              choice: chooseHeuristicCharleston(state, playerId),
+            }
           return { error: `No decision is available during ${state.phase}` }
         },
       }),
@@ -177,7 +204,7 @@ export class MahjongPlayer extends Think<Env> {
             throw new Error("Unknown player in trusted turn context")
           }
 
-          const cards = [...player.privateCards, ...state.community]
+          const cards = [...player.privateCards, ...player.publicCards]
 
           return {
             ...summarizeHandProgress(cards),
@@ -307,36 +334,46 @@ function validateOperation(state: GameState, playerId: string, operation: AgentO
     }
 
     if (
-      (operation.action.type === "bet" || operation.action.type === "raise") &&
+      operation.action.type === "bet" &&
       (operation.action.amount < (legal.minimum ?? 0) ||
         operation.action.amount > (legal.maximum ?? 0) ||
-        operation.action.amount % CHIP_UNIT !== 0)
+        (operation.action.amount % CHIP_UNIT !== 0 && operation.action.amount !== legal.maximum))
     ) {
       throw new Error("Committed wager is outside legal bounds")
     }
 
-    if (
-      (operation.action.type === "bet" || operation.action.type === "raise") &&
-      operation.action.riichi &&
-      !legal.canRiichi
-    ) {
+    if (operation.action.type === "bet" && operation.action.riichi && !legal.canRiichi) {
       throw new Error("Riichi is not available")
     }
-
+    // Accept legacy fields in the input schema only to reject them explicitly,
+    // rather than silently stripping them and committing a different action.
+    if (
+      operation.action.type !== "fold" &&
+      (operation.action.curseTargetId || operation.action.removeCurse)
+    ) {
+      throw new Error("Curses are not supported by the current rules")
+    }
     return
   }
+  if (
+    operation.kind === "expose" &&
+    (state.phase !== "exposing" || state.actingPlayerId !== playerId)
+  ) {
+    throw new Error("Street exposure is not legal now")
+  }
+
+  if (
+    operation.kind === "charleston" &&
+    (state.phase !== "charleston" || state.actingPlayerId !== playerId)
+  ) {
+    throw new Error("Charleston pass is not legal now")
+  }
+
   if (
     operation.kind === "discard" &&
     (state.phase !== "discarding" || state.pendingDiscard?.playerId !== playerId)
   )
     throw new Error("Discard is not legal now")
-
-  if (
-    operation.kind === "seed-discard" &&
-    (state.phase !== "seeding" || state.actingPlayerId !== playerId)
-  ) {
-    throw new Error("Seed discard is not legal now")
-  }
 }
 
 function isGameState(value: unknown): value is GameState {

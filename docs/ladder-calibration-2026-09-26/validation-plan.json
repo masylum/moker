@@ -1,0 +1,222 @@
+[
+  {
+    "label": "validation-basic-continuous",
+    "mode": "basic",
+    "order": [
+      "high-card",
+      "eye",
+      "chow",
+      "two-eyes",
+      "chow-eye",
+      "three-winds",
+      "pung",
+      "three-dragons",
+      "four-winds"
+    ],
+    "count": 96,
+    "orbits": 4,
+    "games": 1,
+    "seed": "calibration-validation-continuous-20260926",
+    "samples": 1
+  },
+  {
+    "label": "validation-basic-reset4",
+    "mode": "basic",
+    "order": [
+      "high-card",
+      "eye",
+      "chow",
+      "two-eyes",
+      "chow-eye",
+      "three-winds",
+      "pung",
+      "three-dragons",
+      "four-winds"
+    ],
+    "count": 96,
+    "orbits": 1,
+    "games": 4,
+    "seed": "calibration-validation-reset4-20260926",
+    "samples": 1
+  },
+  {
+    "label": "validation-riichi-continuous",
+    "mode": "riichi",
+    "order": [
+      "high-card",
+      "eye",
+      "chow",
+      "two-eyes",
+      "chow-eye",
+      "pung",
+      "three-winds",
+      "pung-eye",
+      "three-dragons",
+      "long-chow",
+      "three-dragons-eye",
+      "four-winds",
+      "kong"
+    ],
+    "count": 96,
+    "orbits": 4,
+    "games": 1,
+    "seed": "calibration-validation-continuous-20260926",
+    "samples": 1
+  },
+  {
+    "label": "validation-riichi-reset4",
+    "mode": "riichi",
+    "order": [
+      "high-card",
+      "eye",
+      "chow",
+      "two-eyes",
+      "chow-eye",
+      "pung",
+      "three-winds",
+      "pung-eye",
+      "three-dragons",
+      "long-chow",
+      "three-dragons-eye",
+      "four-winds",
+      "kong"
+    ],
+    "count": 96,
+    "orbits": 1,
+    "games": 4,
+    "seed": "calibration-validation-reset4-20260926",
+    "samples": 1
+  },
+  {
+    "label": "format-basic-reset1",
+    "mode": "basic",
+    "order": [
+      "high-card",
+      "eye",
+      "chow",
+      "two-eyes",
+      "chow-eye",
+      "three-winds",
+      "pung",
+      "three-dragons",
+      "four-winds"
+    ],
+    "count": 16,
+    "orbits": 1,
+    "games": 1,
+    "seed": "calibration-format-reset1-20260926",
+    "samples": 0
+  },
+  {
+    "label": "format-basic-reset2",
+    "mode": "basic",
+    "order": [
+      "high-card",
+      "eye",
+      "chow",
+      "two-eyes",
+      "chow-eye",
+      "three-winds",
+      "pung",
+      "three-dragons",
+      "four-winds"
+    ],
+    "count": 16,
+    "orbits": 1,
+    "games": 2,
+    "seed": "calibration-format-reset2-20260926",
+    "samples": 0
+  },
+  {
+    "label": "format-basic-reset3",
+    "mode": "basic",
+    "order": [
+      "high-card",
+      "eye",
+      "chow",
+      "two-eyes",
+      "chow-eye",
+      "three-winds",
+      "pung",
+      "three-dragons",
+      "four-winds"
+    ],
+    "count": 16,
+    "orbits": 1,
+    "games": 3,
+    "seed": "calibration-format-reset3-20260926",
+    "samples": 0
+  },
+  {
+    "label": "format-riichi-reset1",
+    "mode": "riichi",
+    "order": [
+      "high-card",
+      "eye",
+      "chow",
+      "two-eyes",
+      "chow-eye",
+      "pung",
+      "three-winds",
+      "pung-eye",
+      "three-dragons",
+      "long-chow",
+      "three-dragons-eye",
+      "four-winds",
+      "kong"
+    ],
+    "count": 16,
+    "orbits": 1,
+    "games": 1,
+    "seed": "calibration-format-reset1-20260926",
+    "samples": 0
+  },
+  {
+    "label": "format-riichi-reset2",
+    "mode": "riichi",
+    "order": [
+      "high-card",
+      "eye",
+      "chow",
+      "two-eyes",
+      "chow-eye",
+      "pung",
+      "three-winds",
+      "pung-eye",
+      "three-dragons",
+      "long-chow",
+      "three-dragons-eye",
+      "four-winds",
+      "kong"
+    ],
+    "count": 16,
+    "orbits": 1,
+    "games": 2,
+    "seed": "calibration-format-reset2-20260926",
+    "samples": 0
+  },
+  {
+    "label": "format-riichi-reset3",
+    "mode": "riichi",
+    "order": [
+      "high-card",
+      "eye",
+      "chow",
+      "two-eyes",
+      "chow-eye",
+      "pung",
+      "three-winds",
+      "pung-eye",
+      "three-dragons",
+      "long-chow",
+      "three-dragons-eye",
+      "four-winds",
+      "kong"
+    ],
+    "count": 16,
+    "orbits": 1,
+    "games": 3,
+    "seed": "calibration-format-reset3-20260926",
+    "samples": 0
+  }
+]

@@ -1,0 +1,598 @@
+/* Dialogs — component styles and their responsive states. */
+
+.round-result {
+  border: 1px solid var(--color-border);
+  background: var(--color-canvas);
+  border-radius: var(--radius-panel);
+  grid-column: 1 / -1;
+  margin: 0 0 25px;
+  padding: 25px;
+}
+
+.round-result h2 {
+  font-size: var(--font-title);
+}
+
+.result-hands {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 22px;
+  display: grid;
+}
+
+.result-hands article > span {
+  color: var(--color-muted);
+  margin: 7px 0 var(--space-3);
+  font-size: var(--font-xs);
+  display: block;
+}
+
+.standings {
+  flex-wrap: wrap;
+  gap: var(--space-5);
+  margin-bottom: 22px;
+  font-size: var(--font-sm);
+  display: flex;
+}
+
+.standings span {
+  gap: 7px;
+  display: grid;
+}
+
+.error-toast {
+  border: 1px solid var(--color-chip-coral);
+  z-index: var(--z-popover);
+  background: var(--color-danger-surface);
+  border-radius: var(--radius-panel);
+  align-items: center;
+  gap: var(--space-5);
+  max-width: calc(100% - 30px);
+  padding: var(--space-3-half) var(--space-4-half);
+  font-size: var(--font-sm);
+  display: flex;
+  position: fixed;
+  bottom: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  box-shadow: var(--shadow-popover);
+}
+
+.error-toast button {
+  background: none;
+  border: 0;
+  min-height: 25px;
+  padding: 0;
+  font-size: var(--font-xl);
+}
+
+.game-dialog {
+  border: 1px solid var(--color-border);
+  background: var(--color-canvas);
+  width: min(560px, 100vw - 32px);
+  max-height: calc(100dvh - 48px);
+  color: var(--color-text);
+  border-radius: var(--radius-dialog);
+  padding: var(--space-6);
+  overflow: auto;
+  box-shadow: var(--shadow-dialog);
+}
+
+.game-dialog::backdrop {
+  background: var(--color-drawer-overlay);
+}
+
+.dialog-heading {
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
+  display: flex;
+}
+
+.dialog-heading h2 {
+  margin: 0;
+  font-size: var(--font-title);
+}
+
+.dialog-heading button {
+  min-width: 36px;
+  min-height: 36px;
+  padding: var(--space-1);
+  font-size: var(--font-xl);
+}
+
+.game-dialog p {
+  font-size: var(--font-md);
+  line-height: 1.6;
+}
+
+.bet-preview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.bet-preview-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-panel);
+  background: var(--color-seat);
+  text-align: center;
+  min-width: 0;
+}
+
+.bet-preview-stack strong {
+  font-size: var(--font-xl);
+  font-weight: var(--font-weight-emphasis);
+  font-variant-numeric: tabular-nums;
+}
+
+.bet-preview-stack small {
+  font-size: var(--font-sm);
+  color: var(--color-muted);
+}
+
+.game-dialog .bet-chips {
+  flex-wrap: wrap;
+}
+
+.game-dialog .chip {
+  width: 42px;
+  height: 42px;
+  font-size: var(--font-sm);
+}
+
+.game-dialog .fishing-row {
+  margin-top: var(--space-5);
+  display: block;
+}
+
+.game-dialog label {
+  font-size: var(--font-sm);
+}
+
+.game-dialog select {
+  width: 100%;
+  font-size: var(--font-md);
+}
+
+.game-dialog .expansion-actions {
+  gap: var(--space-3);
+  display: grid;
+}
+
+.dialog-actions {
+  flex-wrap: wrap;
+  margin-top: var(--space-6);
+  display: flex;
+}
+
+.dialog-actions button {
+  min-height: var(--control-height);
+  font-size: var(--font-md);
+}
+
+.game-dialog.result-dialog {
+  color: var(--color-text);
+  background: var(--color-canvas);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-dialog);
+  width: min(640px, 100vw - 32px);
+  max-height: calc(100dvh - 48px);
+  padding: 22px;
+  box-shadow: var(--shadow-dialog);
+}
+
+.game-dialog.result-dialog::backdrop {
+  backdrop-filter: blur(9px);
+  background: var(--color-overlay);
+}
+
+.result-dialog .dialog-heading {
+  margin-bottom: var(--space-4-half);
+}
+
+.result-dialog .dialog-heading h2 {
+  font:
+    700 16px LINE Seed Sans,
+    sans-serif;
+}
+
+.result-dialog .round-result {
+  box-shadow: none;
+  background: none;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  transform: none;
+}
+
+.result-dialog .round-result > h2 {
+  margin: var(--space-2) 0 var(--space-5);
+  font-size: var(--font-title);
+}
+
+.result-dialog .result-hands {
+  grid-template-columns: 1fr;
+  gap: var(--space-2-half);
+  display: grid;
+}
+
+.result-dialog .result-hands article {
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-control);
+  grid-template-columns: 130px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-3);
+  display: grid;
+}
+
+.result-dialog .result-hands article > span {
+  color: var(--color-muted);
+  margin: var(--space-1) 0 var(--space-2-half);
+  font-size: var(--font-xs);
+  display: block;
+}
+
+.result-dialog .mini-hand {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-1);
+  display: grid;
+}
+
+.result-dialog .mini-hand .playing-card {
+  width: 100%;
+  max-width: 52px;
+  margin: 0;
+  transform: none;
+}
+
+.result-dialog .result-actions {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: 22px;
+  display: flex;
+}
+
+.result-dialog .result-actions .primary {
+  color: var(--color-canvas);
+  width: 100%;
+}
+
+.result-player-summary > span {
+  color: var(--color-muted);
+  margin: var(--space-1) 0 9px;
+  font-size: var(--font-xs);
+  display: block;
+}
+
+.result-committed {
+  color: var(--color-text);
+  font-size: var(--font-xs);
+  display: block;
+}
+
+.result-committed strong {
+  color: var(--color-text);
+  font-size: var(--font-md);
+}
+
+.game-dialog > p[role="alert"] {
+  min-height: 24px;
+}
+
+.action-area > .standings {
+  display: none;
+}
+
+@media (width <= 850px) {
+  .rules-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (width <= 640px) {
+  .rules-panel {
+    padding: 22px;
+  }
+
+  .rules-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rules-heading h2 {
+    font-size: var(--font-title);
+  }
+
+  .rules-heading button {
+    flex-shrink: 0;
+    padding: 9px;
+    font-size: var(--font-xs);
+  }
+
+  .round-result {
+    padding: var(--space-5);
+  }
+
+  .round-result h2 {
+    font-size: var(--font-xl);
+  }
+
+  .game-dialog {
+    padding: var(--space-5);
+  }
+}
+
+@media (width <= 480px) {
+  .result-dialog .result-hands article {
+    grid-template-columns: 1fr;
+    gap: var(--space-2-half);
+  }
+
+  .result-player-summary {
+    grid-template-columns: 1fr auto;
+    gap: var(--space-1) var(--space-2);
+    display: grid;
+  }
+
+  .result-player-summary > span {
+    grid-column: 1;
+    margin: 0;
+  }
+
+  .result-committed {
+    grid-area: 1 / 2 / 3;
+    align-self: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .bet-preview-stack {
+    padding: var(--space-3);
+  }
+}
+
+.bet-editor .bet-chips {
+  justify-content: center;
+  margin-top: var(--space-2);
+}
+.bet-editor {
+  gap: var(--space-3);
+}
+
+/* Native modal drawers keep focus and dismissal consistent across help and betting. */
+.game-dialog.drawer {
+  position: fixed;
+  inset: auto 0 0;
+  margin: 0 auto;
+  width: min(960px, 100%);
+  max-height: 82dvh;
+  border-radius: 22px 22px 0 0;
+  padding: 24px clamp(20px, 4vw, 40px);
+  transform: none;
+  animation: drawer-enter 180ms ease-out;
+}
+.game-dialog.bet-drawer {
+  width: min(720px, 100%);
+}
+.game-dialog.drawer .dialog-heading h2 {
+  font-size: 26px;
+}
+.game-dialog.drawer .dialog-heading {
+  margin-bottom: 18px;
+}
+.game-dialog.drawer .dialog-actions {
+  margin-top: 20px;
+}
+.bet-drawer .bet-preview-stack {
+  padding: 14px;
+  gap: 6px;
+}
+.bet-drawer .bet-preview-stack strong {
+  font-size: 26px;
+}
+.bet-drawer .bet-chips .chip {
+  font-weight: 500;
+}
+.rank-drawer #hand-ladder {
+  width: 100%;
+  max-height: none;
+}
+.rank-drawer #hand-ladder ol {
+  margin: 0;
+  padding: 0;
+  column-gap: 28px;
+  row-gap: 0;
+}
+.rank-drawer #hand-ladder li {
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+  padding: 16px 0;
+}
+.rank-drawer #hand-ladder li + li {
+  border-top: 0;
+}
+.rank-drawer .rank-details > b {
+  font-size: 20px;
+}
+.rank-drawer .rank-details > small {
+  font-size: 15px;
+  font-weight: 400;
+  color: color-mix(in srgb, var(--color-muted) 72%, white);
+}
+.rank-drawer .rank-examples .playing-card {
+  width: 44px;
+}
+.rules-content section {
+  border-top: 1px solid var(--color-border);
+  padding-top: 20px;
+}
+.rules-content h4 {
+  font-size: 20px;
+  margin: 0 0 16px;
+}
+.rules-content h5 {
+  font-size: 18px;
+  margin: 20px 0 8px;
+}
+.rules-content p,
+.rules-content li {
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--color-muted);
+}
+.rules-content ul,
+.rules-content ol {
+  padding-left: 24px;
+  margin: 16px 0;
+}
+.rules-content li {
+  margin: 6px 0;
+}
+.rules-content strong {
+  font-weight: 700;
+  color: var(--color-text);
+}
+.rules-chapter > h3 {
+  font-size: 26px;
+  margin: 28px 0 16px;
+}
+.rules-chapter + .rules-chapter {
+  margin-top: 40px;
+}
+.rules-setup-illustrations {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 20px 0;
+}
+.rules-setup-illustrations .rules-illustration {
+  float: none;
+  margin: 0;
+  max-width: 44%;
+  min-width: 0;
+}
+.rules-setup-illustrations .rules-illustration img {
+  object-fit: contain;
+}
+.rules-content table {
+  width: min(520px, 100%);
+  margin: 24px 0 28px;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+.rules-content th,
+.rules-content td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+/* Keep the authored compositions intact rather than laying out loose card faces. */
+.rules-content {
+  display: block;
+  margin: 0;
+}
+.rules-content section {
+  display: flow-root;
+  padding: 28px 0;
+}
+.rules-content section:last-child h5 {
+  clear: both;
+}
+.rules-illustration {
+  float: right;
+  margin: 0 0 24px 28px;
+  max-width: 45%;
+}
+.rules-illustration img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.rules-illustration-inline {
+  float: none;
+  clear: both;
+  max-width: 100%;
+  margin: 24px 0;
+}
+.fishing-illustration {
+  position: relative;
+  width: 117px;
+  height: 296px;
+}
+.fishing-illustration img {
+  position: absolute;
+  max-width: none;
+}
+@media (max-width: 480px) {
+  .rules-setup-illustrations {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+  }
+  .rules-setup-illustrations .rules-illustration:first-child {
+    flex-basis: 100%;
+    max-width: 100%;
+  }
+  .rules-setup-illustrations .rules-illustration:first-child img {
+    margin: auto;
+  }
+  .rules-illustration {
+    float: none;
+    max-width: 100%;
+    margin: 20px auto;
+    width: fit-content;
+  }
+  .fishing-illustration {
+    width: 117px;
+  }
+}
+@keyframes drawer-enter {
+  from {
+    opacity: 0;
+    translate: 0 24px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@media (max-width: 700px) {
+  .rank-drawer #hand-ladder ol {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    grid-auto-flow: row;
+  }
+  .rank-drawer .rank-details {
+    display: grid;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-dialog.drawer {
+    animation: none;
+  }
+}
+
+.rules-content .rules-example {
+  clear: both;
+  background: var(--color-rules-example);
+  padding: 12px 16px;
+  border-radius: var(--radius-control);
+  color: var(--color-text);
+}
+
+.game-dialog.rules-drawer .dialog-heading {
+  float: right;
+  margin: 0 0 12px 20px;
+}
+.rules-chapter:first-child > h3 {
+  margin-top: 0;
+}

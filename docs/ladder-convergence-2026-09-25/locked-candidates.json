@@ -1,0 +1,32 @@
+{
+  "lockedAt": "2026-09-25T17:48:37.844042+00:00",
+  "basic": [
+    "high-card",
+    "eye",
+    "chow",
+    "two-eyes",
+    "chow-eye",
+    "three-winds",
+    "pung",
+    "three-dragons",
+    "four-winds"
+  ],
+  "riichi": [
+    "high-card",
+    "eye",
+    "chow",
+    "two-eyes",
+    "chow-eye",
+    "pung",
+    "three-winds",
+    "pung-eye",
+    "three-dragons",
+    "three-dragons-eye",
+    "four-winds",
+    "kong"
+  ],
+  "reason": "Basic original has zero observed build-frequency inversions in screen; all three Basic alternatives worsen alignment. Riichi combined has strictly decreasing contained-combination frequency across ranks in the new 80-game block and first-three-orbit sensitivity. Small showdown point inversions require held-out uncertainty checks.",
+  "validationSeed": "ladder-validation-20260925",
+  "validationGamesPerArm": 160,
+  "productionChanged": false
+}

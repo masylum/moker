@@ -1,20 +1,27 @@
 import { describe, expect, it } from "vitest"
-import { blankFace, dragonFace, numberedFace, windFace } from "../src/game/cards"
+import { blankFace, numberedFace, windFace } from "../src/game/cards"
 import { GameEngine } from "../src/game/engine"
+import { stepHeuristic } from "../src/game/automation"
 import { analyzePokerMath } from "../src/game/heuristic"
 import { publicKnownPrivateCards } from "../src/game/information"
 
-const players = [
-  { id: "p1", name: "A", controller: "human" as const },
-  { id: "p2", name: "B", controller: "heuristic" as const },
-]
+function engine(): GameEngine {
+  return GameEngine.create(
+    Array.from({ length: 4 }, (_, index) => ({
+      id: `p${index + 1}`,
+      name: `P${index + 1}`,
+      controller: "heuristic" as const,
+    })),
+    { seed: "public-information", heuristicSamples: 4 },
+  )
+}
 
 describe("public opponent information", () => {
-  it("tracks publicly acquired tiles until they are visibly discarded", () => {
-    const engine = readyEngine()
+  it("tracks publicly acquired tiles until visibly discarded", () => {
+    const game = engine()
     const east = { id: "wind-east-1", ...windFace("east") }
     const south = { id: "wind-south-1", ...windFace("south") }
-    engine.state.drawDiscardHistory = [
+    game.state.drawDiscardHistory = [
       {
         playerId: "p1",
         source: "discard-a",
@@ -22,6 +29,7 @@ describe("public opponent information", () => {
         discardedCard: { id: "bamboo-1-1", ...numberedFace("bamboo", 1) },
         discardPile: "a",
         discardIndex: 0,
+        reason: "call",
       },
       {
         playerId: "p1",
@@ -30,6 +38,7 @@ describe("public opponent information", () => {
         discardedCard: { id: "blank-1", ...blankFace() },
         discardPile: "b",
         discardIndex: 0,
+        reason: "call",
       },
       {
         playerId: "p1",
@@ -38,78 +47,99 @@ describe("public opponent information", () => {
         discardedCard: east,
         discardPile: "a",
         discardIndex: 1,
+        reason: "call",
       },
     ]
-
-    expect(publicKnownPrivateCards(engine.state).p1?.map((card) => card.id)).toEqual([
+    const moves = game.publicView("p2").publicDrawDiscards!
+    expect(moves[0]!.drawnCard).toEqual(east)
+    expect(moves[1]!.drawnCard).toEqual(south)
+    expect(moves[2]).not.toHaveProperty("drawnCard")
+    expect(moves[2]!.discardedCard).toEqual(east)
+    expect(publicKnownPrivateCards(game.state).p1?.map((card) => card.id)).toEqual(["wind-south-1"])
+    expect(game.publicView("p2").players[0]!.knownPrivateCards.map((card) => card.id)).toEqual([
       "wind-south-1",
     ])
-    const publicPlayer = engine.publicView("p2").players.find((player) => player.id === "p1")!
-    expect(publicPlayer.knownPrivateCards.map((card) => card.id)).toEqual(["wind-south-1"])
-    expect(publicPlayer.privateCards).toEqual({ count: 3 })
   })
 
-  it("discounts confidence when public Winds and repeated raises narrow an opponent's range", () => {
-    const engine = readyEngine()
-    engine.state.street = 4
-    engine.state.phase = "betting"
-    engine.state.actingPlayerId = "p2"
-    engine.state.pendingPlayerIds = ["p2"]
-    engine.state.community = [
-      { id: "wind-north-1", ...windFace("north") },
-      { id: "dragon-green-1", ...dragonFace("green") },
-      { id: "dragon-green-2", ...dragonFace("green") },
-      { id: "bamboo-7-1", ...numberedFace("bamboo", 7) },
-      { id: "characters-9-1", ...numberedFace("characters", 9) },
+  it("reports public-range and aggression inputs without exposing concealed cards", () => {
+    const game = engine()
+    game.state.phase = "betting"
+    game.state.street = 2
+    game.state.actingPlayerId = "p2"
+    game.state.pendingPlayerIds = ["p2"]
+    game.state.players[0]!.publicCards = [{ id: "wind-east-1", ...windFace("east") }]
+    game.state.bettingHistory = [
+      { playerId: "p1", street: 1, type: "bet", amount: 20 },
+      { playerId: "p1", street: 2, type: "bet", amount: 50 },
     ]
-    engine.state.players[1]!.privateCards = [
-      { id: "dots-2-1", ...numberedFace("dots", 2) },
-      { id: "dots-3-1", ...numberedFace("dots", 3) },
-      { id: "dots-4-1", ...numberedFace("dots", 4) },
-    ]
-    engine.state.drawDiscardHistory = [
-      {
-        playerId: "p1",
-        source: "discard-a",
-        drawnCard: { id: "wind-east-1", ...windFace("east") },
-        discardedCard: { id: "bamboo-1-1", ...numberedFace("bamboo", 1) },
-        discardPile: "a",
-        discardIndex: 0,
-      },
-      {
-        playerId: "p1",
-        source: "blank-exchange",
-        drawnCard: { id: "wind-south-1", ...windFace("south") },
-        discardedCard: { id: "blank-1", ...blankFace() },
-        discardPile: "b",
-        discardIndex: 0,
-      },
-    ]
-    const unweighted = analyzePokerMath(engine.state, "p2", 128).showdownEquity
-    engine.state.bettingHistory = [
-      { playerId: "p1", street: 4, type: "raise", amount: 50 },
-      { playerId: "p1", street: 4, type: "raise", amount: 200 },
-      { playerId: "p1", street: 4, type: "raise", amount: 430 },
-    ]
-    const rangeAnalysis = analyzePokerMath(engine.state, "p2", 128)
+    const analysis = analyzePokerMath(game.state, "p2", 8)
+    expect(analysis.knownOpponentTiles).toBeGreaterThanOrEqual(1)
+    expect(analysis.opponentAggressiveActions).toBe(2)
+    expect(game.publicView("p2").players[0]!.privateCards).toEqual({ count: 7 })
+  })
 
-    expect(rangeAnalysis.knownOpponentTiles).toBe(2)
-    expect(rangeAnalysis.opponentAggressiveActions).toBe(3)
-    expect(rangeAnalysis.showdownEquity).toBeLessThan(unweighted - 0.05)
+  it("removes folded concealed tiles without leaking the face-down discard", () => {
+    const game = engine()
+    while (game.state.phase !== "betting") stepHeuristic(game)
+    const folderId = game.state.actingPlayerId!
+    game.act(folderId, { type: "fold" })
+    const view = game.publicView("p1")
+    expect(view).not.toHaveProperty("removedCards")
+    expect(view).not.toHaveProperty("foldedPrivateCards")
+    expect(game.state.players.find((player) => player.id === folderId)!.privateCards).toEqual([])
+    expect(game.state.foldedPrivateCards[folderId]).toHaveLength(7)
   })
 })
 
-function readyEngine(): GameEngine {
-  const engine = GameEngine.create(players, { seed: "public-information", heuristicSamples: 8 })
-
-  while (engine.state.phase === "seeding") {
-    const playerId = engine.state.actingPlayerId!
-    const player = engine.state.players.find((candidate) => candidate.id === playerId)!
-    engine.seedDiscard(playerId, {
-      discardCardId: player.privateCards[0]!.id,
-      discardPile: engine.state.discardA.length === 0 ? "a" : "b",
-    })
+it("counts a lane card only once after it is exposed, including a Lotus", () => {
+  const game = engine()
+  const lotus = {
+    id: "flower-white-lotus",
+    kind: "flower" as const,
+    flower: "white-lotus" as const,
+    color: null,
   }
+  game.state.drawDiscardHistory = [
+    {
+      playerId: "p1",
+      source: "discard-a",
+      drawnCard: lotus,
+      discardedCard: { id: "bamboo-1-1", ...numberedFace("bamboo", 1) },
+      discardPile: "a",
+      discardIndex: 0,
+      reason: "call",
+    },
+  ]
+  expect(publicKnownPrivateCards(game.state).p1).toEqual([lotus])
+  game.state.players[0]!.publicCards = [lotus]
+  game.state.exposureHistory = [{ playerId: "p1", street: 1, card: lotus }]
+  expect(publicKnownPrivateCards(game.state).p1).toEqual([])
+  expect(game.publicView("p2").players[0]!.knownPrivateCards).toEqual([])
+})
 
-  return engine
-}
+it("shows each viewer only their two received Charleston cards", () => {
+  const game = GameEngine.create(
+    ["p1", "p2"].map((id) => ({ id, name: id, controller: "human" as const })),
+    { seed: "charleston-receipt", mode: "riichi" },
+  )
+  expect(game.publicView("p1").charlestonReceivedCards).toEqual([])
+  while (game.state.phase === "charleston") {
+    const player = game.state.players.find((p) => p.id === game.state.actingPlayerId)!
+    game.passCharleston(
+      player.id,
+      player.privateCards.slice(0, 2).map((card) => card.id),
+    )
+  }
+  for (const player of game.state.players) {
+    const receipt = game.publicView(player.id).charlestonReceivedCards!
+    expect(receipt).toEqual(
+      game.state.charlestonHistory.find((pass) => pass.toPlayerId === player.id)!.cards,
+    )
+    expect(receipt).toHaveLength(2)
+    expect(receipt.every((card) => player.privateCards.some((held) => held.id === card.id))).toBe(
+      true,
+    )
+  }
+  expect(game.publicView().charlestonReceivedCards).toEqual([])
+  expect(game.publicView("unknown").charlestonReceivedCards).toEqual([])
+})

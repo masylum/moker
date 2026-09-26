@@ -1,0 +1,7 @@
+{
+  "oldEngineHash": "7537b0bb369103b53f147cf0b7f893084d93c33409a48aa0068f9d0d74adc77e",
+  "newEngineHash": "9bf926f9fae3787fd005f31ad524d86b9360143a03b635b35de5e0a796495e67",
+  "onlyChange": "      charlestonReceivedCards: _charlestonHistory\n        .filter((pass) => pass.toPlayerId === viewerId)\n        .flatMap((pass) => pass.cards),\n",
+  "effect": "Adds charlestonReceivedCards to publicView, which the heuristic simulator does not use; no state transitions or scoring change. Round-two and validation cohorts both use the new source.",
+  "verifiedBy": "Removing exactly the three public-view projection lines reproduces the original SHA-256."
+}

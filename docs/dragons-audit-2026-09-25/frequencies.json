@@ -1,0 +1,87 @@
+{
+  "basic": {
+    "exact_opening": {
+      "cards": 7,
+      "deck": 102,
+      "total_hands": 18466953120,
+      "dragon_hands": 89813484,
+      "pung_hands": 127934928,
+      "dragon_pct": 0.48634706232470254,
+      "pung_pct": 0.692777672465332
+    },
+    "held_out": {
+      "runs": 160,
+      "hands": 2516,
+      "player_hands": 9897,
+      "counts": {
+        "three-dragons": {
+          "opening": 41,
+          "contains": 179,
+          "show": 43,
+          "showContains": 43,
+          "newBuilt": 138
+        },
+        "pung": {
+          "opening": 70,
+          "contains": 538,
+          "show": 176,
+          "showContains": 177,
+          "newBuilt": 468
+        }
+      }
+    }
+  },
+  "riichi": {
+    "exact_opening": {
+      "cards": 7,
+      "deck": 112,
+      "total_hands": 36227890512,
+      "dragon_hands": 300701568,
+      "pung_hands": 728053296,
+      "dragon_pct": 0.8300278148969139,
+      "pung_pct": 2.0096486041847847
+    },
+    "held_out": {
+      "runs": 160,
+      "hands": 2560,
+      "player_hands": 10236,
+      "counts": {
+        "three-dragons": {
+          "opening": 86,
+          "contains": 383,
+          "show": 43,
+          "showContains": 87,
+          "newBuilt": 290
+        },
+        "three-dragons-eye": {
+          "opening": 9,
+          "contains": 130,
+          "show": 44,
+          "showContains": 44,
+          "newBuilt": 121
+        },
+        "pung": {
+          "opening": 175,
+          "contains": 1229,
+          "show": 158,
+          "showContains": 420,
+          "newBuilt": 1022
+        },
+        "pung-eye": {
+          "opening": 20,
+          "contains": 591,
+          "show": 214,
+          "showContains": 217,
+          "newBuilt": 571
+        },
+        "kong": {
+          "opening": 2,
+          "contains": 42,
+          "show": 12,
+          "showContains": 12,
+          "newBuilt": 40
+        }
+      }
+    }
+  }
+}

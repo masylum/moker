@@ -1,67 +1,59 @@
-# Mahjong Poker Lab
+# Moker
 
-A deterministic TypeScript implementation of Mahjong Poker for rules testing, balance simulation, bot play, and human playtesting.
+A browser and terminal card game for 2–6 players, with a shared deterministic TypeScript engine, heuristic opponents, optional LLM opponents, and persisted Cloudflare game sessions.
 
-## What is included
+The [attached rules](public/rules.md) are the source of truth for rules version 6. Basic play starts with 200 chips, a 5-chip ante, a 102-card deck, and one dealer orbit by default. Browser setup also allows 2–4 continuous orbits, with chips carried over. The Riichi Expansion adds Charleston, Jokers, Blanks, Lotuses, fishing sticks, one automatic ante loan per player per game, and the advanced ladder. Three- and four-game tournaments reset each game and sum adjusted scores.
 
-- A framework-independent game library in `src/game` with a 114-tile Flower deck, four Texas Hold'em-style streets, `rand-seed` determinism, and the fixed 16-rank five-card Hand ladder.
-- A statistical player that estimates multiway showdown equity, pot odds, call EV, draw sources, discards, legal wagers, Riichi, buried-discard Blank exchanges, and distance from every Hand. Rollouts retain opponents' publicly Fished tiles, narrow ranges from betting action, and gate aggression on the resulting equity before considering blue-stick strategy.
-- Replayable simulations whose events, decisions, state, and seed can be inspected later.
-- One Cloudflare Durable Object per game session, with SQLite event snapshots and synchronized current state.
-- A Cloudflare Think agent using OpenRouter tools to inspect legal information, compare the heuristic baseline, commit a validated move, and persist model-exposed reasoning/tool/usage artifacts plus a concise strategic summary.
-- A responsive SolidJS SPA and a colored Unicode terminal client for human play against heuristic players, with complete hand-result reveals and an opt-in compact table view combining each seat's hidden hand, current/next Hand, draw, and poker math.
-- Oxlint, Oxfmt, and Knip checks, with no-semicolon formatting and unused-code detection.
-- Node unit tests plus Workers-runtime integration tests.
+The browser uses original cards, logo, and illustrations exported from the supplied Figma file, its chip palette, and local LINE Seed Sans fonts. See [asset provenance](docs/design-assets.md) for sources and the Gelica font fallback.
 
 ## Local setup
-
-Requirements: a current supported Node LTS release and an OpenRouter API key for LLM turns.
 
 ```bash
 npm install
 cp .dev.vars.example .dev.vars
-# edit .dev.vars and add your key
 npm run dev
 ```
 
-The heuristic player, scoring library, simulations, and non-LLM UI work without an API key.
+An OpenRouter key is needed only for LLM-controlled turns. Browser play uses heuristic opponents by default and works without a key. Choose multiple human players for pass-and-play on one device; a handoff screen conceals cards between players. Old rules-v5 and earlier sessions cannot be resumed under the new engine.
 
 ## Commands
 
 ```bash
-npm test                 # game/rules/scoring/determinism tests
-npm run test:worker      # Worker + Durable Object integration tests
-npm run typecheck
-npm run lint
-npm run format:check
-npm run knip
-npm run check              # all static checks and tests
+npm run check
 npm run build
-npm run simulate -- 1000 balance-seed --samples 64 --workers 9
-npm run play -- --seed jade-table --players 4 --samples 48
-npm run play -- --seed jade-table --debug  # reveal all hands, equity, odds, edge, and EV
-npm run play -- --auto --seed demo  # visible non-interactive heuristic game
-npm run deploy:dry
-npm run deploy
+npm run simulate -- 20 basic-health --samples 24 --workers auto
+npm run simulate -- 20 riichi-health --samples 24 --workers auto --riichi
+npm run play -- --seed jade-table --players 4
+npm run play -- --riichi --games 3 --players 6
+npm run play -- --auto --seed demo
 ```
 
-Set the production secret before deployment:
+See [architecture](docs/architecture.md) and [implementation notes](docs/implementation-notes.md). Existing experiment and health-report documents record earlier rules and are historical, not balance evidence for version 6.
+
+## Parallel simulation
+
+`simulate` uses the current engine and bots, with four continuous orbits per game and 24 equity trials per projection. By default it starts one persistent CPU process per available core, capped at the number of games. Use `--workers 8` to leave some capacity free on a ten-core machine, or `--workers 1` for serial execution. The browser and server do not spawn these processes.
 
 ```bash
-npx wrangler secret put OPENROUTER_API_KEY
+npm run simulate -- 20 health-v6 --riichi --workers auto --output /tmp/health.md --jsonl /tmp/health.jsonl --logs /tmp/health-logs
 ```
 
-`OPENROUTER_MODEL` defaults to `x-ai/grok-4.6`, matching the requested OpenRouter model. It remains a non-secret configuration value, so you can switch models without changing code.
+The summary includes all-ins, Street 4, eliminations, loans and showdown hand win rates. JSONL retains each completed game's full state and events, including hands for subsequent catch-up analysis. `--logs` additionally saves decision alternatives for the first ten seed indices; change this with `--log-count`. Logs increase disk usage, so omit them for throughput-only runs. Aggregate runs discard decision alternatives after use and do not retain all completed games in memory.
 
-## Architecture
+`--orbits 1` runs shorter smoke checks; `--offset 20` starts at seed index 20. Each game's result is independent of worker count. JSONL completion order can differ: compare by `index` or `seed`, not line position. Progress reports every ten seconds. Ctrl-C terminates workers and leaves completed JSONL records; incomplete games are not recorded. A new invocation replaces its outputs, so choose another path when extending a run. There is no automatic resume. `--help` lists all options.
 
-```text
-                       deterministic game library
-                      /                          \
-colored terminal client                     Cloudflare Worker API
-                                             ├─ SolidJS SPA client
-                                             ├─ GameSession
-                                             └─ MahjongPlayer / Think / Grok
+Use this command for new health checks. `scripts/archive/health-check.ts` and dated experiment runners retain historical policies/settings and are not the entry point for the current bots.
+
+## Code organization and performance checks
+
+Current CLI tools live in `scripts/`, reusable simulation/orbit helpers in `scripts/lib/`, and dated research tools in `scripts/archive/`. Historical source snapshots in `docs/` remain reproducibility artifacts, outside active lint/type/dead-code checks. Current runtime code imports its own rules, rather than research snapshots; the explicit previous-generation comparison runner retains its frozen opponent.
+
+`npm run check` enforces formatting, type-aware lint, dead-code analysis, TypeScript and both unit/integration tests. There is no catch-all game export barrel: consumers import the modules they use. Shared hand evaluation is in `scoring.ts`, `melds.ts` and `hand-progress.ts`; bot count-only projections reuse the same pattern definitions as UI explanations.
+
+For a small single-core performance regression check (six games, 24 samples):
+
+```bash
+node --import tsx scripts/benchmark-simulator.ts --output /tmp/simulator-timing.json
 ```
 
-The terminal and server use the same `GameEngine`, scoring ladder, heuristic, and automated-step functions; only transport and presentation differ. See `docs/architecture.md` for module and persistence ownership, and `docs/implementation-notes.md` for deterministic rulings.
+Run it in fresh processes for repeatable comparisons. `--module /path/to/snapshot/src/game/simulation.ts` selects an earlier implementation. The output includes hashes of full results, including decisions, so timing changes can be checked against behavior. See [the optimization report](docs/simulator-cleanup-2026-09-25.md).

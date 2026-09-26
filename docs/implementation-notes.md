@@ -1,27 +1,17 @@
-# Rule implementation notes
+# Rules-v6 implementation notes
 
-The engine follows the revised Mahjong Poker rules: 114 tiles including four Flowers, 4-card opening hands that seed the discard lanes down to 3 private tiles, an empty first street followed by 3/1/1 community reveals, Flower board resets and bluff bonuses, blue-stick and Loan charges, two fully visible discard lanes, own-turn buried-discard Blank exchanges, early-street Riichi, the fixed 16-rank five-card Hand ladder, three dealer orbits, and the final charge.
+The complete rule sheet is [public/rules.md](../public/rules.md). These rulings deserve particular care:
 
-The source rules leave a few procedural details open. The library makes these deterministic choices:
+- The starting dealer is seeded randomly. A game ends after the selected 1–4 dealer orbits (one by default), including crossing eliminated seats. Chips, loans, and sticks carry across these orbits; tournament resets occur only between games. Basic players unable to ante are eliminated; Expansion players automatically borrow 200 only when needed for an ante, at most once per game. A later unaffordable ante eliminates them while retaining their remaining chips and 250-point loan deduction. The allowance carries across orbits and resets between tournament games; loans cannot be repaid.
+- Tournament games reset chips to 200/300/400/500, antes to 5/10/15/20, and reset loans and elimination; carry unused Riichi sticks forward and add two per game (starting with two). Adjusted scores accumulate across games.
+- Each lane starts with one card. Basic skips Charleston; Expansion passes two cards left simultaneously. Reveals are simultaneous 3/1/1 between four betting streets.
+- Check is available only at no cost. Check and Call each include one free fish in both modes; Call pays only the difference. Bet/Raise gives no free fish. Expansion permits one stick per turn for a second fish after Check/Call or one fish after Bet. All-in and declared-Riichi locks still stop fishing.
+- The dealer opens Street 1. Later streets start with the last bettor from the preceding street, or the dealer if nobody bet, skipping folded players.
+- All-in caps only the current street. Excess street contributions are refunded, previous-street money remains in the pot, and raises and fishing stop. A shorter subsequent call lowers the cap again. Remaining players call or fold, then proceed directly to showdown; there are no side pots. Spending the final chips on the ante also triggers showdown after setup.
+- A Blank exchanges with any depth of either lane, leaving the Blank at that exact position, and replaces one fishing action without a separate discard.
+- Riichi is declared with a Bet on Streets 1–3 and locks the hand immediately. Only one active declaration is allowed; folding releases it. Solely winning the pot earns two sticks; splitting does not.
+- Twin Lotus is an automatic showdown win outside the ladder. One Lotus loses; if every contender has one, they split. An uncontested winner's single public or private Lotus collects three antes from each participating opponent, capped at available chips without loans.
+- Basic has nine ranks and Expansion twelve. Ties compare defining combinations before pairs, descending; Winds outrank Dragons, which outrank numbered cards. Unused kickers do not count. Exact ties split exactly, including fractional chips. A fractional remaining stack can be bet all-in.
+- Public views never expose folded or uncontested concealed cards through result history. Invalid actions leave chips, cards, events, and randomness unchanged.
 
-- Numbered suits are presented to players and the LLM as Cracks, Bams, and Dots. The serialized values remain `characters`, `bamboo`, and `dots` so existing saved sessions can still be restored.
-- A betting street starts with the first active player clockwise after the dealer.
-- A raise reopens action for every other active player. A street closes once every remaining player has matched the current wager or folded.
-- Chips have physical denominations of 5, 10, 20, 50, and 100. Every wager is a multiple of 5, and its `amount` is the player's target total for that street.
-- The minimum opening wager is 5. Raises follow the poker full-raise rule: the increase must be at least the size of the previous opening bet or raise. A new street resets that minimum to 5.
-- A new 114-tile deck is shuffled for each hand.
-- Each player receives four private tiles and, clockwise after the dealer, seeds one face-up discard before street 1. The first two seed discards must populate the two separate lanes.
-- A Flower revealed on any community street scraps the whole board and the triggering reveal. A Flower-free replacement flop starts a new street-2 betting round without changing the pot, commitments, folded players, Riichi, sticks, or Loans. Replacement flops are redealt until Flower-free.
-- Flowers have no ordinary High Card, Eye, or meld value. Two distinct natural Flowers plus a separate natural Eye make rank-15 Bouquet. Three distinct Flowers make rank-16 Imperial Garden, and one Black Joker may substitute there.
-- Exactly one natural private Flower disqualifies a player at showdown, even alongside the Black Joker. If all contenders are disqualified, they split the pot as a dead heat. An uncontested winner with exactly one natural private Flower instead receives 20 chips directly from every opponent.
-- A tied pot is split in 5-chip units. Remaining 5-chip units are awarded clockwise after the dealer among the tied winners, so the engine never creates a chip denomination that does not exist.
-- Folding gives the player two penalty blue sticks. If the center runs out while paying either stick, the donor is the first clockwise player holding one.
-- Only the first Riichi declaration in a hand is legal. If that player wins, their remaining blue sticks return to the center before one stick is paid clockwise to each opponent still in the hand. This settlement also runs after an uncontested win, when there are no remaining opponents to receive a stick.
-- Publicly Fished tiles and buried tiles claimed with a Blank remain attached to that opponent's public range until visibly discarded. Equity rollouts pin those tiles to that opponent and weight the remaining range by their public calls, bets, and raises.
-- A Joker only takes an identity in a Hand of at least three cards. It cannot form natural Eyes, the natural Dragon Eye in Dragon Dancer, or Crosswinds. A Kong must contain its matching Joker because only three natural copies exist.
-- A player unable to make a payment must take an eligible Loan first. Optional wagers remain capped by available chips. After the third Loan, inability to pay the next opening charge eliminates the player before that hand; their blue sticks return to the center, their score freezes apart from outstanding Loan principal, and the game ends early if only one player remains.
-- At showdown, each player chooses the highest completed Hand available from any mix of their three private and five community cards. Only that single Hand counts. Equal Hands compare the main combination first and any Eye or secondary component second; numbered suits are equal, and an exact tie splits the pot.
-
-Normal Draw & Discard remains two engine transitions: the player chooses the source, sees the drawn card, then chooses the discard. The heuristic and LLM server steps execute both transitions before responding, so automated turns render once while preserving the hidden-information boundary. A Blank exchange is one transition because it replaces the Blank in place and requires no further discard.
-
-Event timestamps in pure simulations are logical timestamps derived from event order, so complete replays remain byte-for-byte deterministic. Durable and LLM records use real timestamps because they are operational audit data.
+Reserved zero/empty Curse fields remain in version-6 saves for compatibility. Unreachable Curse execution, bot utility and CLI options have been removed; legacy action fields are retained only for explicit rejection at input validation. Version 6 offers no curse actions and rejects manual borrowing and repayment. Version 5 and older saved games are rejected; version 6 introduces the per-game loan cap.

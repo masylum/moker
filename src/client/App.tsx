@@ -1,1024 +1,1968 @@
-import { For, Show, createEffect, createMemo, createSignal } from "solid-js"
-import { cardLabel, compareCards, suitLabel } from "../game/cards"
-import { MAX_LOANS } from "../game/rules"
+import {
+  For,
+  Show,
+  createEffect,
+  createMemo,
+  createSignal,
+  onCleanup,
+  onMount,
+  type JSX,
+} from "solid-js"
+import { OpponentMove, type DrawNotice, sourcePosition } from "./OpponentMove"
+import { createGameAudio } from "./audio"
+import { knownHand } from "./known-hand"
+import { SpiritAvatar } from "./SpiritAvatar"
+import { cardLabel, compareCards } from "../game/cards"
+import { CHIP_UNIT } from "../game/rules"
+import { scoreHand } from "../game/scoring"
 import type {
   BettingAction,
-  BlankExchange,
   Card,
   CardSource,
-  DebugGameView,
-  DrawDiscardRecord,
-  HandResult,
-  PokerMathAnalysis,
   PublicGameState,
   PublicPlayerState,
 } from "../game/types"
-import { FLOWERS } from "../game/types"
-import {
-  bettingAction,
-  botStep,
-  createGame,
-  gameAction,
-  getEvents,
-  loadDebugGame,
-  loadGame,
-  runSimulations,
-} from "./api"
+import { bettingAction, botStep, createGame, gameAction, loadGame, type SeatKind } from "./api"
+import { cardAsset } from "./assets"
+import { createTableMotion } from "./motion"
+import { readSetup, saveSetup } from "./setup-preferences"
+import { RulesContent } from "./RulesContent"
+import { Button } from "./Button"
+import { handExamples } from "./hand-examples"
 
-const storedSession = localStorage.getItem("mahjong-poker-session") ?? ""
+const BASIC_LADDER = [
+  ["High Card", "One card"],
+  ["Eyes", "Two identical cards"],
+  ["Chow", "Three consecutive, one suit"],
+  ["Two Eyes", "Two pairs"],
+  ["Chow and Eyes", "A Chow + a pair"],
+  ["Three Winds", "Three different Winds"],
+  ["Pung", "Three identical cards"],
+  ["Three Dragons", "One of each Dragon"],
+  ["Four Winds", "One of each Wind"],
+]
+const ADVANCED_LADDER = [
+  ...BASIC_LADDER.slice(0, 5),
+  BASIC_LADDER[6]!,
+  BASIC_LADDER[5]!,
+  ["Pung and Eyes", "A Pung + a pair"],
+  BASIC_LADDER[7]!,
+  ["Long Chow", "Five consecutive cards of the same suit"],
+  ["Three Dragons and Eyes", "Three Dragons + a pair"],
+  BASIC_LADDER[8]!,
+  ["Kong", "Four identical cards"],
+]
+
+const format = (amount: number) =>
+  new Intl.NumberFormat("en", { maximumFractionDigits: 2 }).format(amount)
 
 export function App() {
-  const [sessionId, setSessionId] = createSignal(storedSession)
-  const [seed, setSeed] = createSignal("jade-table-01")
+  const audio = createGameAudio()
+  onCleanup(() => audio.dispose())
+  const [musicOn, setMusicOn] = createSignal(audio.musicEnabled())
+  const [effectsOn, setEffectsOn] = createSignal(audio.effectsEnabled())
+  const [session, setSession] = createSignal(localStorage.getItem("moker-v6-session") ?? "")
   const [state, setState] = createSignal<PublicGameState>()
+  const [drawNotice, setDrawNotice] = createSignal<DrawNotice>()
+  let pendingMoves: DrawNotice[] = []
+  const finishOpponentMove = () => setDrawNotice(pendingMoves.shift())
+  let tableSurface: HTMLDivElement | undefined
+  const motion = createTableMotion(() => tableSurface)
+  onCleanup(() => motion.dispose())
+  function updateState(next: PublicGameState) {
+    const previous = state()
+    pendingMoves = []
+    setDrawNotice(undefined)
+    if (previous && previous.handNumber === next.handNumber) {
+      pendingMoves = (next.publicDrawDiscards ?? [])
+        .slice(previous.publicDrawDiscards?.length ?? 0)
+        .filter(
+          (record) =>
+            previous.players.find((p) => p.id === record.playerId)?.controller !== "human",
+        )
+        .map((record) => ({
+          ...record,
+          origin: sourcePosition(record.source),
+          name: next.players.find((p) => p.id === record.playerId)?.name ?? "Opponent",
+        }))
+    }
+    const before = motion.capture()
+    const deal = !state() || state()?.handNumber !== next.handNumber
+    setState(next)
+    setDrawNotice(pendingMoves.shift())
+    motion.play(before, deal)
+    if (deal) audio.play("tiles")
+    else if (next.pot > (previous?.pot ?? 0)) audio.play("coin2")
+    else if (previous?.phase === "exposing" && next.phase !== "exposing") audio.play("clack")
+    else if (
+      (next.publicDrawDiscards?.length ?? 0) > (previous?.publicDrawDiscards?.length ?? 0) &&
+      !drawNotice()
+    )
+      audio.play("clack")
+    else if (previous?.phase === "betting" && next.phase === "discarding") audio.play("shake")
+  }
+  const setup = readSetup()
+  const [mode, setMode] = createSignal<"basic" | "riichi">(setup.mode)
+  const [seats, setSeats] = createSignal<SeatKind[]>(setup.seats)
+  const players = () => seats().filter((seat) => seat !== "none").length
+  const humans = () => seats().filter((seat) => seat === "human").length
+  const validSeats = () => players() >= 2 && humans() >= 1
+  function cycleSeat(index: number) {
+    const next: Record<SeatKind, SeatKind> = { human: "robot", robot: "none", none: "human" }
+    setSeats((current) => current.map((seat, i) => (i === index ? next[seat] : seat)))
+  }
+  const [viewer, setViewer] = createSignal<string>()
+  createEffect(() => audio.setScene(state() ? "game" : "home"))
+  let soundedResult = ""
+  createEffect(() => {
+    const game = state()
+    if (!game || drawNotice() || !["between-hands", "finished"].includes(game.phase)) return
+    const result = game.handResults.at(-1)
+    const key = `${session()}:${result?.handNumber}`
+    if (!result || key === soundedResult) return
+    soundedResult = key
+    audio.play(result.winnerIds.includes(viewer() ?? "p1") ? "won" : "lost")
+  })
+  const [handoff, setHandoff] = createSignal<{ id: string; name: string }>()
+  const [orbits, setOrbits] = createSignal(setup.games)
+  createEffect(() => saveSetup({ mode: mode(), seats: seats(), games: orbits() }))
+  const [seed] = createSignal(crypto.randomUUID().slice(0, 8))
   const [busy, setBusy] = createSignal(false)
   const [error, setError] = createSignal("")
-  const [notice, setNotice] = createSignal("Create a seeded table to begin.")
-  const [drawChoice, setDrawChoice] = createSignal("deck")
+  const [selection, setSelection] = createSignal<string[]>([])
   const [wager, setWager] = createSignal(10)
-  const [riichi, setRiichi] = createSignal(false)
-  const [debugEnabled, setDebugEnabled] = createSignal(false)
-  const [debugView, setDebugView] = createSignal<DebugGameView>()
-  const [events, setEvents] = createSignal<
-    Array<{
-      sequence: number
-      handNumber: number
-      type: string
-      actorId?: string
-      payload: unknown
-    }>
-  >([])
-  const [simulationCount, setSimulationCount] = createSignal(4)
-  const [simulationResults, setSimulationResults] = createSignal<
-    Array<{ sessionId: string; seed: string; finalScores: Record<string, number> }>
-  >([])
-
-  const human = createMemo(() => state()?.players.find((player) => player.controller === "human"))
-  const actor = createMemo(() => {
+  const [source, setSource] = createSignal("deck")
+  const [auto, setAuto] = createSignal(true)
+  const [acceptedCharleston, setAcceptedCharleston] = createSignal<string[]>([])
+  const charlestonReceiptKey = () => `${session()}:${state()?.handNumber}:${viewer()}`
+  const receivedCharleston = createMemo(() => {
     const game = state()
-
-    if (!game) {
-      return undefined
-    }
-
-    const id = game.phase === "discarding" ? game.pendingDiscard?.playerId : game.actingPlayerId
-    return game.players.find((player) => player.id === id)
+    if (
+      !viewer() ||
+      handoff() ||
+      !game ||
+      game.phase !== "betting" ||
+      game.street !== 1 ||
+      acceptedCharleston().includes(charlestonReceiptKey())
+    )
+      return []
+    return game.charlestonReceivedCards ?? []
   })
-  const isHumanTurn = createMemo(() => actor()?.controller === "human")
-
-  const refreshDebug = async () => {
-    if (!debugEnabled() || !sessionId()) {
-      return
-    }
-
-    try {
-      setDebugView(await loadDebugGame(sessionId()))
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not refresh debug math")
-    }
+  const acceptCharleston = () => setAcceptedCharleston((keys) => [...keys, charlestonReceiptKey()])
+  const [rules, setRules] = createSignal(false)
+  const [closedResult, setClosedResult] = createSignal("")
+  const [ladderOpen, setLadderOpen] = createSignal(false)
+  const [pickingFish, setPickingFish] = createSignal(false)
+  const [pickingStick, setPickingStick] = createSignal(false)
+  let fishingTable: HTMLDivElement | undefined
+  const [actionDialog, setActionDialog] = createSignal<"check" | "call" | "bet">()
+  const human = createMemo(() => state()?.players.find((p) => p.id === (viewer() ?? "p1")))
+  const actor = createMemo(() =>
+    state()?.players.find(
+      (p) => p.id === (state()?.pendingDiscard?.playerId ?? state()?.actingPlayerId),
+    ),
+  )
+  const myTurn = () =>
+    !drawNotice() &&
+    !handoff() &&
+    (state()?.phase === "charleston"
+      ? !!viewer() && !!state()?.pendingPlayerIds.includes(viewer()!)
+      : actor()?.controller === "human" && actor()?.id === viewer())
+  const charlestonRecipient = () => {
+    const participants =
+      state()?.players.filter((player) => !player.folded && !player.eliminated) ?? []
+    const index = participants.findIndex((player) => player.id === viewer())
+    return index < 0 ? undefined : participants[(index + 1) % participants.length]?.name
   }
-
-  const perform = async (work: () => Promise<{ state: PublicGameState }>, success?: string) => {
+  const cards = () => [...privateCards(human())].sort(compareCards)
+  const allIn = () => Boolean(state()?.allInPlayerIds.length)
+  const callCost = () => Math.max(0, (state()?.currentWager ?? 0) - (human()?.roundCommitted ?? 0))
+  const maximum = () => (human()?.chips ?? 0) + (human()?.roundCommitted ?? 0)
+  const minimum = () =>
+    Math.min(
+      maximum(),
+      Math.ceil(((state()?.currentWager ?? 0) + CHIP_UNIT) / CHIP_UNIT) * CHIP_UNIT,
+    )
+  const required = () => (state()?.phase === "charleston" ? 2 : state()?.street === 1 ? 3 : 1)
+  const choosing = () =>
+    myTurn() && ["charleston", "exposing", "discarding"].includes(state()?.phase ?? "")
+  const canFish = () => !allIn() && !human()?.riichi
+  const canFishOnCall = () => canFish() && callCost() < (human()?.chips ?? 0)
+  const ladder = () =>
+    (state()?.config.mode ?? mode()) === "riichi" ? ADVANCED_LADDER : BASIC_LADDER
+  const currentHand = () =>
+    scoreHand([...cards(), ...(human()?.publicCards ?? [])], state()?.config.mode ?? "basic")
+  async function perform(work: () => Promise<{ state: PublicGameState }>) {
+    if (busy()) return
+    const previous = state()
+    const previousViewer = viewer()
     setBusy(true)
     setError("")
     try {
       const result = await work()
-      setState(result.state)
-      await refreshDebug()
-      if (success) setNotice(success)
+      const humanPlayers = result.state.players.filter((p) => p.controller === "human")
+      if (humanPlayers.length > 1) {
+        const nextId = result.state.pendingDiscard?.playerId ?? result.state.actingPlayerId
+        const nextHuman = humanPlayers.find((p) => p.id === nextId)
+        const continuing = Boolean(nextHuman && nextHuman.id === viewer())
+        const nextView = await loadGame(session(), continuing ? viewer()! : "")
+        if (!continuing) setViewer(undefined)
+        updateState(nextView.state)
+        setHandoff(
+          nextHuman && !continuing ? { id: nextHuman.id, name: nextHuman.name } : undefined,
+        )
+      } else {
+        setViewer(humanPlayers[0]?.id ?? "p1")
+        setHandoff(undefined)
+        updateState(result.state)
+      }
+      setPickingFish(false)
+      const awaitingExchangeOrReveal =
+        (previous?.phase === "exposing" || previous?.phase === "charleston") &&
+        state()?.phase === previous.phase &&
+        previous.handNumber === state()?.handNumber &&
+        previous.street === state()?.street &&
+        previousViewer === viewer()
+      if (!awaitingExchangeOrReveal) setSelection([])
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Something went wrong")
+      setError(caught instanceof Error ? caught.message : "Something went wrong. Try again.")
+      setAuto(false)
     } finally {
       setBusy(false)
     }
   }
-
-  const start = async () => {
+  async function revealHumanHand() {
+    const next = handoff()
+    if (!next || busy()) return
     setBusy(true)
     setError("")
     try {
-      const result = await createGame(seed())
-      setSessionId(result.sessionId)
-      localStorage.setItem("mahjong-poker-session", result.sessionId)
-      setState(result.state)
-      setNotice(`Table created from seed “${seed()}”.`)
-      setEvents([])
-      setDebugView(undefined)
-      await refreshDebug()
+      const result = await loadGame(session(), next.id)
+      setViewer(next.id)
+      updateState(result.state)
+      setHandoff(undefined)
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not create game")
+      setError(caught instanceof Error ? caught.message : "Could not load this hand")
     } finally {
       setBusy(false)
     }
   }
-
-  const resume = () =>
-    perform(async () => {
-      const result = await loadGame(sessionId())
-      return { state: result.state }
-    }, "Saved table restored.")
-
-  const act = (action: BettingAction) => {
-    setRiichi(false)
-
-    return perform(() => bettingAction(sessionId(), "p1", action))
+  async function start() {
+    if (!validSeats()) return
+    await perform(async () => {
+      const result = await createGame(
+        seed().trim() || crypto.randomUUID(),
+        mode(),
+        players(),
+        1,
+        orbits(),
+        humans(),
+        seats(),
+      )
+      setViewer(undefined)
+      setSession(result.sessionId)
+      localStorage.setItem("moker-v6-session", result.sessionId)
+      setAuto(true)
+      window.scrollTo({ top: 0 })
+      return result
+    })
   }
-  const humanPlayer = () => human()
-  const canHumanRiichi = () => {
+  const bot = () =>
+    perform(() => botStep(session(), actor()?.controller === "llm" ? "llm" : "heuristic"))
+  createEffect(() => {
     const game = state()
-
-    return Boolean(
-      game &&
-      game.street < 4 &&
-      !game.players.some((player) => player.riichi) &&
-      humanPlayer()?.privateCards,
+    if (
+      !game ||
+      busy() ||
+      !auto() ||
+      !!drawNotice() ||
+      receivedCharleston().length > 0 ||
+      (game.phase === "charleston" &&
+        game.players.some(
+          (player) => player.controller === "human" && game.pendingPlayerIds.includes(player.id),
+        )) ||
+      !actor() ||
+      actor()?.controller === "human" ||
+      game.phase === "finished"
+    )
+      return
+    const timer = window.setTimeout(() => void bot(), 1300)
+    onCleanup(() => window.clearTimeout(timer))
+  })
+  createEffect(() => {
+    if (state()) setWager(Math.min(maximum(), Math.max(10, minimum())))
+  })
+  const act = async (action: BettingAction) => {
+    await perform(() => bettingAction(session(), viewer()!, action))
+    if (!error()) setActionDialog(undefined)
+  }
+  const canSpendStick = () =>
+    state()?.config.mode === "riichi" &&
+    !state()?.stickSpentThisTurn &&
+    canFish() &&
+    (human()?.riichiSticks ?? 0) > 0 &&
+    (human()?.chips ?? 0) > 0 &&
+    !human()?.folded
+  const cancelFishing = () => {
+    setPickingFish(false)
+    setPickingStick(false)
+  }
+  const chooseStick = () => {
+    setPickingStick(true)
+    setPickingFish(true)
+  }
+  const resolveStick = (drawSource?: CardSource) =>
+    perform(() =>
+      gameAction(session(), {
+        kind: "riichi-stick",
+        playerId: viewer()!,
+        ...(drawSource ? { source: drawSource } : {}),
+      }),
+    )
+  const fishFrom = (drawSource: CardSource) =>
+    pickingStick()
+      ? resolveStick(drawSource)
+      : act({ type: callCost() ? "call" : "check", drawSource })
+  const openAction = (kind: "check" | "call" | "bet") => {
+    setPickingStick(false)
+    setError("")
+    setPickingFish(false)
+    if ((kind === "check" && canFish()) || (kind === "call" && canFishOnCall())) {
+      setPickingFish(true)
+      requestAnimationFrame(() =>
+        fishingTable?.scrollIntoView({
+          block: "center",
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "auto"
+            : "smooth",
+        }),
+      )
+    } else if (kind === "check" || kind === "call") {
+      void act({ type: kind })
+    } else setActionDialog(kind)
+  }
+  function drawFields() {
+    if (source().startsWith("blank:")) {
+      const [, blankCardId, pile, index] = source().split(":")
+      return {
+        blankExchange: {
+          blankCardId: blankCardId!,
+          pile: pile as "a" | "b",
+          cardIndex: Number(index),
+        },
+      }
+    }
+    return { drawSource: source() as CardSource }
+  }
+  function toggleCard(id: string) {
+    audio.play("click2")
+    const count = state()?.phase === "discarding" ? 1 : required()
+    setSelection((current) =>
+      current.includes(id)
+        ? current.filter((x) => x !== id)
+        : count === 1
+          ? [id]
+          : current.length < count
+            ? [...current, id]
+            : current,
     )
   }
-  const callAmount = () =>
-    Math.max(0, (state()?.currentWager ?? 0) - (humanPlayer()?.roundCommitted ?? 0))
-  const minimumWager = () => {
-    const game = state()
-
-    if (!game) {
-      return 5
-    }
-
-    return game.currentWager === 0 ? 5 : game.currentWager + game.minimumRaise
-  }
-  const maximumWager = () => (human()?.roundCommitted ?? 0) + (human()?.chips ?? 0)
-  const sortedCommunity = () => [...(state()?.community ?? [])].sort(compareCards)
-  const debugPlayer = (playerId: string) =>
-    debugView()?.state.players.find((player) => player.id === playerId)
-  const debugAnalysis = (playerId: string) =>
-    debugView()?.analyses.find((analysis) => analysis.playerId === playerId)
-  const recentDraw = (playerId: string) =>
-    debugView()
-      ?.recentDrawDiscards.filter((record) => record.playerId === playerId)
-      .at(-1)
-  const drawAction = (type: "check" | "call"): BettingAction => {
-    const [kind, blankCardId, pile, cardIndex] = drawChoice().split(":")
-
-    if (kind === "blank" && blankCardId && (pile === "a" || pile === "b")) {
-      const blankExchange: BlankExchange = {
-        blankCardId,
-        pile,
-        cardIndex: Number(cardIndex),
-      }
-
-      return { type, drawSource: "deck", blankExchange }
-    }
-
-    const source: CardSource =
-      kind && ["deck", "discard-a", "discard-b"].includes(kind) ? (kind as CardSource) : "deck"
-
-    return { type, drawSource: source }
-  }
-
-  createEffect(() => {
-    const minimum = minimumWager()
-
-    if (state() && (wager() < minimum || wager() % 5 !== 0)) {
-      setWager(minimum)
-    }
-  })
-
-  const runBot = async () => {
-    const controller = actor()?.controller
-
-    if (controller !== "heuristic" && controller !== "llm") {
-      return
-    }
-
-    setBusy(true)
-    setError("")
-    try {
-      const result = await botStep(sessionId(), controller)
-      setState(result.state)
-      setNotice(result.rationale)
-      await refreshDebug()
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Bot turn failed")
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const toggleDebug = async (enabled: boolean) => {
-    setDebugEnabled(enabled)
-
-    if (!enabled) {
-      setDebugView(undefined)
-
-      return
-    }
-
-    try {
-      setDebugView(await loadDebugGame(sessionId()))
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not load debug math")
-    }
-  }
-
-  const refreshEvents = async () => {
-    if (!sessionId()) {
-      return
-    }
-
-    try {
-      setEvents((await getEvents(sessionId())).events)
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not load events")
-    }
-  }
-
-  const simulate = async () => {
-    setBusy(true)
-    setError("")
-    try {
-      const result = await runSimulations(seed(), simulationCount())
-      setSimulationResults(result.results)
-      setNotice(`${result.results.length} deterministic games simulated and persisted.`)
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Simulation failed")
-    } finally {
-      setBusy(false)
-    }
-  }
-
+  const confirmSelection = () =>
+    perform(() =>
+      gameAction(session(), {
+        kind: state()?.phase === "charleston" ? "charleston" : "expose",
+        playerId: viewer()!,
+        cardIds: selection(),
+      }),
+    )
+  const discard = (pile: "a" | "b") =>
+    perform(() =>
+      gameAction(session(), {
+        kind: "discard",
+        playerId: viewer()!,
+        discardCardId: selection()[0],
+        discardPile: pile,
+      }),
+    )
   return (
-    <main>
+    <main
+      class={state() ? "game-page" : "home-page"}
+      onClick={(event) => {
+        const button = (event.target as Element).closest("button")
+        if (button && !button.disabled && !button.matches(".card-choice, [data-audio-control]"))
+          audio.play("click2")
+      }}
+    >
       <header class="masthead">
-        <div>
-          <p class="eyebrow">Deterministic playtest environment</p>
-          <h1>
-            Mahjong <i>Poker</i> Lab
-          </h1>
-        </div>
-        <div class="session-chip">
-          <span>Session</span>
-          {sessionId() || "not started"}
-        </div>
+        <a
+          class="brand"
+          href="#"
+          aria-label="Moker home"
+          onClick={(e) => {
+            e.preventDefault()
+            if (!busy()) {
+              setState(undefined)
+              setViewer(undefined)
+              setAuto(false)
+            }
+          }}
+        >
+          <img src="/assets/logo-dark.svg" alt="Moker" />
+        </a>
+
+        <nav aria-label="Main">
+          <div class="audio-controls" aria-label="Audio controls">
+            <Button
+              data-audio-control
+              class="audio-toggle"
+              aria-label="Music"
+              title={musicOn() ? "Mute music" : "Enable music"}
+              aria-pressed={musicOn()}
+              onClick={() => {
+                const enabled = !musicOn()
+                setMusicOn(enabled)
+                audio.setMusic(enabled)
+              }}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M9 18V5l11-2v13M9 8l11-2" />
+                <ellipse cx="6" cy="18" rx="3" ry="2.5" />
+                <ellipse cx="17" cy="16" rx="3" ry="2.5" />
+                <Show when={!musicOn()}>
+                  <path d="M3 3l18 18" />
+                </Show>
+              </svg>
+            </Button>
+            <Button
+              data-audio-control
+              class="audio-toggle"
+              aria-label="Sound effects"
+              title={effectsOn() ? "Mute sound effects" : "Enable sound effects"}
+              aria-pressed={effectsOn()}
+              onClick={() => {
+                const enabled = !effectsOn()
+                setEffectsOn(enabled)
+                audio.setEffects(enabled)
+                if (enabled) audio.play("click2")
+              }}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M11 5L6 9H3v6h3l5 4z" />
+                <Show when={effectsOn()} fallback={<path d="M16 9l6 6m0-6l-6 6" />}>
+                  <path d="M15 8a6 6 0 010 8m3-11a10 10 0 010 14" />
+                </Show>
+              </svg>
+            </Button>
+          </div>
+          <Button class="text-button" onClick={() => setRules(!rules())}>
+            {rules() ? "Close rules" : "How to play"}
+          </Button>
+        </nav>
       </header>
-
       <Show when={!state()}>
-        <section class="welcome panel">
+        <section class="welcome">
           <div class="welcome-copy">
-            <p class="kicker">Four seats. Twelve hands. One very expensive fold.</p>
-            <h2>Test the table, not your patience.</h2>
-            <p>
-              Every shuffle and bot rollout is seeded. Replay a surprising hand exactly, inspect its
-              event trail, then run a batch to see whether it was luck or a balance problem.
-            </p>
+            <h1>
+              <em>Build</em> hands like Mahjong.
+              <br />
+              <em>Bet</em> like Poker.
+              <br />
+              <em>Bluff</em> your friends.
+            </h1>
           </div>
-          <div class="launch-card">
-            <label>
-              Game seed
-              <input value={seed()} onInput={(event) => setSeed(event.currentTarget.value)} />
-            </label>
-            <button class="primary" disabled={busy()} onClick={start}>
-              Deal a new table
-            </button>
-            <Show when={sessionId()}>
-              <button class="ghost" disabled={busy()} onClick={resume}>
-                Resume saved session
-              </button>
-            </Show>
-          </div>
-        </section>
-      </Show>
-
-      <Show when={state()} keyed>
-        {(game) => (
-          <>
-            <section class="status-strip">
-              <div>
-                <span>Hand</span>
-                <strong>
-                  {game.handNumber} / {game.maxHands}
-                </strong>
+          <section class="launch-card" aria-label="Set up your game">
+            <div class="setup-mode">
+              <div class="setup-label" id="game-mode-label">
+                Game mode
               </div>
-              <div>
-                <span>Orbit</span>
-                <strong>
-                  {game.orbit} · {game.orbitValue}¢
-                </strong>
+              <div
+                class="mode-picker"
+                classList={{ "riichi-selected": mode() === "riichi" }}
+                role="group"
+                aria-labelledby="game-mode-label"
+              >
+                <Button
+                  classList={{ selected: mode() === "basic" }}
+                  aria-pressed={mode() === "basic"}
+                  onClick={() => setMode("basic")}
+                >
+                  Basic game
+                </Button>
+                <Button
+                  classList={{ selected: mode() === "riichi" }}
+                  aria-pressed={mode() === "riichi"}
+                  onClick={() => setMode("riichi")}
+                >
+                  Riichi expansion
+                </Button>
               </div>
-              <div>
-                <span>Street</span>
-                <strong>{game.street || "—"}</strong>
-              </div>
-              <div>
-                <span>Pot</span>
-                <strong>{game.pot}</strong>
-              </div>
-              <div>
-                <span>Wager to match</span>
-                <strong>{game.currentWager || "—"}</strong>
-              </div>
-              <div>
-                <span>Blue center</span>
-                <strong>{game.centerBlueSticks}</strong>
-              </div>
-              <div>
-                <span>Phase</span>
-                <strong>{game.phase.replace("-", " ")}</strong>
-              </div>
-            </section>
-
-            <div class="debug-switch">
-              <label class="check">
-                <input
-                  type="checkbox"
-                  checked={debugEnabled()}
-                  onChange={(event) => void toggleDebug(event.currentTarget.checked)}
-                />
-                Debug table: reveal hands and tournament math
-              </label>
-              <small>Monte Carlo estimates use only information visible to each player.</small>
+              <p class="mode-description">
+                {mode() === "basic"
+                  ? "102 cards. Nine hand ranks."
+                  : "Special cards and Riichi sticks."}
+              </p>
             </div>
-
-            <section class="table-shell">
-              <div class={`felt ${debugEnabled() ? "debug-felt" : ""}`}>
-                <div class="community">
-                  <p>Community · {game.community.length} / 5</p>
-                  <div class="tiles">
-                    <For each={sortedCommunity()}>{(card) => <Tile card={card} />}</For>
-                  </div>
-                </div>
-                <div class="discard discard-a">
-                  <span>Discard A</span>
-                  <div class="lane-tiles">
-                    <For each={game.discardA}>{(card) => <Tile card={card} compact />}</For>
-                  </div>
-                </div>
-                <div class="discard discard-b">
-                  <span>Discard B</span>
-                  <div class="lane-tiles">
-                    <For each={game.discardB}>{(card) => <Tile card={card} compact />}</For>
-                  </div>
-                </div>
-                <For each={game.players}>
-                  {(player, index) => (
-                    <Seat
-                      player={player}
-                      active={actor()?.id === player.id}
-                      position={index()}
-                      debugPlayer={debugEnabled() ? debugPlayer(player.id) : undefined}
-                      analysis={debugEnabled() ? debugAnalysis(player.id) : undefined}
-                      recentDraw={debugEnabled() ? recentDraw(player.id) : undefined}
-                      recommendation={
-                        debugEnabled() && debugView()?.actingDecision?.playerId === player.id
-                          ? debugView()?.actingDecision?.action
-                          : undefined
-                      }
-                    />
+            <div class="setup-field seat-setup">
+              <span>Players</span>
+              <div class="seat-picker" role="group" aria-label="Player seats">
+                <For each={[0, 1, 2, 3, 4, 5]}>
+                  {(index) => (
+                    <Button
+                      class={`setup-seat ${seats()[index]}`}
+                      onClick={() => cycleSeat(index)}
+                      aria-label={`Seat ${index + 1}: ${seats()[index]}. Change to ${{ human: "robot", robot: "none", none: "human" }[seats()[index]!]}`}
+                    >
+                      <SeatIcon kind={seats()[index]!} />
+                      <span>
+                        {seats()[index] === "none"
+                          ? "Empty"
+                          : seats()[index] === "robot"
+                            ? "Robot"
+                            : "Human"}
+                      </span>
+                    </Button>
                   )}
                 </For>
-                <div class="pot-mark">
-                  <span>POT</span>
-                  <strong>{game.pot}</strong>
-                  <span>BLUE {game.centerBlueSticks}</span>
-                </div>
+              </div>
+              <small class="seat-validation" classList={{ "reserved-empty": validSeats() }}>
+                Choose at least two players, including a human.
+              </small>
+            </div>
+            <div class="setup-field">
+              <span>Tournament games</span>
+              <div class="player-picker" role="group" aria-label="Tournament games">
+                <For each={[1, 2, 3, 4]}>
+                  {(n) => (
+                    <Button
+                      aria-label={`${n} ${n === 1 ? "game" : "games"}`}
+                      aria-pressed={orbits() === n}
+                      classList={{ selected: orbits() === n }}
+                      onClick={() => setOrbits(n)}
+                    >
+                      {n}
+                    </Button>
+                  )}
+                </For>
+              </div>
+            </div>
+            <Button class="primary start-button" disabled={busy() || !validSeats()} onClick={start}>
+              {busy() ? "Starting…" : "Start game"}
+            </Button>
+          </section>
+          <FrontpageDecor />
+          <FrontpageDecor special visible={mode() === "riichi"} />
+        </section>
+      </Show>
+      <Show when={state()}>
+        {(game) => (
+          <>
+            <section class="game-topline">
+              <div class="game-stats">
+                <CycleBars label="Game" current={game().orbit} total={game().config.orbits ?? 1} />
+                <CycleBars
+                  label="Round"
+                  current={Math.min(
+                    game().players.length,
+                    (game().dealerSteps % game().players.length) + 1,
+                  )}
+                  total={game().players.length}
+                />
+                <CycleBars label="Street" current={game().street} total={4} />
+                <span>
+                  Ante <b>{game().orbitValue}</b>
+                </span>
               </div>
             </section>
-
-            <Show
-              when={
-                (game.phase === "between-hands" || game.phase === "finished") &&
-                game.handResults.at(-1)
-              }
+            <div
+              ref={(element) => {
+                tableSurface = element
+              }}
+              class="play-layout"
             >
-              {(result) => <HandSummary result={result()} />}
-            </Show>
-
-            <section class="hand-panel panel">
-              <div class="hand-heading">
-                <div>
-                  <p class="eyebrow">Your private hand</p>
-                  <h2>
-                    {game.phase === "seeding"
-                      ? "Choose one tile to seed the discards"
-                      : human()?.riichi
-                        ? "Locked in Riichi"
-                        : "Three tiles, many futures"}
-                  </h2>
-                </div>
-                <div class="wallet">
-                  <span>{human()?.chips} chips</span>
-                  <span class="blue">● {human()?.blueSticks}</span>
-                  <span class="red">● {human()?.loans}</span>
-                </div>
-              </div>
-              <div class="tiles private">
-                <For each={privateCards(human())}>{(card) => <Tile card={card} />}</For>
-              </div>
-
-              <div class="controls">
-                <Show when={isHumanTurn() && game.phase === "seeding"}>
-                  <p class="instruction">
-                    Discard one of your four private tiles face up. You will play the hand with the
-                    remaining three.
-                  </p>
-                  <For each={privateCards(human())}>
-                    {(card) => (
-                      <div class="discard-choice">
-                        <Tile card={card} compact />
-                        <button
-                          disabled={
-                            busy() || (game.discardA.length > 0 && game.discardB.length === 0)
+              <Show when={drawNotice()} keyed>
+                {(notice) => (
+                  <OpponentMove
+                    notice={notice}
+                    onDone={finishOpponentMove}
+                    onSound={(sound) => audio.play(sound)}
+                  />
+                )}
+              </Show>
+              <div class="play-main">
+                <section class="table" aria-label="Game table">
+                  <div class="opponents">
+                    <For each={game().players.filter((p) => p.id !== (viewer() ?? "p1"))}>
+                      {(p) => (
+                        <PlayerSeat
+                          player={p}
+                          mode={game().config.mode}
+                          drawNotice={drawNotice()?.playerId === p.id ? drawNotice() : undefined}
+                          colorIndex={game().players.findIndex((player) => player.id === p.id)}
+                          active={
+                            game().phase !== "charleston" &&
+                            (drawNotice()?.playerId ?? actor()?.id) === p.id
                           }
-                          onClick={() =>
-                            perform(() =>
-                              gameAction(sessionId(), {
-                                kind: "seed-discard",
-                                playerId: "p1",
-                                discardCardId: card.id,
-                                discardPile: "a",
-                              }),
-                            )
+                          betting={
+                            game().phase === "betting" && actor()?.id === p.id && !drawNotice()
                           }
+                          charlestonStatus={
+                            game().phase === "charleston"
+                              ? game().pendingPlayerIds.includes(p.id)
+                                ? "Choosing cards…"
+                                : "Ready to pass"
+                              : undefined
+                          }
+                          dealer={game().players[game().dealerIndex]?.id === p.id}
+                        />
+                      )}
+                    </For>
+                  </div>
+                  <div
+                    class="fish-controls"
+                    classList={{ "reserved-empty": !pickingFish() }}
+                    aria-hidden={!pickingFish()}
+                    inert={!pickingFish()}
+                    aria-label="Fishing controls"
+                  >
+                    <div class="button-row">
+                      <span>
+                        {pickingStick()
+                          ? "Choose a card to fish with your Riichi stick."
+                          : "Choose a card to fish."}
+                      </span>
+                      <Show when={game().config.mode === "riichi" && !pickingStick()}>
+                        <Button
+                          disabled={busy()}
+                          onClick={() => {
+                            setPickingFish(false)
+                            setActionDialog(callCost() ? "call" : "check")
+                          }}
                         >
-                          to A
-                        </button>
-                        <button
-                          disabled={
-                            busy() || (game.discardB.length > 0 && game.discardA.length === 0)
+                          Blank swap
+                        </Button>
+                      </Show>
+                      <Button disabled={busy()} onClick={cancelFishing}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                  <div
+                    class="table-center"
+                    ref={(element) => {
+                      fishingTable = element
+                    }}
+                    classList={{ "choosing-fish": pickingFish() }}
+                  >
+                    <div class="deck-pile">
+                      <div class="pot-summary">
+                        <span>
+                          <b class="pot-label">Pot</b>
+                          <span class="pot-amount">
+                            <strong data-motion-key="pot">{format(game().pot)}</strong> chips
+                          </span>
+                        </span>
+                        <ChipStack
+                          amount={Math.max(
+                            0,
+                            game().pot -
+                              game().players.reduce((sum, p) => sum + p.roundCommitted, 0),
+                          )}
+                          contributions={
+                            game().pot > 0
+                              ? game().players.flatMap((p) => [
+                                  Math.min(
+                                    Math.max(0, p.potCommitted - p.roundCommitted),
+                                    game().orbitValue,
+                                  ),
+                                  Math.max(
+                                    0,
+                                    p.potCommitted - p.roundCommitted - game().orbitValue,
+                                  ),
+                                ])
+                              : []
                           }
-                          onClick={() =>
-                            perform(() =>
-                              gameAction(sessionId(), {
-                                kind: "seed-discard",
-                                playerId: "p1",
-                                discardCardId: card.id,
-                                discardPile: "b",
-                              }),
-                            )
-                          }
-                        >
-                          to B
-                        </button>
+                        />
                       </div>
-                    )}
-                  </For>
-                </Show>
 
-                <Show when={isHumanTurn() && game.phase === "betting"}>
-                  <label>
-                    Draw after check/call
-                    <select
-                      value={drawChoice()}
-                      disabled={human()?.riichi}
-                      onChange={(event) => setDrawChoice(event.currentTarget.value)}
+                      <Button
+                        class="deck"
+                        aria-label={`Draw from deck, ${game().deck.count} cards`}
+                        disabled={!pickingFish() || busy() || game().deck.count === 0}
+                        onClick={() => fishFrom("deck")}
+                      >
+                        <img
+                          data-motion-key="deck"
+                          data-motion-value={game().deck.count}
+                          src="/assets/cards/back.png"
+                          alt="Moker card back"
+                        />
+                      </Button>
+                    </div>
+                    <Lane
+                      discarding={myTurn() && game().phase === "discarding"}
+                      discardAllowed={!game().discardB.length ? !game().discardA.length : true}
+                      ready={selection().length === 1 && !busy()}
+                      onDiscard={() => discard("a")}
+                      title="Lane A"
+                      cards={game().discardA}
+                      concealed={
+                        drawNotice()
+                          ? [
+                              drawNotice()!.discardedCard.id,
+                              ...pendingMoves.map((m) => m.discardedCard.id),
+                            ]
+                          : []
+                      }
+                      enabled={pickingFish() && !busy()}
+                      onPick={() => fishFrom("discard-a")}
+                    />
+                    <Lane
+                      discarding={myTurn() && game().phase === "discarding"}
+                      discardAllowed={!game().discardA.length ? !game().discardB.length : true}
+                      ready={selection().length === 1 && !busy()}
+                      onDiscard={() => discard("b")}
+                      title="Lane B"
+                      cards={game().discardB}
+                      concealed={
+                        drawNotice()
+                          ? [
+                              drawNotice()!.discardedCard.id,
+                              ...pendingMoves.map((m) => m.discardedCard.id),
+                            ]
+                          : []
+                      }
+                      enabled={pickingFish() && !busy()}
+                      onPick={() => fishFrom("discard-b")}
+                    />
+                  </div>
+                </section>
+                <section
+                  class="hand-panel"
+                  classList={{
+                    folded: Boolean(human()?.folded),
+                    betting: myTurn() && game().phase === "betting" && !drawNotice(),
+                  }}
+                  aria-label="Your hand"
+                >
+                  <div class="hand-heading">
+                    <div class="opponent-heading own-seat">
+                      <SpiritAvatar
+                        name={human()?.name ?? "You"}
+                        colorIndex={Math.max(
+                          0,
+                          game().players.findIndex((p) => p.id === human()?.id),
+                        )}
+                      />
+                      <div>
+                        <b>
+                          {human()?.name ?? "You"}{" "}
+                          <Show when={game().players[game().dealerIndex]?.id === human()?.id}>
+                            <span class="dealer-label" title="Dealer">
+                              <span class="stick-tag">Dealer</span>
+                            </span>
+                          </Show>
+                        </b>
+                        <small>
+                          <strong data-motion-key="own-chips">{format(human()?.chips ?? 0)}</strong>{" "}
+                          chips
+                        </small>
+                        <Show when={game().config.mode === "riichi"}>
+                          <div class="player-sticks">
+                            <div
+                              class="riichi-stick-count"
+                              role="img"
+                              aria-label={`${human()?.riichiSticks ?? 0} Riichi sticks`}
+                            >
+                              <div class="riichi-stick-art" aria-hidden="true">
+                                <For
+                                  each={Array.from({
+                                    length: Math.min(human()?.riichiSticks ?? 0, 6),
+                                  })}
+                                >
+                                  {(_, index) => (
+                                    <img
+                                      src="/assets/sticks/riichi-decor.svg"
+                                      alt=""
+                                      style={{
+                                        "--stick-tilt": `${[-12, -17, -14, -19, -13, -16][index()]}deg`,
+                                        "--stick-shift": `${[0, -2, 1, -1, 2, 0][index()]}px`,
+                                      }}
+                                    />
+                                  )}
+                                </For>
+                              </div>
+                              <span class="stick-tag">
+                                {human()?.riichiSticks ?? 0} Riichi
+                                {human()?.riichi ? " · Active" : ""}
+                              </span>
+                            </div>
+                            <Show when={human()?.loans}>
+                              <div class="loan-stick-count">
+                                <span class="loan-stick-art">
+                                  <img src="/assets/sticks/loan-decor.svg" alt="" />
+                                </span>
+                                <span class="stick-tag">{human()?.loans} Loan</span>
+                              </div>
+                            </Show>
+                          </div>
+                        </Show>
+                      </div>
+                    </div>
+                    <aside class="ladder-panel">
+                      <Button
+                        class="ladder-toggle"
+                        aria-expanded={ladderOpen()}
+                        aria-controls="hand-ladder"
+                        onClick={() => setLadderOpen(!ladderOpen())}
+                      >
+                        <span>
+                          <small>Current hand</small>
+                          <b>
+                            {human()?.folded
+                              ? "Folded"
+                              : [...cards(), ...(human()?.publicCards ?? [])].filter(
+                                    (c) => c.kind === "flower",
+                                  ).length === 2
+                                ? "Twin Lotus"
+                                : `${currentHand().total} - ${currentHand().combinations[0]?.label ?? "High Card"}`}
+                          </b>
+                        </span>
+                        <span>{ladderOpen() ? "−" : "+"}</span>
+                      </Button>
+                      <Show when={ladderOpen()}>
+                        <Modal
+                          title="Hand ranks"
+                          class="drawer rank-drawer"
+                          onClose={() => setLadderOpen(false)}
+                        >
+                          <div id="hand-ladder">
+                            <ol style={{ "--ladder-rows": Math.ceil(ladder().length / 2) }}>
+                              <For each={ladder().map((entry, i) => ({ entry, rank: i + 1 }))}>
+                                {(row) => (
+                                  <li
+                                    classList={{ made: currentHand().total === row.rank }}
+                                    aria-current={
+                                      currentHand().total === row.rank ? "true" : undefined
+                                    }
+                                  >
+                                    <div class="rank-details">
+                                      <b>
+                                        {String(row.rank).padStart(2, "0")} {row.entry[0]}
+                                      </b>
+                                      <small>{row.entry[1]}</small>
+                                      <div
+                                        class="rank-examples"
+                                        aria-label={`Example of ${row.entry[0]}`}
+                                      >
+                                        <For each={handExamples(row.entry[0]!)}>
+                                          {(group) => (
+                                            <div class="rank-example-group">
+                                              <For each={group}>
+                                                {(card) => <PlayingCard card={card} compact />}
+                                              </For>
+                                            </div>
+                                          )}
+                                        </For>
+                                      </div>
+                                    </div>
+                                  </li>
+                                )}
+                              </For>
+                            </ol>
+                          </div>
+                        </Modal>
+                      </Show>
+                    </aside>
+                  </div>
+                  <div class="hand-cards">
+                    <For
+                      each={sortPublicFirst(
+                        [...cards(), ...(human()?.publicCards ?? [])],
+                        human()?.publicCards ?? [],
+                      ).sort(
+                        (a, b) =>
+                          Number(receivedCharleston().some((c) => c.id === b.id)) -
+                          Number(receivedCharleston().some((c) => c.id === a.id)),
+                      )}
                     >
-                      <option value="deck">
-                        {human()?.riichi ? "Riichi hand is locked" : "Deck (hidden)"}
-                      </option>
-                      <option value="discard-a" disabled={game.discardA.length === 0}>
-                        Discard A
-                      </option>
-                      <option value="discard-b" disabled={game.discardB.length === 0}>
-                        Discard B
-                      </option>
-                      <For
-                        each={
-                          human()?.riichi
-                            ? []
-                            : privateCards(human()).filter((card) => card.kind === "blank")
+                      {(card) => {
+                        const drawn = () =>
+                          game().phase === "discarding" &&
+                          game().pendingDiscard?.playerId === human()?.id &&
+                          game().pendingDiscard?.drawnCardId === card.id
+                        const received = () => receivedCharleston().some((c) => c.id === card.id)
+                        const revealed = () =>
+                          Boolean(human()?.publicCards.some((c) => c.id === card.id))
+                        return (
+                          <Button
+                            class="card-choice"
+                            classList={{
+                              picked: selection().includes(card.id),
+                              "is-public": revealed(),
+                              "is-highlighted": drawn() || received(),
+                            }}
+                            aria-label={`${cardLabel(card)}${received() ? ", received from Charleston" : ""}${drawn() ? ", just drawn" : ""}${revealed() ? ", revealed" : ""}${selection().includes(card.id) ? ", selected" : ""}`}
+                            aria-describedby={
+                              game().phase === "discarding" && myTurn()
+                                ? "discard-instruction"
+                                : undefined
+                            }
+                            aria-pressed={selection().includes(card.id)}
+                            disabled={revealed() || !choosing() || busy()}
+                            onClick={() => toggleCard(card.id)}
+                          >
+                            <span class="hand-card-surface">
+                              <PlayingCard card={card} />
+                              <Show
+                                when={
+                                  drawn() ||
+                                  revealed() ||
+                                  selection().includes(card.id) ||
+                                  received()
+                                }
+                              >
+                                <span class="card-caption">
+                                  {received()
+                                    ? "Received"
+                                    : drawn()
+                                      ? selection().includes(card.id)
+                                        ? "New · Selected ✓"
+                                        : "Just drawn"
+                                      : revealed()
+                                        ? "Public"
+                                        : game().phase === "charleston" && !myTurn()
+                                          ? "Passing…"
+                                          : "Selected ✓"}
+                                </span>
+                              </Show>
+                            </span>
+                          </Button>
+                        )
+                      }}
+                    </For>
+                  </div>
+                  <div
+                    class="own-wager"
+                    classList={{ "reserved-empty": !(human()?.roundCommitted ?? 0) }}
+                    aria-hidden={!(human()?.roundCommitted ?? 0)}
+                  >
+                    <small>{format(human()?.roundCommitted ?? 0)} committed</small>
+                  </div>
+                  <div class="action-area">
+                    <Show when={pickingFish()}>
+                      <div class="button-row main-actions">
+                        <span>Choose a card from the deck or a discard lane.</span>
+                        <Button disabled={busy()} onClick={cancelFishing}>
+                          {pickingStick() ? "Cancel Riichi stick" : "Cancel fishing"}
+                        </Button>
+                      </div>
+                    </Show>
+                    <Show when={receivedCharleston().length > 0}>
+                      <div class="button-row main-actions">
+                        <span>Your two Charleston cards are highlighted on the left.</span>
+                        <Button class="primary" onClick={acceptCharleston}>
+                          Accept cards
+                        </Button>
+                      </div>
+                    </Show>
+                    <Show when={myTurn() && game().phase === "discarding"}>
+                      <p id="discard-instruction" role="status">
+                        {selection().length
+                          ? "Choose a discard lane above to place your selected card."
+                          : "Discard a card: select one from your hand, then choose a lane above."}
+                      </p>
+                    </Show>
+                    <Show when={myTurn() && ["charleston", "exposing"].includes(game().phase)}>
+                      <p class="sr-only" id="selection-instruction">
+                        Select {required()} hidden cards. Everyone’s choices are revealed together.
+                      </p>
+                      <div class="button-row main-actions">
+                        <Show when={game().phase === "charleston"}>
+                          <span>Charleston: select and</span>
+                        </Show>
+                        <Button
+                          class="primary"
+                          disabled={busy() || selection().length !== required()}
+                          onClick={confirmSelection}
+                          aria-describedby="selection-instruction"
+                        >
+                          {game().phase === "charleston" ? "Pass" : "Reveal"} {selection().length}/
+                          {required()} cards
+                        </Button>
+                        <Show when={game().phase === "charleston"}>
+                          <span>to {charlestonRecipient()}.</span>
+                        </Show>
+                      </div>
+                    </Show>
+                    <Show when={myTurn() && game().stickWindow && !receivedCharleston().length}>
+                      <div class="button-row main-actions">
+                        <span>Spend a Riichi stick before ending your turn?</span>
+                        <Button
+                          class="primary"
+                          disabled={busy() || pickingFish()}
+                          onClick={chooseStick}
+                        >
+                          Spend Riichi stick
+                        </Button>
+                        <Button disabled={busy()} onClick={() => resolveStick()}>
+                          End turn
+                        </Button>
+                      </div>
+                    </Show>
+                    <Show
+                      when={
+                        myTurn() &&
+                        game().phase === "betting" &&
+                        !game().stickWindow &&
+                        !receivedCharleston().length
+                      }
+                    >
+                      <div
+                        class="button-row main-actions"
+                        classList={{ "fishing-active": pickingFish() }}
+                      >
+                        <Button
+                          class="primary"
+                          disabled={busy()}
+                          onClick={() => openAction(callCost() ? "call" : "check")}
+                        >
+                          {callCost()
+                            ? `Call ${format(Math.min(callCost(), human()?.chips ?? 0))}${canFishOnCall() ? " + Fish" : ""}`
+                            : canFish()
+                              ? "Check + Fish"
+                              : "Check"}
+                        </Button>
+                        <Show when={canSpendStick()}>
+                          <Button disabled={busy() || pickingFish()} onClick={chooseStick}>
+                            Spend Riichi stick
+                          </Button>
+                        </Show>
+                        <Show when={!allIn() && maximum() > game().currentWager}>
+                          <Button
+                            class="bet-button"
+                            disabled={busy()}
+                            onClick={() => openAction("bet")}
+                          >
+                            Bet
+                          </Button>
+                        </Show>
+                        <Button
+                          class="fold-button"
+                          disabled={busy()}
+                          onClick={() => act({ type: "fold" })}
+                        >
+                          Fold
+                        </Button>
+                      </div>
+                      <Show when={actionDialog()}>
+                        <Modal
+                          class="drawer bet-drawer"
+                          title={
+                            actionDialog() === "bet"
+                              ? "Place your bet"
+                              : actionDialog() === "call"
+                                ? canFishOnCall()
+                                  ? "Call & fish"
+                                  : "Call the bet"
+                                : "Check & choose"
+                          }
+                          onClose={() => setActionDialog(undefined)}
+                        >
+                          <Show when={actionDialog() === "check"}>
+                            <p>Choose a card to fish.</p>
+                          </Show>
+                          <Show when={actionDialog() === "call"}>
+                            <p>
+                              Pay {format(Math.min(callCost(), human()?.chips ?? 0))} chips to stay
+                              in.
+                              {callCost() >= (human()?.chips ?? 0)
+                                ? " This puts you all-in."
+                                : " Calling includes one free fish unless fishing is locked."}
+                            </p>
+                          </Show>
+                          <Show when={actionDialog() === "bet"}>
+                            <div class="bet-preview" aria-live="polite">
+                              <section class="bet-preview-stack">
+                                <span>Your chips</span>
+                                <strong>{format(human()?.chips ?? 0)}</strong>
+                              </section>
+                              <section class="bet-preview-stack">
+                                <span>Pot</span>
+                                <strong>{format(game().pot)}</strong>
+                              </section>
+                            </div>
+                            <section class="bet-editor bet-preview-stack">
+                              <span>Your bet</span>
+                              <strong aria-live="polite">{format(wager())}</strong>
+                              <div class="bet-chips">
+                                <For each={[5, 10, 20, 50]}>
+                                  {(value) => (
+                                    <Button
+                                      class={`chip chip-${value}`}
+                                      aria-label={`Add ${value} to bet`}
+                                      disabled={busy() || wager() + value > maximum()}
+                                      onClick={() => setWager(wager() + value)}
+                                    >
+                                      +{value}
+                                    </Button>
+                                  )}
+                                </For>
+                                <Button
+                                  disabled={busy() || wager() === maximum()}
+                                  onClick={() => setWager(maximum())}
+                                >
+                                  All-in
+                                </Button>
+                                <Button
+                                  class="bet-reset"
+                                  disabled={
+                                    busy() ||
+                                    wager() === Math.min(maximum(), Math.max(10, minimum()))
+                                  }
+                                  onClick={() =>
+                                    setWager(Math.min(maximum(), Math.max(10, minimum())))
+                                  }
+                                >
+                                  Reset
+                                </Button>
+                              </div>
+                            </section>
+                          </Show>
+                          <Show when={canFish() && actionDialog() !== "bet"}>
+                            <div class="fishing-row">
+                              <label>
+                                Fishing source
+                                <select
+                                  value={source()}
+                                  onChange={(e) => setSource(e.currentTarget.value)}
+                                >
+                                  <option value="deck" disabled={!game().deck.count}>
+                                    Deck · face down
+                                  </option>
+                                  <option value="discard-a" disabled={!game().discardA.length}>
+                                    Lane A ·{" "}
+                                    {game().discardA.at(-1)
+                                      ? cardLabel(game().discardA.at(-1)!)
+                                      : "empty"}
+                                  </option>
+                                  <option value="discard-b" disabled={!game().discardB.length}>
+                                    Lane B ·{" "}
+                                    {game().discardB.at(-1)
+                                      ? cardLabel(game().discardB.at(-1)!)
+                                      : "empty"}
+                                  </option>
+                                  <For each={cards().filter((c) => c.kind === "blank")}>
+                                    {(blank) => (
+                                      <For each={["a", "b"] as const}>
+                                        {(pile) => (
+                                          <For
+                                            each={pile === "a" ? game().discardA : game().discardB}
+                                          >
+                                            {(c, index) => (
+                                              <option
+                                                value={`blank:${blank.id}:${pile}:${index()}`}
+                                              >
+                                                Blank swap · {pile.toUpperCase()}
+                                                {index() + 1} · {cardLabel(c)}
+                                              </option>
+                                            )}
+                                          </For>
+                                        )}
+                                      </For>
+                                    )}
+                                  </For>
+                                </select>
+                              </label>
+                            </div>
+                          </Show>
+
+                          <p role="alert" class="dialog-error">
+                            {error()}
+                          </p>
+                          <div class="button-row dialog-actions">
+                            <Show when={actionDialog() === "check"}>
+                              <Show when={canFish()}>
+                                <Button
+                                  class="primary"
+                                  disabled={busy()}
+                                  onClick={() =>
+                                    act({
+                                      type: "check",
+                                      ...drawFields(),
+                                    })
+                                  }
+                                >
+                                  Check & fish
+                                </Button>
+                              </Show>
+                            </Show>
+                            <Show when={actionDialog() === "call"}>
+                              <Button
+                                class="primary"
+                                disabled={busy()}
+                                onClick={() =>
+                                  act({
+                                    type: "call",
+                                    ...drawFields(),
+                                  })
+                                }
+                              >
+                                Call {format(Math.min(callCost(), human()?.chips ?? 0))}
+                                {canFishOnCall() ? " + Fish" : ""}
+                              </Button>
+                            </Show>
+                            <Show when={actionDialog() === "bet"}>
+                              <Button
+                                class="primary"
+                                disabled={
+                                  busy() ||
+                                  (wager() % CHIP_UNIT !== 0 && wager() !== maximum()) ||
+                                  wager() < minimum() ||
+                                  wager() > maximum()
+                                }
+                                onClick={() =>
+                                  act({
+                                    type: "bet",
+                                    amount: wager(),
+                                  })
+                                }
+                              >
+                                Bet {format(wager())}
+                              </Button>
+                              <Show
+                                when={
+                                  game().config.mode === "riichi" &&
+                                  !human()?.riichi &&
+                                  game().street <= 3 &&
+                                  !game().players.some((p) => p.riichi && !p.folded)
+                                }
+                              >
+                                <Button
+                                  disabled={
+                                    busy() ||
+                                    wager() < minimum() ||
+                                    wager() > maximum() ||
+                                    (wager() % CHIP_UNIT !== 0 && wager() !== maximum())
+                                  }
+                                  onClick={() =>
+                                    act({ type: "bet", amount: wager(), riichi: true })
+                                  }
+                                >
+                                  Bet {format(wager())} + Declare Riichi
+                                </Button>
+                              </Show>
+                            </Show>
+                          </div>
+                        </Modal>
+                      </Show>
+                    </Show>
+                    <Show
+                      when={
+                        game().phase !== "charleston" &&
+                        actor() &&
+                        actor()?.controller !== "human" &&
+                        !receivedCharleston().length
+                      }
+                    >
+                      <p>
+                        {human()?.folded
+                          ? "Watch the rest of the round."
+                          : "Watch the table. Your next move is coming."}
+                      </p>
+                      <Show when={!auto()}>
+                        <Button class="primary" disabled={busy()} onClick={bot}>
+                          Play {actor()?.name}’s turn →
+                        </Button>
+                      </Show>
+                    </Show>
+                    <Show when={["between-hands", "finished"].includes(game().phase)}>
+                      <Button onClick={() => setClosedResult("")}>View round result</Button>
+                    </Show>
+                    <Show when={game().phase === "between-hands"}>
+                      <Button
+                        class="primary"
+                        disabled={busy()}
+                        onClick={() =>
+                          perform(() =>
+                            gameAction(session(), { kind: "next-hand", viewerId: viewer() ?? "" }),
+                          )
                         }
                       >
-                        {(blank) => (
-                          <>
-                            <For each={game.discardA}>
-                              {(card, index) => (
-                                <option value={`blank:${blank.id}:a:${index()}`}>
-                                  Blank swap · A{index() + 1} · {cardLabel(card)}
-                                </option>
-                              )}
-                            </For>
-                            <For each={game.discardB}>
-                              {(card, index) => (
-                                <option value={`blank:${blank.id}:b:${index()}`}>
-                                  Blank swap · B{index() + 1} · {cardLabel(card)}
-                                </option>
-                              )}
-                            </For>
-                          </>
-                        )}
-                      </For>
-                    </select>
-                  </label>
-                  <button
-                    disabled={busy() || callAmount() > 0}
-                    onClick={() => act(drawAction("check"))}
-                  >
-                    {human()?.riichi ? "Check" : "Check + Draw & Discard"}
-                  </button>
-                  <button
-                    disabled={busy() || callAmount() === 0 || (human()?.chips ?? 0) < callAmount()}
-                    onClick={() => act(drawAction("call"))}
-                  >
-                    Call {callAmount()}
-                    {human()?.riichi ? "" : " + Draw & Discard"}
-                  </button>
-                  <label>
-                    Wager
-                    <input
-                      type="number"
-                      min={minimumWager()}
-                      max={maximumWager()}
-                      step="5"
-                      value={wager()}
-                      onInput={(event) => setWager(event.currentTarget.valueAsNumber)}
-                    />
-                  </label>
-                  <label class="check">
-                    <input
-                      type="checkbox"
-                      checked={riichi()}
-                      disabled={!canHumanRiichi()}
-                      onChange={(event) => setRiichi(event.currentTarget.checked)}
-                    />{" "}
-                    Riichi
-                  </label>
-                  <button
-                    class="accent"
-                    disabled={
-                      busy() ||
-                      wager() < minimumWager() ||
-                      wager() > maximumWager() ||
-                      wager() % 5 !== 0
-                    }
-                    onClick={() =>
-                      act(
-                        game.currentWager === 0
-                          ? {
-                              type: "bet",
-                              amount: wager(),
-                              riichi: riichi() && canHumanRiichi(),
-                            }
-                          : {
-                              type: "raise",
-                              amount: wager(),
-                              riichi: riichi() && canHumanRiichi(),
-                            },
-                      )
-                    }
-                  >
-                    {game.currentWager === 0 ? "Bet" : `Raise (min ${minimumWager()})`}
-                  </button>
-                  <button class="danger" disabled={busy()} onClick={() => act({ type: "fold" })}>
-                    Fold + 2 blue sticks
-                  </button>
-                </Show>
-
-                <Show when={isHumanTurn() && game.phase === "discarding"}>
-                  <p class="instruction">
-                    Choose one tile to discard. An empty pile must be filled first.
-                  </p>
-                  <For each={privateCards(human())}>
-                    {(card) => (
-                      <div class="discard-choice">
-                        <span>{cardLabel(card)}</span>
-                        <button
-                          disabled={busy()}
-                          onClick={() =>
-                            perform(() =>
-                              gameAction(sessionId(), {
-                                kind: "discard",
-                                playerId: "p1",
-                                discardCardId: card.id,
-                                discardPile: "a",
-                              }),
-                            )
-                          }
+                        {game().dealerSteps >= game().players.length * (game().config.orbits ?? 1)
+                          ? "Start next tournament game"
+                          : "Deal next round"}{" "}
+                        →
+                      </Button>
+                    </Show>
+                    <Show when={game().phase === "finished"}>
+                      <div class="standings">
+                        <For
+                          each={[...game().players].sort(
+                            (a, b) =>
+                              (game().finalScores?.[b.id] ?? 0) - (game().finalScores?.[a.id] ?? 0),
+                          )}
                         >
-                          to A
-                        </button>
-                        <button
-                          disabled={busy()}
-                          onClick={() =>
-                            perform(() =>
-                              gameAction(sessionId(), {
-                                kind: "discard",
-                                playerId: "p1",
-                                discardCardId: card.id,
-                                discardPile: "b",
-                              }),
-                            )
-                          }
-                        >
-                          to B
-                        </button>
+                          {(p) => (
+                            <span>
+                              <b>{p.name}</b> {format(game().finalScores?.[p.id] ?? 0)} points
+                            </span>
+                          )}
+                        </For>
                       </div>
-                    )}
-                  </For>
-                </Show>
-
-                <Show when={actor() && !isHumanTurn()}>
-                  <p class="instruction">
-                    {actor()?.name} is deciding with{" "}
-                    {actor()?.controller === "llm"
-                      ? "Grok via Cloudflare Think"
-                      : "seeded statistical heuristics"}
-                    .
-                  </p>
-                  <button class="primary" disabled={busy()} onClick={runBot}>
-                    Run {actor()?.name}'s turn
-                  </button>
-                </Show>
-
-                <Show when={game.phase === "between-hands"}>
-                  <button
-                    class="primary"
-                    disabled={busy()}
-                    onClick={() =>
-                      perform(() => gameAction(sessionId(), { kind: "next-hand", viewerId: "p1" }))
-                    }
-                  >
-                    Deal next hand
-                  </button>
-                </Show>
-                <Show when={game.phase === "finished"}>
-                  <p class="instruction">
-                    Game complete. Final scores: {JSON.stringify(game.finalScores)}
-                  </p>
-                </Show>
-                <button
-                  class="ghost"
-                  disabled={
-                    busy() || Boolean(human()?.eliminated) || (human()?.loans ?? 0) >= MAX_LOANS
-                  }
-                  onClick={() =>
-                    perform(() => gameAction(sessionId(), { kind: "take-loan", playerId: "p1" }))
-                  }
-                >
-                  Take 200 loan
-                </button>
-                <button
-                  class="ghost"
-                  disabled={busy() || (human()?.loans ?? 0) === 0 || (human()?.chips ?? 0) < 200}
-                  onClick={() =>
-                    perform(() => gameAction(sessionId(), { kind: "repay-loan", playerId: "p1" }))
-                  }
-                >
-                  Repay loan
-                </button>
-              </div>
-            </section>
-
-            <section class="analysis-grid">
-              <article class="panel">
-                <div class="section-title">
-                  <div>
-                    <p class="eyebrow">Replay ledger</p>
-                    <h3>What actually happened</h3>
-                  </div>
-                  <button class="ghost" onClick={refreshEvents}>
-                    Refresh
-                  </button>
-                </div>
-                <div class="event-list">
-                  <For
-                    each={events()}
-                    fallback={
-                      <p class="muted">Load the ledger to inspect every persisted transition.</p>
-                    }
-                  >
-                    {(event) => (
-                      <div class="event">
-                        <span>#{event.sequence}</span>
-                        <strong>{event.type.replaceAll("-", " ")}</strong>
-                        <small>
-                          hand {event.handNumber}
-                          {event.actorId ? ` · ${event.actorId}` : ""}
-                        </small>
-                      </div>
-                    )}
-                  </For>
-                </div>
-              </article>
-              <article class="panel">
-                <p class="eyebrow">Balance batch</p>
-                <h3>Luck needs a larger sample</h3>
-                <p class="muted">
-                  Run complete heuristic games. Each result has its own durable replay session.
-                </p>
-                <label>
-                  Games
-                  <input
-                    type="number"
-                    min="1"
-                    max="20"
-                    value={simulationCount()}
-                    onInput={(event) => setSimulationCount(event.currentTarget.valueAsNumber)}
-                  />
-                </label>
-                <button class="primary" disabled={busy()} onClick={simulate}>
-                  Simulate & persist
-                </button>
-                <div class="sim-results">
-                  <For each={simulationResults()}>
-                    {(result) => (
-                      <button
-                        class="result"
+                      <Button
+                        class="primary"
                         onClick={() => {
-                          setSessionId(result.sessionId)
-                          void resume()
+                          setState(undefined)
+                          setViewer(undefined)
+                          setAuto(false)
                         }}
                       >
-                        <span>{result.seed}</span>
-                        <strong>
-                          {Object.entries(result.finalScores)
-                            .sort((a, b) => b[1] - a[1])[0]
-                            ?.join(" · ")}
-                        </strong>
-                      </button>
-                    )}
-                  </For>
-                </div>
-              </article>
-            </section>
+                        Set up another game →
+                      </Button>
+                    </Show>
+                  </div>
+                </section>
+                <Show
+                  when={
+                    !drawNotice() &&
+                    ["between-hands", "finished"].includes(game().phase) &&
+                    closedResult() !== `${session()}:${game().handResults.at(-1)?.handNumber}` &&
+                    game().handResults.at(-1)
+                  }
+                >
+                  {(result) => (
+                    <Modal
+                      title={game().phase === "finished" ? "Game complete" : "Round result"}
+                      class="result-dialog"
+                      onClose={() => setClosedResult(`${session()}:${result().handNumber}`)}
+                    >
+                      <section class="round-result">
+                        <p class="eyebrow">
+                          {result().reason === "showdown" ? "SHOWDOWN" : "EVERYONE ELSE FOLDED"}
+                        </p>
+                        <h2>
+                          {result()
+                            .winnerIds.map((id) => game().players.find((p) => p.id === id)?.name)
+                            .join(" & ")}{" "}
+                          {result().winnerIds.length === 1
+                            ? "takes the pot of"
+                            : "share the pot of"}{" "}
+                          {format(result().pot)} chips.
+                        </h2>
+                        <Show when={result().lotusBluff}>
+                          <p>Lotus bonus: +{result().lotusBluff?.total} chips.</p>
+                        </Show>
+                        <div class="result-hands">
+                          <For each={result().players.filter((p) => !p.eliminated)}>
+                            {(p) => (
+                              <article>
+                                <div class="result-player-summary">
+                                  <b>{p.name}</b>
+                                  <span>
+                                    {p.folded
+                                      ? "Folded"
+                                      : p.lotusDisqualified
+                                        ? "One Lotus · loses showdown"
+                                        : p.score.total === 0
+                                          ? "Hand kept hidden"
+                                          : p.cards.filter((c) => c.kind === "flower").length === 2
+                                            ? "Twin Lotus · automatic win"
+                                            : (p.score.combinations[0]?.label ?? "High Card")}
+                                  </span>
+                                  <small class="result-committed">
+                                    <strong>
+                                      {(p.netChips ?? p.payout - p.committed) > 0 ? "+" : ""}
+                                      {format(p.netChips ?? p.payout - p.committed)}
+                                    </strong>{" "}
+                                    chips{" "}
+                                    {(p.netChips ?? p.payout - p.committed) > 0
+                                      ? "won"
+                                      : (p.netChips ?? p.payout - p.committed) < 0
+                                        ? "lost"
+                                        : "net"}
+                                  </small>
+                                </div>
+                                <div class="mini-hand">
+                                  <For each={sortPublicFirst(p.cards, p.publicCards)}>
+                                    {(c) => <PlayingCard card={c} compact />}
+                                  </For>
+                                </div>
+                              </article>
+                            )}
+                          </For>
+                        </div>
+                        <p role="alert" class="dialog-error">
+                          {error()}
+                        </p>
+                        <div class="result-actions">
+                          <Show when={game().phase === "between-hands"}>
+                            <Button
+                              class="primary"
+                              disabled={busy()}
+                              onClick={() =>
+                                perform(() =>
+                                  gameAction(session(), {
+                                    kind: "next-hand",
+                                    viewerId: viewer() ?? "",
+                                  }),
+                                )
+                              }
+                            >
+                              {game().dealerSteps >=
+                              game().players.length * (game().config.orbits ?? 1)
+                                ? "Start next tournament game"
+                                : "Deal next round"}{" "}
+                              →
+                            </Button>
+                          </Show>
+                          <Show when={game().phase === "finished"}>
+                            <div class="standings">
+                              <For
+                                each={[...game().players].sort(
+                                  (a, b) =>
+                                    (game().finalScores?.[b.id] ?? 0) -
+                                    (game().finalScores?.[a.id] ?? 0),
+                                )}
+                              >
+                                {(p) => (
+                                  <span>
+                                    <b>{p.name}</b> {format(game().finalScores?.[p.id] ?? 0)} points
+                                  </span>
+                                )}
+                              </For>
+                            </div>
+                            <Button
+                              class="primary"
+                              onClick={() => {
+                                setState(undefined)
+                                setViewer(undefined)
+                                setAuto(false)
+                              }}
+                            >
+                              Set up another game →
+                            </Button>
+                          </Show>
+                        </div>
+                      </section>
+                    </Modal>
+                  )}
+                </Show>
+              </div>
+            </div>
           </>
         )}
       </Show>
-
-      <footer>
-        <p>{notice()}</p>
-        <Show when={error()}>
-          <p class="error">{error()}</p>
-        </Show>
-      </footer>
+      <Show when={handoff()}>
+        {(next) => (
+          <Modal title={`Pass to ${next().name}`} dismissible={false} onClose={() => {}}>
+            <p>Hand the device to {next().name}. The previous hand is hidden.</p>
+            <p role="alert" class="dialog-error">
+              {error()}
+            </p>
+            <Button class="primary" disabled={busy()} onClick={revealHumanHand}>
+              {busy() ? "Loading…" : `I'm ${next().name} — show my hand`}
+            </Button>
+          </Modal>
+        )}
+      </Show>
+      <Show when={rules()}>
+        <Modal
+          title="How to play"
+          hideTitle
+          class="drawer rules-drawer"
+          onClose={() => setRules(false)}
+        >
+          <RulesContent />
+        </Modal>
+      </Show>
+      <Show when={error()}>
+        <div class="error-toast" role="alert">
+          <span>{error()}</span>
+          <Button aria-label="Dismiss error" onClick={() => setError("")}>
+            ×
+          </Button>
+        </div>
+      </Show>
     </main>
   )
 }
 
-function Seat(props: {
-  player: PublicPlayerState
-  active: boolean
-  position: number
-  debugPlayer?: PublicPlayerState
-  analysis?: PokerMathAnalysis
-  recentDraw?: DrawDiscardRecord
-  recommendation?: BettingAction
-}) {
+function CycleBars(props: { label: string; current: number; total: number }) {
   return (
     <div
-      class={`seat seat-${props.position} ${props.active ? "active" : ""} ${props.player.folded ? "folded" : ""} ${props.debugPlayer ? "debug-seat" : ""}`}
+      class="cycle-bars"
+      role="progressbar"
+      aria-label={props.label}
+      aria-valuemin={1}
+      aria-valuemax={props.total}
+      aria-valuenow={props.current}
     >
-      <div class="avatar">{props.player.name.slice(0, 1)}</div>
-      <div class="seat-content">
-        <strong>{props.player.name}</strong>
-        <small>
-          {props.player.controller} · {props.player.chips} chips
-        </small>
-        <small>
-          <b class="blue">● {props.player.blueSticks}</b> <b class="red">● {props.player.loans}</b>
-          {props.player.riichi ? " · RIICHI" : ""}
-          {props.player.eliminated ? " · ELIMINATED" : ""}
-        </small>
-        <small class="seat-bet">
-          Street {props.player.roundCommitted} · total {props.player.handCommitted}
-        </small>
-        <Show when={!props.debugPlayer && !Array.isArray(props.player.privateCards)}>
-          <div class="tiles">
-            <For each={props.player.knownPrivateCards}>
-              {(card) => <Tile card={card} compact />}
-            </For>
-            <For
-              each={Array.from({
-                length: Math.max(
-                  0,
-                  ("count" in props.player.privateCards ? props.player.privateCards.count : 0) -
-                    props.player.knownPrivateCards.length,
-                ),
-              })}
-            >
-              {() => <span class="hidden-tile">🀫</span>}
-            </For>
-          </div>
-        </Show>
-        <Show when={props.debugPlayer}>
-          {(player) => (
-            <div class="seat-debug">
-              <div class="tiles">
-                <For each={privateCards(player())}>{(card) => <Tile card={card} compact />}</For>
-              </div>
-              <Show when={props.analysis}>
-                {(analysis) => (
-                  <>
-                    <div class="seat-math">
-                      <span>
-                        Equity <b>{formatPercent(analysis().showdownEquity)}</b>
-                      </span>
-                      <span>
-                        Pot odds <b>{formatPercent(analysis().potOdds)}</b>
-                      </span>
-                      <span>
-                        Edge{" "}
-                        <b class={analysis().equityEdge >= 0 ? "positive" : "negative"}>
-                          {formatSignedPercent(analysis().equityEdge)}
-                        </b>
-                      </span>
-                      <span>
-                        To call <b>{analysis().toCall}</b>
-                      </span>
-                      <span>
-                        Avg rank <b>{analysis().expectedScore.toFixed(1)}</b>
-                      </span>
-                      <span>
-                        Public range <b>{analysis().knownOpponentTiles} tiles</b>
-                      </span>
-                      <span>
-                        Opponent action <b>{analysis().opponentAggressiveActions} aggressive</b>
-                      </span>
-                      <span>
-                        Improves <b>{analysis().improveRate.toFixed(0)}%</b>
-                      </span>
-                      <span>
-                        Call EV{" "}
-                        <b class={analysis().callExpectedValue >= 0 ? "positive" : "negative"}>
-                          {formatSignedNumber(analysis().callExpectedValue)}
-                        </b>
-                      </span>
-                    </div>
-                    <div class="seat-progress">
-                      <span>
-                        Best · <b>{analysis().currentBest.label}</b> (rank{" "}
-                        {analysis().currentBest.rank})
-                      </span>
-                      <span>
-                        Next ·{" "}
-                        <b>
-                          {analysis().nextClosest
-                            ? `${analysis().nextClosest!.label}, ${analysis().nextClosest!.missing} away`
-                            : "top of ladder"}
-                        </b>
-                      </span>
-                    </div>
-                  </>
-                )}
-              </Show>
-              <Show when={props.recommendation}>
-                {(action) => (
-                  <small class="recommendation">Baseline · {formatAction(action())}</small>
-                )}
-              </Show>
-              <Show when={props.recentDraw}>
-                {(record) => (
-                  <small class="draw-debug">
-                    {record().source === "blank-exchange" ? "Swapped for" : "Drew"}{" "}
-                    {cardLabel(record().drawnCard)} · left {cardLabel(record().discardedCard)} in{" "}
-                    {record().discardPile.toUpperCase()}
-                  </small>
-                )}
-              </Show>
-            </div>
-          )}
-        </Show>
-      </div>
-    </div>
-  )
-}
-
-function HandSummary(props: { result: HandResult }) {
-  const winnerNames = () =>
-    props.result.players
-      .filter((player) => props.result.winnerIds.includes(player.playerId))
-      .map((player) => `${player.name} (+${player.payout})`)
-      .join(", ")
-
-  return (
-    <section class="result-panel panel">
-      <div class="section-title">
-        <div>
-          <p class="eyebrow">Hand {props.result.handNumber} result</p>
-          <h3>
-            {winnerNames()} won the {props.result.pot}-chip pot
-          </h3>
-        </div>
-        <span class="result-reason">
-          {props.result.reason === "uncontested" ? "Won by folds" : "Showdown"}
-        </span>
-      </div>
-      <div class="result-community">
-        <span>Board</span>
-        <div class="tiles">
-          <For each={[...props.result.community].sort(compareCards)}>
-            {(card) => <Tile card={card} compact />}
-          </For>
-        </div>
-      </div>
-      <Show when={props.result.boardResets > 0}>
-        <p class="instruction">
-          Flowers reset the board {props.result.boardResets} time
-          {props.result.boardResets === 1 ? "" : "s"} this hand.
-        </p>
-      </Show>
-      <Show when={props.result.flowerBonus}>
-        {(bonus) => (
-          <p class="instruction">
-            Flower bluff bonus: +{bonus().total} ({bonus().perOpponent} from every opponent).
-          </p>
-        )}
-      </Show>
-      <Show when={props.result.riichiSettlement}>
-        {(settlement) => (
-          <p class="instruction">
-            Riichi settled: {settlement().returnedToCenter} returned to the center;{" "}
-            {settlement().recipientIds.length} opponent
-            {settlement().recipientIds.length === 1 ? "" : "s"} received a blue stick.
-          </p>
-        )}
-      </Show>
-      <div class="revealed-hands">
-        <For each={props.result.players}>
-          {(player) => (
-            <article class={props.result.winnerIds.includes(player.playerId) ? "winner" : ""}>
-              <div>
-                <strong>{player.name}</strong>
-                <small>
-                  {player.folded
-                    ? "Folded"
-                    : player.flowerDisqualified
-                      ? "Single Flower · ineligible"
-                      : "Showed"}{" "}
-                  · committed {player.committed} · payout +{player.payout}
-                </small>
-              </div>
-              <div class="tiles">
-                <For each={player.cards}>{(card) => <Tile card={card} compact />}</For>
-              </div>
-              <p>
-                <b>Rank {player.score.total}</b> · {scoreLabel(player.score)}
-              </p>
-            </article>
+      <span>
+        {props.label}{" "}
+        <strong>
+          {props.current}/{props.total}
+        </strong>
+      </span>
+      <div class="progress-segments">
+        <For each={Array.from({ length: props.total })}>
+          {(_, i) => (
+            <i
+              classList={{ complete: i() < props.current - 1, current: i() === props.current - 1 }}
+            />
           )}
         </For>
       </div>
-    </section>
+    </div>
+  )
+}
+function sortPublicFirst(cards: Card[], publicCards: Card[]): Card[] {
+  const publicIds = new Set(publicCards.map((card) => card.id))
+  return [...cards].sort(
+    (a, b) => Number(publicIds.has(b.id)) - Number(publicIds.has(a.id)) || compareCards(a, b),
+  )
+}
+function privateCards(player?: PublicPlayerState): Card[] {
+  return player && Array.isArray(player.privateCards) ? player.privateCards : []
+}
+function PlayingCard(props: { card: Card; compact?: boolean }) {
+  return (
+    <img
+      class={`playing-card ${props.compact ? "compact" : ""}`}
+      data-motion-key={`card-${props.card.id}`}
+      src={cardAsset(props.card)}
+      alt={cardLabel(props.card)}
+      title={cardLabel(props.card)}
+      width={825}
+      height={1125}
+      draggable={false}
+    />
+  )
+}
+function Lane(props: {
+  title: string
+  cards: Card[]
+  concealed?: string[]
+  enabled: boolean
+  onPick: () => void
+  discarding: boolean
+  discardAllowed: boolean
+  ready: boolean
+  onDiscard: () => void
+}) {
+  return (
+    <div
+      class="lane"
+      data-lane={props.title === "Lane A" ? "a" : "b"}
+      style={{ "--lane-count": Math.max(1, props.cards.length + 1) }}
+    >
+      <Show
+        when={props.discarding}
+        fallback={
+          <div class="lane-cards">
+            <Show when={props.cards.length} fallback={<span class="empty-lane">Empty lane</span>}>
+              <For each={props.cards}>
+                {(card, index) => (
+                  <Show
+                    when={index() === props.cards.length - 1}
+                    fallback={
+                      <span
+                        style={{
+                          visibility: props.concealed?.includes(card.id) ? "hidden" : "visible",
+                        }}
+                      >
+                        <PlayingCard card={card} compact />
+                      </span>
+                    }
+                  >
+                    <Button
+                      class="fish-card"
+                      style={{
+                        visibility: props.concealed?.includes(card.id) ? "hidden" : "visible",
+                      }}
+                      disabled={!props.enabled}
+                      aria-label={`Fish ${cardLabel(card)} from ${props.title}`}
+                      onClick={props.onPick}
+                    >
+                      <PlayingCard card={card} compact />
+                    </Button>
+                  </Show>
+                )}
+              </For>
+            </Show>
+          </div>
+        }
+      >
+        <Button
+          class="lane-cards discard-zone"
+          classList={{
+            available: props.discardAllowed,
+            ready: props.discardAllowed && props.ready,
+          }}
+          disabled={!props.discardAllowed || !props.ready}
+          aria-label={`Discard selected card to ${props.title}`}
+          onClick={props.onDiscard}
+        >
+          <For each={props.cards}>{(card) => <PlayingCard card={card} compact />}</For>
+          <Show when={props.discardAllowed}>
+            <span class="discard-slot" aria-hidden="true">
+              +
+            </span>
+          </Show>
+        </Button>
+      </Show>
+    </div>
+  )
+}
+function PlayerSeat(props: {
+  charlestonStatus?: string
+  betting: boolean
+  drawNotice?: DrawNotice
+  mode: "basic" | "riichi"
+  player: PublicPlayerState
+  active: boolean
+  dealer: boolean
+  colorIndex: number
+}) {
+  const known = createMemo(() => knownHand(props.player, props.mode))
+  const hidden = () =>
+    Array.isArray(props.player.privateCards)
+      ? props.player.privateCards.length
+      : props.player.privateCards.count
+  return (
+    <article
+      class="opponent"
+      data-player-id={props.player.id}
+      classList={{
+        active: props.active,
+        betting: props.betting,
+        folded: props.player.folded || props.player.eliminated,
+      }}
+    >
+      <div
+        class="opponent-heading"
+        data-motion-key={`seat-${props.player.id}`}
+        data-motion-value={`${props.active}-${props.player.chips}-${props.player.folded}`}
+      >
+        <SpiritAvatar name={props.player.name} colorIndex={props.colorIndex} />
+        <div>
+          <b>
+            {props.player.name}{" "}
+            <Show when={props.dealer}>
+              <span class="dealer-label" title="Dealer">
+                <span class="stick-tag">Dealer</span>
+              </span>
+            </Show>
+          </b>
+          <small>
+            <strong>{format(props.player.chips)}</strong> chips
+          </small>
+        </div>
+      </div>
+      <div class="opponent-cards">
+        <For each={[...props.player.publicCards].sort(compareCards)}>
+          {(c) => <PlayingCard card={c} compact />}
+        </For>
+        <Show when={hidden() > 0}>
+          <div class="opponent-private" style={{ "--hidden-count": hidden() }}>
+            <For each={Array.from({ length: hidden() })}>
+              {(_, index) => (
+                <img
+                  class="card-back"
+                  data-motion-key={`back-${props.player.id}-${index()}`}
+                  src="/assets/cards/back.png"
+                  alt="Hidden card"
+                />
+              )}
+            </For>
+          </div>
+        </Show>
+      </div>
+      <div class="opponent-known-hand">
+        <Show when={!props.player.folded && !props.player.eliminated && known().label}>
+          <b>
+            <Show when={known().rank}>{known().rank} - </Show>
+            {known().label}
+          </b>
+        </Show>
+      </div>
+      <div class="seat-summary" role="status">
+        <span class="opponent-status">
+          {props.player.eliminated
+            ? "Out"
+            : props.player.folded
+              ? "Folded"
+              : props.charlestonStatus
+                ? props.charlestonStatus
+                : props.active
+                  ? props.drawNotice
+                    ? "Fishing…"
+                    : props.betting
+                      ? "Betting…"
+                      : "Choosing cards…"
+                  : props.player.riichi
+                    ? "Riichi"
+                    : props.player.roundCommitted > 0
+                      ? ""
+                      : "In the round"}
+        </span>
+        <Show when={props.player.roundCommitted > 0}>
+          <div
+            class="seat-bet"
+            data-motion-key={`wager-${props.player.id}`}
+            data-motion-value={props.player.roundCommitted}
+          >
+            <span>Bet {format(props.player.roundCommitted)}</span>
+            <span class="seat-bet-chips" aria-hidden="true">
+              <ChipStack amount={props.player.roundCommitted} />
+            </span>
+          </div>
+        </Show>
+      </div>
+    </article>
   )
 }
 
-function Tile(props: { card: Card; compact?: boolean }) {
-  const short = () =>
-    props.card.kind === "numbered"
-      ? `${props.card.rank}${props.card.suit[0]!.toUpperCase()}`
-      : props.card.kind === "dragon"
-        ? `${props.card.dragon[0]!.toUpperCase()}D`
-        : props.card.kind === "wind"
-          ? `${props.card.wind[0]!.toUpperCase()}W`
-          : props.card.kind === "flower"
-            ? String.fromCodePoint(0x1f022 + FLOWERS.indexOf(props.card.flower))
-            : props.card.kind === "joker"
-              ? "★"
-              : "□"
+function ChipStack(props: { amount: number; contributions?: number[] }) {
+  const stacks = () => {
+    const counts = new Map<number, number>()
+    const contributions =
+      props.contributions?.reduce((sum, n) => sum + n, 0) === props.amount
+        ? props.contributions
+        : [props.amount]
+    for (const amount of contributions ?? [props.amount]) {
+      let remaining = Math.max(0, amount)
+      for (const value of [50, 20, 10, 5]) {
+        const count = Math.floor((remaining + 1e-8) / value)
+        remaining -= count * value
+        counts.set(value, (counts.get(value) ?? 0) + count)
+      }
+    }
+    return [...counts].map(([value, count]) => ({ value, count })).filter((stack) => stack.count)
+  }
+  return (
+    <div class="chip-stacks" aria-label={`${format(props.amount)} chips`}>
+      <For each={stacks()}>
+        {(stack) => (
+          <div
+            class="denomination-stack"
+            title={`${stack.count} × ${stack.value} = ${stack.count * stack.value} chips`}
+          >
+            <div
+              class="stack-discs"
+              style={{ height: `${38 + Math.min(stack.count - 1, 7) * 4}px` }}
+            >
+              <For each={Array.from({ length: Math.min(stack.count, 8) })}>
+                {(_, index) => (
+                  <span
+                    aria-hidden="true"
+                    class={`chip chip-${stack.value}`}
+                    style={{ bottom: `${index() * 4}px` }}
+                  >
+                    {stack.value}
+                  </span>
+                )}
+              </For>
+            </div>
+          </div>
+        )}
+      </For>
+      <Show when={props.amount === 0}>
+        <small>No chips</small>
+      </Show>
+    </div>
+  )
+}
+function SeatIcon(props: { kind: SeatKind }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="28"
+      height="28"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.6"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <Show when={props.kind === "human"}>
+        <circle cx="12" cy="7" r="3" />
+        <path d="M5 21v-3a7 7 0 0 1 14 0v3" />
+      </Show>
+      <Show when={props.kind === "robot"}>
+        <rect x="4" y="6" width="16" height="15" rx="4" />
+        <path d="M12 3v3M1 12v4M23 12v4M9 16h6" />
+        <circle cx="8.5" cy="11" r=".75" />
+        <circle cx="15.5" cy="11" r=".75" />
+      </Show>
+      <Show when={props.kind === "none"}>
+        <circle cx="12" cy="12" r="9" />
+        <path d="m6 18 12-12" />
+      </Show>
+    </svg>
+  )
+}
+
+function FrontpageDecor(props: { special?: boolean; visible?: boolean } = {}) {
+  // Sample once per visit, so choosing settings never rearranges the decoration.
+  const pool = [
+    "bamd.png",
+    "crakd.svg",
+    "dotd.svg",
+    ...["bam", "dot", "crak"].flatMap((suit) =>
+      Array.from({ length: 8 }, (_, i) => `${suit}${i + 2}.svg`),
+    ),
+  ]
+  const cards = Array.from({ length: props.special ? 7 : 14 }, (_, index) => {
+    const backRow = props.special ? index < 3 : index < 7
+    const position = props.special ? [1, 3, 5, 0, 2, 4, 6][index]! : index % 7
+    const direction = props.special ? -1 : 1
+    return {
+      image: props.special
+        ? [
+            "blank.svg",
+            "windj.svg",
+            "lotusb.svg",
+            "crakj.svg",
+            "lotusw.svg",
+            "bamj.png",
+            "dotj.svg",
+          ][index]!
+        : pool.splice(Math.floor(Math.random() * pool.length), 1)[0]!,
+      // Shared geometry; only horizontal positions and angles are mirrored.
+      offset: `${direction * ((position - 3) * 13 + (backRow ? 6 : 0))}%`,
+      lift: `${(backRow ? -80 : 0) + [0, 8, -6, 10, -8, 4, 0][position]!}px`,
+      angle: `${direction * ((position - 3) * 9 + [0, -3, 2, 0, -2, 3, 0][position]!)}deg`,
+      zIndex: (index + 1) * 2,
+    }
+  })
   return (
     <div
-      class={`tile ${props.card.kind} color-${props.card.color ?? "none"} ${props.compact ? "compact" : ""}`}
-      title={cardLabel(props.card)}
+      class="frontpage-decor"
+      classList={{ "expansion-decor": props.special, visible: props.visible }}
+      aria-hidden="true"
     >
-      <span>{short()}</span>
-      <small>
-        {props.card.kind === "numbered"
-          ? suitLabel(props.card.suit)
-          : props.card.kind === "joker"
-            ? props.card.color
-            : props.card.kind}
-      </small>
+      <div class="decor-fan">
+        <For each={cards}>
+          {(card) => (
+            <div
+              class="decor-layer"
+              style={{
+                "--card-offset": card.offset,
+                "--card-lift": card.lift,
+                "--card-angle": card.angle,
+                "z-index": card.zIndex,
+              }}
+            >
+              <img
+                src={`/assets/cards/${card.image}`}
+                alt=""
+                width="825"
+                height="1125"
+                draggable={false}
+              />
+            </div>
+          )}
+        </For>
+        <Show when={props.special}>
+          <For
+            each={[
+              // Compensate for each drawing's native angle, then follow the card fan.
+              { kind: "riichi-decor", x: 10, y: -5, angle: -30, width: 130, layer: 15 },
+              { kind: "dealer-decor", x: 180, y: 185, angle: 5, width: 74, layer: 11 },
+            ]}
+          >
+            {(stick) => (
+              <img
+                class="decor-stick"
+                src={`/assets/sticks/${stick.kind}.svg`}
+                alt=""
+                draggable={false}
+                style={{
+                  "--stick-x": `${stick.x}px`,
+                  "--stick-y": `${stick.y}px`,
+                  "--stick-angle": `${stick.angle}deg`,
+                  width: `${stick.width}px`,
+                  "z-index": stick.layer,
+                }}
+              />
+            )}
+          </For>
+        </Show>
+      </div>
     </div>
   )
 }
 
-function privateCards(player?: PublicPlayerState): Card[] {
-  return player && Array.isArray(player.privateCards) ? player.privateCards : []
-}
-
-function scoreLabel(score: HandResult["players"][number]["score"]): string {
-  const combination = score.combinations[0]
-
-  return combination?.description ?? combination?.label ?? "High Card"
-}
-
-function formatAction(action: BettingAction): string {
-  if (action.type === "bet" || action.type === "raise") {
-    return `${action.type} ${action.amount}${action.riichi ? " + Riichi" : ""}`
-  }
-
-  if (action.type === "check" || action.type === "call") {
-    return `${action.type}${action.blankExchange ? " + Blank exchange" : " + Draw & Discard"}`
-  }
-
-  return action.type
-}
-
-function formatPercent(value: number): string {
-  return `${Math.round(value * 100)}%`
-}
-
-function formatSignedPercent(value: number): string {
-  return `${value >= 0 ? "+" : ""}${Math.round(value * 100)}%`
-}
-
-function formatSignedNumber(value: number): string {
-  return `${value >= 0 ? "+" : ""}${value.toFixed(1)}`
+function Modal(props: {
+  title: string
+  hideTitle?: boolean
+  onClose: () => void
+  children: JSX.Element
+  dismissible?: boolean
+  class?: string
+}) {
+  let element!: HTMLDialogElement
+  const previousOverflow = document.body.style.overflow
+  onMount(() => {
+    document.body.style.overflow = "hidden"
+    element.showModal()
+  })
+  onCleanup(() => {
+    element.close()
+    document.body.style.overflow = previousOverflow
+  })
+  return (
+    <dialog
+      ref={(node) => {
+        element = node
+      }}
+      class={`game-dialog ${props.class ?? ""}`}
+      aria-label={props.title}
+      onCancel={(event) => {
+        event.preventDefault()
+        if (props.dismissible !== false) props.onClose()
+      }}
+      onClick={(event) => {
+        if (event.target === element) {
+          const rect = element.getBoundingClientRect()
+          if (
+            event.clientX < rect.left ||
+            event.clientX > rect.right ||
+            event.clientY < rect.top ||
+            event.clientY > rect.bottom
+          )
+            if (props.dismissible !== false) props.onClose()
+        }
+      }}
+    >
+      <header class="dialog-heading">
+        <Show when={!props.hideTitle}>
+          <h2>{props.title}</h2>
+        </Show>
+        <Show when={props.dismissible !== false}>
+          <Button aria-label={`Close ${props.title}`} onClick={props.onClose}>
+            ×
+          </Button>
+        </Show>
+      </header>
+      {props.children}
+    </dialog>
+  )
 }

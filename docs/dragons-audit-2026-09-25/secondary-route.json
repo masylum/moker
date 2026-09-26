@@ -1,0 +1,101 @@
+{
+  "selected": {
+    "cards": [
+      "Black Joker",
+      "Green Joker",
+      "1 Dots",
+      "East Wind",
+      "North Wind"
+    ],
+    "score": {
+      "total": 7,
+      "selectedCardIds": [
+        "joker-black",
+        "wind-east-1",
+        "wind-north-1"
+      ],
+      "combinations": [
+        {
+          "kind": "three-winds",
+          "score": 7,
+          "cardIds": [
+            "joker-black",
+            "wind-east-1",
+            "wind-north-1"
+          ],
+          "label": "Three Winds",
+          "description": "Three Winds · East Wind + West Wind + North Wind"
+        }
+      ],
+      "tieBreak": [
+        11,
+        11,
+        11
+      ]
+    },
+    "next": {
+      "nextRank": 11,
+      "nextMissing": 1
+    },
+    "dragonProgress": {
+      "kind": "three-dragons",
+      "label": "Three Dragons",
+      "rank": 9,
+      "size": 3,
+      "missing": 2,
+      "matchedCardIds": [
+        "joker-green"
+      ]
+    }
+  },
+  "alternative": {
+    "cards": [
+      "Black Joker",
+      "Green Joker",
+      "Red Dragon",
+      "East Wind",
+      "North Wind"
+    ],
+    "score": {
+      "total": 7,
+      "selectedCardIds": [
+        "joker-black",
+        "wind-east-1",
+        "wind-north-1"
+      ],
+      "combinations": [
+        {
+          "kind": "three-winds",
+          "score": 7,
+          "cardIds": [
+            "joker-black",
+            "wind-east-1",
+            "wind-north-1"
+          ],
+          "label": "Three Winds",
+          "description": "Three Winds · East Wind + West Wind + North Wind"
+        }
+      ],
+      "tieBreak": [
+        11,
+        11,
+        11
+      ]
+    },
+    "next": {
+      "nextRank": 11,
+      "nextMissing": 1
+    },
+    "dragonProgress": {
+      "kind": "three-dragons",
+      "label": "Three Dragons",
+      "rank": 9,
+      "size": 3,
+      "missing": 1,
+      "matchedCardIds": [
+        "dragon-red-1",
+        "joker-green"
+      ]
+    }
+  }
+}

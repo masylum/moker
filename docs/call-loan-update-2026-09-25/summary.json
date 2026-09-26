@@ -1,0 +1,86 @@
+{
+  "new-riichi": {
+    "games": 5,
+    "wins": null,
+    "hands": 80,
+    "street4": 26,
+    "allInHands": 9,
+    "loans": 3,
+    "eliminated": 0,
+    "draws": 490,
+    "bets": 122,
+    "uncontested": 56
+  },
+  "final-basic-smoke": {
+    "games": 1,
+    "wins": null,
+    "hands": 15,
+    "street4": 10,
+    "allInHands": 1,
+    "loans": 0,
+    "eliminated": 1,
+    "draws": 135,
+    "bets": 18,
+    "uncontested": 8
+  },
+  "mixed-basic": {
+    "games": 6,
+    "wins": 2,
+    "hands": 85,
+    "street4": 31,
+    "allInHands": 12,
+    "loans": 0,
+    "eliminated": 5,
+    "draws": 446,
+    "bets": 161,
+    "uncontested": 56
+  },
+  "new-riichi-v1": {
+    "games": 5,
+    "wins": null,
+    "hands": 80,
+    "street4": 16,
+    "allInHands": 20,
+    "loans": 8,
+    "eliminated": 0,
+    "draws": 390,
+    "bets": 170,
+    "uncontested": 50
+  },
+  "mixed-riichi-0": {
+    "games": 12,
+    "wins": 8,
+    "hands": 187,
+    "street4": 47,
+    "allInHands": 67,
+    "loans": 23,
+    "eliminated": 5,
+    "draws": 990,
+    "bets": 496,
+    "uncontested": 81
+  },
+  "final-mixed-riichi": {
+    "games": 6,
+    "wins": 2,
+    "hands": 91,
+    "street4": 28,
+    "allInHands": 26,
+    "loans": 9,
+    "eliminated": 3,
+    "draws": 494,
+    "bets": 233,
+    "uncontested": 40
+  },
+  "old-riichi": {
+    "games": 5,
+    "wins": null,
+    "hands": 70,
+    "street4": 14,
+    "allInHands": 35,
+    "loans": 15,
+    "eliminated": 8,
+    "draws": 287,
+    "bets": 218,
+    "uncontested": 21
+  }
+}

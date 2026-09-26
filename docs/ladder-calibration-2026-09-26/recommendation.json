@@ -1,0 +1,325 @@
+{
+  "orders": {
+    "basic": [
+      "high-card",
+      "eye",
+      "chow",
+      "two-eyes",
+      "chow-eye",
+      "three-winds",
+      "pung",
+      "three-dragons",
+      "four-winds"
+    ],
+    "riichi": [
+      "high-card",
+      "eye",
+      "chow",
+      "two-eyes",
+      "chow-eye",
+      "pung",
+      "three-winds",
+      "pung-eye",
+      "three-dragons",
+      "long-chow",
+      "three-dragons-eye",
+      "four-winds",
+      "kong"
+    ]
+  },
+  "currentRules": "two initial sticks; carry remaining sticks; add two each next game",
+  "allPrimaryRarityInversions": 0,
+  "clearlySeparatedAdjacentRelationships": 15,
+  "adjacentRelationships": 18,
+  "comparisons": [
+    {
+      "mode": "basic",
+      "lower": "eye",
+      "higher": "chow",
+      "separatedInBothFormats": true,
+      "simultaneous95": [
+        [
+          0.36943231441048036,
+          0.41659278024065866
+        ],
+        [
+          0.3738329391261048,
+          0.4238715620476379
+        ]
+      ]
+    },
+    {
+      "mode": "basic",
+      "lower": "chow",
+      "higher": "two-eyes",
+      "separatedInBothFormats": true,
+      "simultaneous95": [
+        [
+          0.8147122191443521,
+          0.9877342419080068
+        ],
+        [
+          0.8006725771935188,
+          0.9660339660339661
+        ]
+      ]
+    },
+    {
+      "mode": "basic",
+      "lower": "two-eyes",
+      "higher": "chow-eye",
+      "separatedInBothFormats": true,
+      "simultaneous95": [
+        [
+          0.5392990813201769,
+          0.6849870896348211
+        ],
+        [
+          0.5240581872435658,
+          0.6511539916761256
+        ]
+      ]
+    },
+    {
+      "mode": "basic",
+      "lower": "chow-eye",
+      "higher": "three-winds",
+      "separatedInBothFormats": true,
+      "simultaneous95": [
+        [
+          0.3220338983050847,
+          0.4594249201277955
+        ],
+        [
+          0.3605683836589698,
+          0.5016393442622951
+        ]
+      ]
+    },
+    {
+      "mode": "basic",
+      "lower": "three-winds",
+      "higher": "pung",
+      "separatedInBothFormats": false,
+      "simultaneous95": [
+        [
+          0.7851959361393324,
+          1.2158516020236088
+        ],
+        [
+          0.7254901960784313,
+          1.112396694214876
+        ]
+      ]
+    },
+    {
+      "mode": "basic",
+      "lower": "pung",
+      "higher": "three-dragons",
+      "separatedInBothFormats": true,
+      "simultaneous95": [
+        [
+          0.28627450980392155,
+          0.5025210084033613
+        ],
+        [
+          0.30460624071322434,
+          0.4991243432574431
+        ]
+      ]
+    },
+    {
+      "mode": "basic",
+      "lower": "three-dragons",
+      "higher": "four-winds",
+      "separatedInBothFormats": true,
+      "simultaneous95": [
+        [
+          0.1148936170212766,
+          0.3439153439153439
+        ],
+        [
+          0.055350553505535055,
+          0.271889400921659
+        ]
+      ]
+    },
+    {
+      "mode": "riichi",
+      "lower": "eye",
+      "higher": "chow",
+      "separatedInBothFormats": true,
+      "simultaneous95": [
+        [
+          0.4604287447755157,
+          0.5154135862742363
+        ],
+        [
+          0.48239771646051377,
+          0.5454160192117531
+        ]
+      ]
+    },
+    {
+      "mode": "riichi",
+      "lower": "chow",
+      "higher": "two-eyes",
+      "separatedInBothFormats": true,
+      "simultaneous95": [
+        [
+          0.6385015039649986,
+          0.7664653436870865
+        ],
+        [
+          0.5476995061086561,
+          0.6717157807766455
+        ]
+      ]
+    },
+    {
+      "mode": "riichi",
+      "lower": "two-eyes",
+      "higher": "chow-eye",
+      "separatedInBothFormats": true,
+      "simultaneous95": [
+        [
+          0.6045508042369556,
+          0.7622080679405521
+        ],
+        [
+          0.64716081491114,
+          0.8383650719925685
+        ]
+      ]
+    },
+    {
+      "mode": "riichi",
+      "lower": "chow-eye",
+      "higher": "pung",
+      "separatedInBothFormats": true,
+      "simultaneous95": [
+        [
+          0.7194919933738266,
+          0.930783242258652
+        ],
+        [
+          0.6961170512099043,
+          0.9310784939374601
+        ]
+      ]
+    },
+    {
+      "mode": "riichi",
+      "lower": "pung",
+      "higher": "three-winds",
+      "separatedInBothFormats": true,
+      "simultaneous95": [
+        [
+          0.5589203423304806,
+          0.7719969395562356
+        ],
+        [
+          0.4924731182795699,
+          0.7190916736753574
+        ]
+      ]
+    },
+    {
+      "mode": "riichi",
+      "lower": "three-winds",
+      "higher": "pung-eye",
+      "separatedInBothFormats": true,
+      "simultaneous95": [
+        [
+          0.5764944275582573,
+          0.861664712778429
+        ],
+        [
+          0.5796610169491525,
+          0.9035460992907801
+        ]
+      ]
+    },
+    {
+      "mode": "riichi",
+      "lower": "pung-eye",
+      "higher": "three-dragons",
+      "separatedInBothFormats": true,
+      "simultaneous95": [
+        [
+          0.5807743658210948,
+          0.9339449541284404
+        ],
+        [
+          0.5382215288611545,
+          0.9106796116504854
+        ]
+      ]
+    },
+    {
+      "mode": "riichi",
+      "lower": "three-dragons",
+      "higher": "long-chow",
+      "separatedInBothFormats": false,
+      "simultaneous95": [
+        [
+          0.571157495256167,
+          1.0047281323877069
+        ],
+        [
+          0.6556291390728477,
+          1.1066666666666667
+        ]
+      ]
+    },
+    {
+      "mode": "riichi",
+      "lower": "long-chow",
+      "higher": "three-dragons-eye",
+      "separatedInBothFormats": true,
+      "simultaneous95": [
+        [
+          0.2675324675324675,
+          0.554858934169279
+        ],
+        [
+          0.40253164556962023,
+          0.7747440273037542
+        ]
+      ]
+    },
+    {
+      "mode": "riichi",
+      "lower": "three-dragons-eye",
+      "higher": "four-winds",
+      "separatedInBothFormats": false,
+      "simultaneous95": [
+        [
+          0.5950920245398773,
+          1.5739130434782609
+        ],
+        [
+          0.3242009132420091,
+          0.8562874251497006
+        ]
+      ]
+    },
+    {
+      "mode": "riichi",
+      "lower": "four-winds",
+      "higher": "kong",
+      "separatedInBothFormats": true,
+      "simultaneous95": [
+        [
+          0.04201680672268908,
+          0.3577981651376147
+        ],
+        [
+          0.18811881188118812,
+          0.7471264367816092
+        ]
+      ]
+    }
+  ],
+  "productionLongChowImplemented": false
+}

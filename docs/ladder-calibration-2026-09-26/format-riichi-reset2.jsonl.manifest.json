@@ -1,0 +1,39 @@
+{
+  "mode": "riichi",
+  "order": [
+    "high-card",
+    "eye",
+    "chow",
+    "two-eyes",
+    "chow-eye",
+    "pung",
+    "three-winds",
+    "pung-eye",
+    "three-dragons",
+    "long-chow",
+    "three-dragons-eye",
+    "four-winds",
+    "kong"
+  ],
+  "count": 16,
+  "workers": 10,
+  "orbits": 1,
+  "games": 2,
+  "samples": 24,
+  "startingSticks": 3,
+  "longChow": true,
+  "scaledLotus": false,
+  "savedSamples": 0,
+  "seed": "calibration-format-reset2-20260926",
+  "sourceHashes": {
+    "heuristic.ts": "ff53fdcc9e8494cf0df31b926f70969248a7a5fa1b83a7062632e924f7ac67d5",
+    "scoring.ts": "66d3bd968b85e753abc4249ab2f299bcee1f78bed75574a37b6b77a818b4273d",
+    "hand-ranks.ts": "2a559f38de1579087f79d70b2a0ee3038a3d178a741f1c41926816757c4e82f8",
+    "hand-progress.ts": "4a759027f38a155111cccad0606f9d9fa44c7dc308ffbdcfe37e8225bdda37ab",
+    "engine.ts": "55ad5292d51cc6ba1c8e538e22668f9cb04005619483035494d689e1bc4d29b8",
+    "rules.ts": "7a3ae02ee3113198d282fabf163721924038359c0d0cc6c322bc42e637b1965d",
+    "melds.ts": "88ac87655540f360e6dab148b066371eb93795b897e9e42f77461f585c46a94a",
+    "types.ts": "c463c27009f2133ec1fc47200eacfae452f48eea6069a5bf6a12841404a2d6cd",
+    "simulation.ts": "114fcf8b9da3588c26ebe5fe3ff6b45786ecbc375ecdfab2e2275af97a88ebe4"
+  }
+}
