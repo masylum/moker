@@ -124,6 +124,8 @@ p {
 }
 
 .masthead {
+  max-width: var(--layout-max-width);
+  margin-inline: auto;
   color: var(--color-text);
   background: none;
   border-bottom: 0;
@@ -278,7 +280,7 @@ label {
 }
 
 html {
-  scrollbar-gutter: stable;
+  overflow-x: clip;
 }
 
 .reserved-empty {

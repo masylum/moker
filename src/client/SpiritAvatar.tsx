@@ -16,10 +16,7 @@ export function SpiritAvatar(props: { name: string; colorIndex: number }) {
     <span class="avatar" aria-hidden="true">
       <svg viewBox="0 0 48 48" style={{ "--spirit-color": `var(--color-avatar-${palette()})` }}>
         <g transform={`rotate(${tilt()} 24 26)`}>
-          <path
-            class="spirit-body"
-            d={bodies[props.colorIndex % bodies.length]}
-          />
+          <path class="spirit-body" d={bodies[props.colorIndex % bodies.length]} />
           <path class="spirit-shine" d="M13 20C12 14 17 10 22 11" />
           <ellipse class="spirit-eye" cx="17" cy="24" rx="2.7" ry={3.2 + (seed() % 2)} />
           <ellipse class="spirit-eye" cx="31" cy="23" rx="2.9" ry={3.3 + ((seed() >> 2) % 2)} />
@@ -30,7 +27,9 @@ export function SpiritAvatar(props: { name: string; colorIndex: number }) {
           ) : (
             <ellipse class="spirit-eye" cx="24" cy="33" rx="2" ry="2.5" />
           )}
-          {props.colorIndex % 3 === 0 && <path class="spirit-leaf" d="M24 8C23 3 27 1 32 2C32 6 28 9 24 8Z" />}
+          {props.colorIndex % 3 === 0 && (
+            <path class="spirit-leaf" d="M24 8C23 3 27 1 32 2C32 6 28 9 24 8Z" />
+          )}
         </g>
       </svg>
     </span>

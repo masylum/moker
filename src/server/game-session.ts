@@ -1,4 +1,4 @@
-import { Agent } from "agents"
+import { DurableObject } from "cloudflare:workers"
 import { prepareCharleston, stepHeuristic } from "../game/automation"
 import { GameEngine, type PlayerSetup } from "../game/engine"
 import { analyzePokerMath, chooseHeuristicAction } from "../game/heuristic"
@@ -13,11 +13,7 @@ import type {
   SimulationResult,
 } from "../game/types"
 
-interface SessionState {
-  game: GameState | null
-}
-
-interface StoredEventRow {
+type StoredEventRow = {
   id: number
   type: string
   actor_id: string | null
@@ -27,27 +23,29 @@ interface StoredEventRow {
   created_at: string
 }
 
-export class GameSession extends Agent<Env, SessionState> {
-  override initialState: SessionState = { game: null }
+export class GameSession extends DurableObject<Env> {
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env)
+    this.ensureSchema()
+    this.ctx.storage.sql.exec(`
+      CREATE TABLE IF NOT EXISTS game_state (id INTEGER PRIMARY KEY CHECK (id = 1), snapshot TEXT NOT NULL);
+      INSERT OR IGNORE INTO game_state (id, snapshot)
+      SELECT 1, state_json FROM game_events ORDER BY id DESC LIMIT 1;
+    `)
+  }
 
   async newGame(
     players: PlayerSetup[],
     config: Partial<GameConfig> & Pick<GameConfig, "seed">,
   ): Promise<PublicGameState> {
-    this.ensureSchema()
-    this.sql`DELETE FROM game_events`
     const engine = GameEngine.create(players, config)
     prepareCharleston(engine)
-    this.commit(engine)
+    this.persist(engine.state, engine.events, true)
     return engine.publicView(players.find((player) => player.controller === "human")?.id)
   }
 
   async getGame(viewerId?: string): Promise<PublicGameState> {
     return this.engine().publicView(viewerId)
-  }
-
-  async getInternalState(): Promise<GameState> {
-    return structuredClone(this.requireGame())
   }
 
   async getDebugGame(): Promise<DebugGameView> {
@@ -148,13 +146,15 @@ export class GameSession extends Agent<Env, SessionState> {
   }
 
   async getEvents(limit = 500): Promise<GameEvent[]> {
-    this.ensureSchema()
     const bounded = Math.max(1, Math.min(2_000, Math.floor(limit)))
     const rows = [
-      ...this.sql<StoredEventRow>`
+      ...this.ctx.storage.sql.exec<StoredEventRow>(
+        `
       SELECT id, type, actor_id, payload_json, hand_number, state_version, created_at
-      FROM game_events ORDER BY id DESC LIMIT ${bounded}
+      FROM game_events ORDER BY id DESC LIMIT ?
     `,
+        bounded,
+      ),
     ].reverse()
     const game = this.requireGame()
     return rows.map((row) => ({
@@ -170,16 +170,7 @@ export class GameSession extends Agent<Env, SessionState> {
   }
 
   async storeSimulation(result: SimulationResult): Promise<void> {
-    this.ensureSchema()
-    this.sql`DELETE FROM game_events`
-    const snapshot = JSON.stringify(result.state)
-    for (const event of result.events) {
-      this.sql`
-        INSERT INTO game_events (type, actor_id, payload_json, state_json, hand_number, state_version, created_at)
-        VALUES (${event.type}, ${event.actorId ?? null}, ${JSON.stringify(event.payload)}, ${snapshot}, ${event.handNumber}, ${event.stateVersion}, ${event.createdAt})
-      `
-    }
-    this.setState({ game: structuredClone(result.state) })
+    this.persist(result.state, result.events, true)
   }
 
   private engine(): GameEngine {
@@ -187,27 +178,48 @@ export class GameSession extends Agent<Env, SessionState> {
   }
 
   private requireGame(): GameState {
-    if (!this.state.game) {
-      throw new Error("Game session has not been created")
+    const row = this.ctx.storage.sql
+      .exec<{ snapshot: string }>("SELECT snapshot FROM game_state WHERE id = 1")
+      .toArray()[0]
+    if (!row) throw new Error("Game session has not been created")
+    const game = JSON.parse(row.snapshot) as GameState
+    // Saved computer seats use the current built-in controller.
+    for (const player of game.players) {
+      if (player.controller !== "human") player.controller = "heuristic"
     }
-
-    return this.state.game
+    return game
   }
 
   private commit(engine: GameEngine): void {
-    this.ensureSchema()
-    const snapshot = JSON.stringify(engine.state)
-    for (const event of engine.events) {
-      this.sql`
-        INSERT INTO game_events (type, actor_id, payload_json, state_json, hand_number, state_version, created_at)
-        VALUES (${event.type}, ${event.actorId ?? null}, ${JSON.stringify(event.payload)}, ${snapshot}, ${event.handNumber}, ${event.stateVersion}, ${event.createdAt})
-      `
-    }
-    this.setState({ game: structuredClone(engine.state) })
+    this.persist(engine.state, engine.events)
+  }
+
+  private persist(state: GameState, events: GameEvent[], replace = false): void {
+    const snapshot = JSON.stringify(state)
+    this.ctx.storage.transactionSync(() => {
+      if (replace) this.ctx.storage.sql.exec("DELETE FROM game_events")
+      for (const event of events) {
+        this.ctx.storage.sql.exec(
+          `INSERT INTO game_events (type, actor_id, payload_json, state_json, hand_number, state_version, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          event.type,
+          event.actorId ?? null,
+          JSON.stringify(event.payload),
+          snapshot,
+          event.handNumber,
+          event.stateVersion,
+          event.createdAt,
+        )
+      }
+      this.ctx.storage.sql.exec(
+        "INSERT OR REPLACE INTO game_state (id, snapshot) VALUES (1, ?)",
+        snapshot,
+      )
+    })
   }
 
   private ensureSchema(): void {
-    this.sql`
+    this.ctx.storage.sql.exec(`
       CREATE TABLE IF NOT EXISTS game_events (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         type TEXT NOT NULL,
@@ -218,6 +230,6 @@ export class GameSession extends Agent<Env, SessionState> {
         state_version INTEGER NOT NULL,
         created_at TEXT NOT NULL
       )
-    `
+    `)
   }
 }

@@ -1,20 +1,19 @@
 # Moker
 
-A browser and terminal card game for 2–6 players, with a shared deterministic TypeScript engine, heuristic opponents, optional LLM opponents, and persisted Cloudflare game sessions.
+A browser and terminal card game for 2–6 players, with a shared deterministic TypeScript engine, heuristic opponents, and persisted Cloudflare game sessions.
 
 The [attached rules](public/rules.md) are the source of truth for rules version 6. Basic play starts with 200 chips, a 5-chip ante, a 102-card deck, and one dealer orbit by default. Browser setup also allows 2–4 continuous orbits, with chips carried over. The Riichi Expansion adds Charleston, Jokers, Blanks, Lotuses, fishing sticks, one automatic ante loan per player per game, and the advanced ladder. Three- and four-game tournaments reset each game and sum adjusted scores.
 
-The browser uses original cards, logo, and illustrations exported from the supplied Figma file, its chip palette, and local LINE Seed Sans fonts. See [asset provenance](docs/design-assets.md) for sources and the Gelica font fallback.
+The browser uses original cards, logo, and illustrations exported from the supplied Figma file, its chip palette, and Gelica/Dela Gothic One typography. See [asset provenance](docs/design-assets.md) for sources and font loading.
 
 ## Local setup
 
 ```bash
 npm install
-cp .dev.vars.example .dev.vars
 npm run dev
 ```
 
-An OpenRouter key is needed only for LLM-controlled turns. Browser play uses heuristic opponents by default and works without a key. Choose multiple human players for pass-and-play on one device; a handoff screen conceals cards between players. Old rules-v5 and earlier sessions cannot be resumed under the new engine.
+Browser play uses heuristic opponents and needs no API keys. Choose multiple human players for pass-and-play on one device; a handoff screen conceals cards between players. Old rules-v5 and earlier sessions cannot be resumed under the new engine.
 
 ## Commands
 
@@ -28,7 +27,7 @@ npm run play -- --riichi --games 3 --players 6
 npm run play -- --auto --seed demo
 ```
 
-See [architecture](docs/architecture.md) and [implementation notes](docs/implementation-notes.md). Existing experiment and health-report documents record earlier rules and are historical, not balance evidence for version 6.
+See [architecture](docs/architecture.md) and [implementation notes](docs/implementation-notes.md).
 
 ## Parallel simulation
 
@@ -42,11 +41,11 @@ The summary includes all-ins, Street 4, eliminations, loans and showdown hand wi
 
 `--orbits 1` runs shorter smoke checks; `--offset 20` starts at seed index 20. Each game's result is independent of worker count. JSONL completion order can differ: compare by `index` or `seed`, not line position. Progress reports every ten seconds. Ctrl-C terminates workers and leaves completed JSONL records; incomplete games are not recorded. A new invocation replaces its outputs, so choose another path when extending a run. There is no automatic resume. `--help` lists all options.
 
-Use this command for new health checks. `scripts/archive/health-check.ts` and dated experiment runners retain historical policies/settings and are not the entry point for the current bots.
+Simulation reports are generated on demand; dated experiments and frozen source copies are kept in Git history.
 
 ## Code organization and performance checks
 
-Current CLI tools live in `scripts/`, reusable simulation/orbit helpers in `scripts/lib/`, and dated research tools in `scripts/archive/`. Historical source snapshots in `docs/` remain reproducibility artifacts, outside active lint/type/dead-code checks. Current runtime code imports its own rules, rather than research snapshots; the explicit previous-generation comparison runner retains its frozen opponent.
+Current CLI tools live in `scripts/`, with reusable simulation helpers in `scripts/lib/`. All tools run against the current rules and engine.
 
 `npm run check` enforces formatting, type-aware lint, dead-code analysis, TypeScript and both unit/integration tests. There is no catch-all game export barrel: consumers import the modules they use. Shared hand evaluation is in `scoring.ts`, `melds.ts` and `hand-progress.ts`; bot count-only projections reuse the same pattern definitions as UI explanations.
 
@@ -56,4 +55,12 @@ For a small single-core performance regression check (six games, 24 samples):
 node --import tsx scripts/benchmark-simulator.ts --output /tmp/simulator-timing.json
 ```
 
-Run it in fresh processes for repeatable comparisons. `--module /path/to/snapshot/src/game/simulation.ts` selects an earlier implementation. The output includes hashes of full results, including decisions, so timing changes can be checked against behavior. See [the optimization report](docs/simulator-cleanup-2026-09-25.md).
+Run it in fresh processes for repeatable comparisons. `--module /path/to/snapshot/src/game/simulation.ts` selects an earlier implementation. The output includes hashes of full results, including decisions, so timing changes can be checked against behavior.
+
+## Cloudflare deployment
+
+The Worker is named `moker`. In Cloudflare Builds, use `npm run build` as the build command, `npx wrangler deploy` as the deploy command, and `/` as the root directory. For a local deployment check, run `npm run deploy:dry`; `npm run deploy` publishes the app.
+
+Wrangler configures the static assets and the SQLite-backed `GAME_SESSION` Durable Object. No runtime secrets or external model services are required. `GET /api/health` returns `{ "ok": true }`.
+
+Keep the existing migration history: `v2` removes the retired player namespace, while `GameSession` keeps its identity and saved games. On first access, sessions created by the previous storage implementation recover their latest committed snapshot from the event ledger. The retired namespace's data is deleted when the migration is deployed.

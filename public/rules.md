@@ -286,6 +286,7 @@ Ranks run from weakest to strongest. The two-Lotus automatic win is a separate s
 |    7 | Three Winds            | Three different Winds               |
 |    8 | Pung and Eyes          | A Pung plus a pair                  |
 |    9 | Three Dragons          | One of each Dragon                  |
-|   10 | Three Dragons and Eyes | One of each Dragon plus a pair      |
-|   11 | Four Winds             | One of each Wind                    |
-|   12 | Kong                   | Four identical cards                |
+|   10 | Long Chow              | Five consecutive cards of one suit  |
+|   11 | Three Dragons and Eyes | One of each Dragon plus a pair      |
+|   12 | Four Winds             | One of each Wind                    |
+|   13 | Kong                   | Four identical cards                |

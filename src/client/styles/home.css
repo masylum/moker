@@ -8,7 +8,7 @@
   align-items: center;
   gap: 55px;
   min-height: calc(100dvh - 94px);
-  padding: var(--space-15) 5% 220px;
+  padding: var(--space-15) max(5%, calc((100% - 1320px) / 2)) 220px;
   display: grid;
   position: relative;
   overflow: hidden;
@@ -388,7 +388,9 @@
 .expansion-decor {
   opacity: 0;
   translate: 0 70px;
-  transition: opacity 500ms var(--ease-out), translate 700ms var(--ease-out);
+  transition:
+    opacity 500ms var(--ease-out),
+    translate 700ms var(--ease-out);
 }
 
 .expansion-decor.visible {

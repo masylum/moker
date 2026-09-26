@@ -26,17 +26,7 @@
     "play": "tsx scripts/play.ts"
   },
   "dependencies": {
-    "@ai-sdk/react": "^4.0.69",
-    "@cloudflare/think": "^0.15.1",
-    "@modelcontextprotocol/client": "2.0.0",
-    "@modelcontextprotocol/sdk": "1.30.0",
-    "@modelcontextprotocol/server": "2.0.0",
-    "@openrouter/ai-sdk-provider": "^3.0.0",
-    "agents": "^0.20.1",
-    "ai": "^7.0.0",
-    "chat": "^4.38.0",
     "rand-seed": "^3.0.0",
-    "react": "^19.2.1",
     "solid-js": "^1.9.14",
     "zod": "^4.1.8"
   },

@@ -4,11 +4,5 @@
   "semi": false,
   "singleQuote": false,
   "trailingComma": "all",
-  "ignorePatterns": [
-    "dist/**",
-    "worker-configuration.d.ts",
-    "package-lock.json",
-    "docs/**",
-    "scripts/archive/**"
-  ]
+  "ignorePatterns": ["dist/**", "worker-configuration.d.ts", "package-lock.json"]
 }

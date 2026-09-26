@@ -1,5 +1,4 @@
 {
-  "extends": "agents/tsconfig",
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
@@ -10,7 +9,9 @@
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
-    "types": ["./worker-configuration.d.ts"]
+    "types": ["./worker-configuration.d.ts"],
+    "lib": ["ES2022"],
+    "skipLibCheck": true
   },
   "include": ["src/worker.ts", "src/server", "src/game", "worker-configuration.d.ts"]
 }

@@ -1,8 +1,0 @@
-
-> mahjong-poker-lab@0.1.0 knip
-> knip
-
-Unused exports (3)
-loadDebugGame   function  src/client/api.ts:52:23
-getEvents       function  src/client/api.ts:77:23
-runSimulations  function  src/client/api.ts:89:23

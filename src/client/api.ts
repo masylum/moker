@@ -63,9 +63,9 @@ export async function bettingAction(sessionId: string, playerId: string, action:
   return gameAction(sessionId, { kind: "betting", playerId, action, offerStick: true })
 }
 
-export async function botStep(sessionId: string, kind: "heuristic" | "llm") {
+export async function botStep(sessionId: string) {
   return request<{ state: PublicGameState; rationale: string }>(
-    `/api/games/${encodeURIComponent(sessionId)}/${kind}-step`,
+    `/api/games/${encodeURIComponent(sessionId)}/heuristic-step`,
     { method: "POST" },
   )
 }

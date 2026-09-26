@@ -1,8 +1,10 @@
 /* Shared design tokens. Change a role here instead of overriding a component. */
 :root {
+  --layout-max-width: 1440px;
   --color-rules-example: rgb(219 227 178 / 0.2);
   --color-drawer-overlay: rgb(24 59 37 / 0.16);
-  --color-betting-seat: rgb(200 221 193 / 0.7);
+  --color-betting-seat: rgb(200 221 193 / 75%);
+  --color-player-surface: rgb(220 233 216 / 65%);
   --color-canvas: #ffffff;
   --color-text: #183b25;
   --color-muted: #526c56;

@@ -55,7 +55,7 @@ export interface HandScore {
   tieBreak: number[]
 }
 
-export type PlayerController = "human" | "heuristic" | "llm"
+export type PlayerController = "human" | "heuristic"
 type Street = 0 | 1 | 2 | 3 | 4
 type GamePhase =
   | "between-hands"

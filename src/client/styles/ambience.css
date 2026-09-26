@@ -71,10 +71,17 @@ body::after {
   width: 22px;
   height: 22px;
 }
-.launch-card,
-.opponent,
-.hand-panel {
+.launch-card {
   background: var(--color-seat);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
+}
+
+.opponent,
+.hand-panel {
+  background: var(--color-player-surface);
+}
+.opponent.betting,
+.hand-panel.betting {
+  background: var(--color-betting-seat);
 }

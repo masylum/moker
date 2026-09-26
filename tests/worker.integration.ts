@@ -1,11 +1,12 @@
-import { SELF } from "cloudflare:test"
+import { SELF, evictDurableObject, runInDurableObject } from "cloudflare:test"
+import { env } from "cloudflare:workers"
 import { describe, expect, it } from "vitest"
 
 describe("Cloudflare Worker and Durable Object persistence", () => {
   it("serves health through the Worker entrypoint", async () => {
     const response = await SELF.fetch("http://example.com/api/health")
     expect(response.status).toBe(200)
-    expect(await response.json()).toMatchObject({ ok: true, model: "x-ai/grok-4.6" })
+    expect(await response.json()).toMatchObject({ ok: true })
   })
 
   it("supports two humans, two orbits, and private per-player views", async () => {
@@ -173,4 +174,61 @@ describe("Cloudflare Worker and Durable Object persistence", () => {
     expect(result.state.phase).toBe("finished")
     expect(result.state.config.heuristicSamples).toBe(24)
   }, 30000)
+})
+
+describe("native session storage", () => {
+  const players = [
+    { id: "p1", name: "One", controller: "human" as const },
+    { id: "p2", name: "Two", controller: "human" as const },
+  ]
+
+  it("restores snapshots and events after eviction and recovers the previous ledger format", async () => {
+    const stub = env.GAME_SESSION.getByName("storage-recovery")
+    const initial = await stub.newGame(players, { seed: "storage-recovery" })
+    const events = await stub.getEvents()
+    await evictDurableObject(stub)
+    expect(await stub.getGame("p1")).toEqual(initial)
+    expect(await stub.getEvents()).toEqual(events)
+
+    // Before native storage, the last event batch held the committed snapshot.
+    await runInDurableObject(stub, (_instance, ctx) => {
+      ctx.storage.sql.exec("DROP TABLE game_state")
+    })
+    await evictDurableObject(stub)
+    expect(await stub.getGame("p1")).toEqual(initial)
+    expect(await stub.getEvents()).toEqual(events)
+  })
+
+  it("rolls back event replacement when snapshot persistence fails", async () => {
+    const stub = env.GAME_SESSION.getByName("storage-rollback")
+    const initial = await stub.newGame(players, { seed: "original" })
+    const events = await stub.getEvents()
+    await runInDurableObject(stub, async (instance, ctx) => {
+      ctx.storage.sql.exec(`CREATE TRIGGER reject_snapshot BEFORE INSERT ON game_state
+        BEGIN SELECT RAISE(ABORT, 'injected storage failure'); END`)
+      try {
+        await expect(instance.newGame(players, { seed: "replacement" })).rejects.toThrow(
+          "injected storage failure",
+        )
+        expect(await instance.getGame("p1")).toEqual(initial)
+        expect(await instance.getEvents()).toEqual(events)
+      } finally {
+        ctx.storage.sql.exec("DROP TRIGGER reject_snapshot")
+      }
+    })
+    await evictDurableObject(stub)
+    expect(await stub.getGame("p1")).toEqual(initial)
+  })
+
+  it("rejects unsupported player controllers", async () => {
+    const response = await SELF.fetch("http://example.com/api/games", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        seed: "invalid",
+        players: [players[0], { ...players[1], controller: "external" }],
+      }),
+    })
+    expect(response.status).toBe(400)
+  })
 })

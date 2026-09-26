@@ -267,8 +267,7 @@ export function App() {
       return result
     })
   }
-  const bot = () =>
-    perform(() => botStep(session(), actor()?.controller === "llm" ? "llm" : "heuristic"))
+  const bot = () => perform(() => botStep(session()))
   createEffect(() => {
     const game = state()
     if (
@@ -584,9 +583,10 @@ export function App() {
                   total={game().players.length}
                 />
                 <CycleBars label="Street" current={game().street} total={4} />
-                <span>
-                  Ante <b>{game().orbitValue}</b>
-                </span>
+                <div class="ante-stat">
+                  <span>Ante</span>
+                  <span class="chip chip-5">{game().orbitValue}</span>
+                </div>
               </div>
             </section>
             <div

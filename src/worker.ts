@@ -1,136 +1,15 @@
-import { routeAgentRequest } from "agents"
 import { z } from "zod"
+import { ActionSchema, CreateGameSchema, SimulationSchema } from "./server/schemas"
 import { simulateGame } from "./game/simulation"
 import { GameSession } from "./server/game-session"
-import { MahjongPlayer, type AgentOperation } from "./server/mahjong-player"
 
-export { GameSession, MahjongPlayer }
-
-const PlayerSchema = z.object({
-  id: z.string().min(1).max(60).optional(),
-  name: z.string().min(1).max(80),
-  controller: z.enum(["human", "heuristic", "llm"]),
-})
-const CreateGameSchema = z.object({
-  sessionId: z.string().min(1).max(120).optional(),
-  seed: z.string().min(1).max(200),
-  players: z.array(PlayerSchema).min(2).max(6),
-  mode: z.enum(["basic", "riichi"]).default("basic"),
-  orbits: z.number().int().min(1).max(4).default(1),
-  tournamentGames: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]).default(1),
-  heuristicSamples: z.int().min(1).max(256).optional(),
-})
-const ActionSchema = z.discriminatedUnion("kind", [
-  z.object({
-    kind: z.literal("riichi-stick"),
-    playerId: z.string(),
-    source: z.enum(["deck", "discard-a", "discard-b"]).optional(),
-  }),
-  z.object({
-    kind: z.literal("charleston"),
-    playerId: z.string(),
-    cardIds: z.array(z.string()).length(2),
-  }),
-  z.object({
-    kind: z.literal("expose"),
-    playerId: z.string(),
-    cardIds: z.array(z.string()).min(1).max(3),
-  }),
-  z.object({
-    kind: z.literal("betting"),
-    offerStick: z.boolean().optional(),
-    playerId: z.string(),
-    action: z.discriminatedUnion("type", [
-      z.object({
-        type: z.literal("check"),
-        drawSource: z.enum(["deck", "discard-a", "discard-b"]).optional(),
-        blankExchange: z
-          .object({
-            blankCardId: z.string(),
-            pile: z.enum(["a", "b"]),
-            cardIndex: z.int().nonnegative(),
-          })
-          .optional(),
-        useRiichiStick: z.boolean().optional(),
-        riichiDrawSource: z.enum(["deck", "discard-a", "discard-b"]).optional(),
-        riichiBlankExchange: z
-          .object({
-            blankCardId: z.string(),
-            pile: z.enum(["a", "b"]),
-            cardIndex: z.int().nonnegative(),
-          })
-          .optional(),
-      }),
-      z.object({
-        type: z.literal("call"),
-        drawSource: z.enum(["deck", "discard-a", "discard-b"]).optional(),
-        blankExchange: z
-          .object({
-            blankCardId: z.string(),
-            pile: z.enum(["a", "b"]),
-            cardIndex: z.int().nonnegative(),
-          })
-          .optional(),
-        useRiichiStick: z.boolean().optional(),
-        riichiDrawSource: z.enum(["deck", "discard-a", "discard-b"]).optional(),
-        riichiBlankExchange: z
-          .object({
-            blankCardId: z.string(),
-            pile: z.enum(["a", "b"]),
-            cardIndex: z.int().nonnegative(),
-          })
-          .optional(),
-        curseTargetId: z.string().optional(),
-        removeCurse: z.boolean().optional(),
-      }),
-      z.object({
-        type: z.literal("bet"),
-        amount: z.number().positive(),
-        riichi: z.boolean().optional(),
-        useRiichiStick: z.boolean().optional(),
-        drawSource: z.enum(["deck", "discard-a", "discard-b"]).optional(),
-        blankExchange: z
-          .object({
-            blankCardId: z.string(),
-            pile: z.enum(["a", "b"]),
-            cardIndex: z.int().nonnegative(),
-          })
-          .optional(),
-        curseTargetId: z.string().optional(),
-        removeCurse: z.boolean().optional(),
-      }),
-      z.object({ type: z.literal("fold") }),
-    ]),
-  }),
-  z.object({
-    kind: z.literal("discard"),
-    playerId: z.string(),
-    discardCardId: z.string(),
-    discardPile: z.enum(["a", "b"]),
-  }),
-  z.object({ kind: z.literal("take-loan"), playerId: z.string() }),
-  z.object({ kind: z.literal("repay-loan"), playerId: z.string() }),
-  z.object({ kind: z.literal("next-hand"), viewerId: z.string().optional() }),
-])
-const SimulationSchema = z.object({
-  count: z.int().min(1).max(20).default(1),
-  seedPrefix: z.string().min(1).max(120),
-  heuristicSamples: z.int().min(1).max(64).default(24),
-})
+export { GameSession }
 
 export default {
   async fetch(request, env): Promise<Response> {
     const url = new URL(request.url)
     const requestId = crypto.randomUUID()
     try {
-      if (url.pathname.startsWith("/agents/")) {
-        const response = await routeAgentRequest(request, env)
-
-        if (response) {
-          return response
-        }
-      }
-
       if (url.pathname.startsWith("/api/")) {
         return await handleApi(request, env, url)
       }
@@ -157,7 +36,7 @@ export default {
 
 async function handleApi(request: Request, env: Env, url: URL): Promise<Response> {
   if (request.method === "GET" && url.pathname === "/api/health") {
-    return Response.json({ ok: true, model: env.OPENROUTER_MODEL })
+    return Response.json({ ok: true })
   }
   if (request.method === "POST" && url.pathname === "/api/games") {
     const input = CreateGameSchema.parse(await request.json())
@@ -217,13 +96,6 @@ async function handleApi(request: Request, env: Env, url: URL): Promise<Response
   if (request.method === "GET" && operation === "debug") {
     return Response.json(await game.getDebugGame())
   }
-  if (request.method === "GET" && operation === "reasoning") {
-    const playerId = url.searchParams.get("player")
-    if (!playerId)
-      return Response.json({ error: "Missing player query parameter" }, { status: 400 })
-    const player = env.MAHJONG_PLAYER.getByName(`${sessionId}:${playerId}`)
-    return Response.json({ traces: await player.getReasoning((await game.getInternalState()).id) })
-  }
   if (request.method === "POST" && operation === "actions") {
     const input = ActionSchema.parse(await request.json())
     const state = await applyAction(game, input)
@@ -231,32 +103,6 @@ async function handleApi(request: Request, env: Env, url: URL): Promise<Response
   }
   if (request.method === "POST" && operation === "heuristic-step") {
     return Response.json(await game.stepHeuristic())
-  }
-  if (request.method === "POST" && operation === "llm-step") {
-    let state = await game.getInternalState()
-    const playerId = decisionPlayerId(state)
-    const agent = env.MAHJONG_PLAYER.getByName(`${sessionId}:${playerId}`)
-    const decisions = []
-
-    for (let step = 0; step < 2; step += 1) {
-      const decision = await agent.decide(state.id, state, playerId)
-      decisions.push(decision)
-      await applyAgentOperation(game, playerId, decision.operation)
-      state = await game.getInternalState()
-
-      if (state.phase !== "discarding" || state.pendingDiscard?.playerId !== playerId) {
-        break
-      }
-    }
-
-    const humanId = state.players.find((player) => player.controller === "human")?.id
-    const publicState = await game.getGame(humanId)
-    return Response.json({
-      state: publicState,
-      rationale: decisions.map((decision) => decision.reasoningSummary).join(" "),
-      turnId: decisions[0]!.turnId,
-      turnIds: decisions.map((decision) => decision.turnId),
-    })
   }
   return Response.json({ error: "Not found" }, { status: 404 })
 }
@@ -285,49 +131,4 @@ async function applyAction(
   }
 
   throw new Error("Unknown game action")
-}
-
-async function applyAgentOperation(
-  game: DurableObjectStub<GameSession>,
-  playerId: string,
-  operation: AgentOperation,
-) {
-  switch (operation.kind) {
-    case "betting":
-      return game.applyBettingAction(playerId, operation.action as BettingActionForRpc)
-    case "charleston":
-      return game.applyCharleston(playerId, operation.cardIds)
-    case "expose":
-      return game.applyExposure(playerId, operation.cardIds)
-    case "discard":
-      return game.applyDiscard(
-        playerId,
-        operation.discardCardId,
-        operation.discardPile as "a" | "b",
-      )
-  }
-
-  throw new Error("Unknown agent operation")
-}
-
-type BettingActionForRpc = Parameters<GameSession["applyBettingAction"]>[1]
-
-function decisionPlayerId(state: Awaited<ReturnType<GameSession["getInternalState"]>>): string {
-  if (state.phase === "betting" && state.actingPlayerId) {
-    return state.actingPlayerId
-  }
-
-  if (state.phase === "discarding" && state.pendingDiscard) {
-    return state.pendingDiscard.playerId
-  }
-
-  if (state.phase === "exposing" && state.actingPlayerId) {
-    return state.actingPlayerId
-  }
-
-  if (state.phase === "charleston" && state.actingPlayerId) {
-    return state.actingPlayerId
-  }
-
-  throw new Error(`No LLM decision is available during ${state.phase}`)
 }
