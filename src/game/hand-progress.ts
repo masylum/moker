@@ -1,4 +1,4 @@
-import { createDeck, dragonFace, faceKey, numberedFace, windFace } from "./cards"
+import { createDeck, dragonFace, flowerFace, faceKey, numberedFace, windFace } from "./cards"
 import { HAND_RANKS, handRank } from "./hand-ranks"
 import { scoreHand } from "./scoring"
 import {
@@ -44,6 +44,9 @@ const chowAlternatives = SUITS.flatMap((suit) =>
   Array.from({ length: 7 }, (_, index) => chowRequirements(suit, index + 1)),
 )
 const definitions: HandDefinition[] = [
+  exactDefinition("twin-lotus", "Twin Lotus", 2, [
+    [requirement(flowerFace("white-lotus"), true), requirement(flowerFace("black-lotus"), true)],
+  ]),
   exactDefinition(
     "long-chow",
     "Long Chow",
@@ -107,7 +110,7 @@ export function analyzeHandProgress(
   for (const definition of definitions) {
     if (
       mode === "basic" &&
-      ["pung-eye", "three-dragons-eye", "kong", "long-chow"].includes(definition.kind)
+      ["pung-eye", "three-dragons-eye", "kong", "long-chow", "twin-lotus"].includes(definition.kind)
     )
       continue
     const match = bestAlternativeMatch(prepared, definition.alternatives)
@@ -136,7 +139,7 @@ export function nextHandPotential(
   for (const definition of definitions) {
     if (
       mode === "basic" &&
-      ["pung-eye", "three-dragons-eye", "kong", "long-chow"].includes(definition.kind)
+      ["pung-eye", "three-dragons-eye", "kong", "long-chow", "twin-lotus"].includes(definition.kind)
     )
       continue
     const rank = handRank(definition.kind, mode)

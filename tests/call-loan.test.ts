@@ -64,6 +64,28 @@ describe("one loan per game", () => {
     expect(player.eliminated).toBe(false)
     expect(player.chips).toBe(290)
   })
+  it("carries negative loan-adjusted game scores into the tournament total", () => {
+    const { game } = fixture("riichi", 2)
+    for (let gameNumber = 1; gameNumber <= 2; gameNumber++) {
+      while (game.state.phase === "charleston") stepHeuristic(game)
+      finishHand(game)
+      const borrowers = game.state.players.slice(1)
+      for (const player of borrowers) {
+        player.chips = 3
+        player.loans = 1
+      }
+      game.startNextHand()
+      for (const player of borrowers) {
+        expect(game.state.gameScores[gameNumber - 1]![player.id]).toBe(-247)
+      }
+      if (gameNumber === 1) game.startNextHand()
+    }
+    expect(game.state.phase).toBe("finished")
+    for (const player of game.state.players.slice(1)) {
+      expect(game.state.finalScores![player.id]).toBe(-494)
+    }
+  })
+
   it("finishes safely when exhausted borrowers leave only one player, retaining adjusted scores", () => {
     const { game } = fixture()
     finishHand(game)

@@ -5,8 +5,6 @@ import type { PublicPlayerState } from "../game/types"
 export function knownHand(player: PublicPlayerState, mode: "basic" | "riichi") {
   const cards = [...new Map(player.publicCards.map((card) => [card.id, card])).values()]
   if (!cards.length) return { label: "", rank: undefined }
-  if (mode === "riichi" && cards.filter((card) => card.kind === "flower").length === 2)
-    return { label: "Twin Lotus · automatic win", rank: undefined }
   const score = scoreHand(cards, mode)
   if (!score.selectedCardIds.length) return { label: "", rank: undefined }
   return {

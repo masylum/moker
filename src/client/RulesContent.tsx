@@ -393,7 +393,8 @@ export function RulesContent() {
           <p>At the end of the round, reveal any Lotuses you hold, even if everyone else folded.</p>
           <ul>
             <li>
-              <strong>Both Lotuses:</strong> Win the showdown, regardless of other hands.
+              <strong>Both Lotuses:</strong> Form Twin Lotus, ranked above Three Dragons and below
+              Long Chow.
             </li>
             <li>
               <strong>One Lotus:</strong> Lose the showdown, regardless of your other cards. If

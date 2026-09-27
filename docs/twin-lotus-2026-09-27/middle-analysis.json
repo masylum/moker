@@ -1,0 +1,2221 @@
+{
+  "automatic-continuous": {
+    "totals": {
+      "runs": 64,
+      "hands": 1024,
+      "allInHands": 111,
+      "showdownHands": 347,
+      "street4": 342,
+      "holdings": 4096,
+      "retainedTwins": 75,
+      "twinUncontested": 65,
+      "twinFolds": 0,
+      "twinRiichi": 31,
+      "twinNet": 4260,
+      "builtTwins": 62,
+      "strongerOrdinaryWithTwins": 0,
+      "twinBothPublic": 0
+    },
+    "rows": {
+      "chow-eye": {
+        "retained": 461,
+        "show": 171,
+        "winCredit": 63.0
+      },
+      "three-winds": {
+        "retained": 246,
+        "show": 89,
+        "winCredit": 40.0
+      },
+      "two-eyes": {
+        "retained": 563,
+        "show": 227,
+        "winCredit": 29.0
+      },
+      "pung": {
+        "retained": 223,
+        "show": 81,
+        "winCredit": 39.0
+      },
+      "pung-eye": {
+        "retained": 218,
+        "show": 99,
+        "winCredit": 64.0
+      },
+      "chow": {
+        "retained": 479,
+        "show": 98,
+        "winCredit": 12.0
+      },
+      "high-card": {
+        "retained": 734,
+        "show": 59,
+        "winCredit": 2.0
+      },
+      "eye": {
+        "retained": 698,
+        "show": 133,
+        "winCredit": 7.0
+      },
+      "three-dragons-eye": {
+        "retained": 64,
+        "show": 25,
+        "winCredit": 22.0
+      },
+      "three-dragons": {
+        "retained": 94,
+        "show": 26,
+        "winCredit": 13.0
+      },
+      "twin-lotus": {
+        "retained": 75,
+        "show": 10,
+        "winCredit": 10.0
+      },
+      "long-chow": {
+        "retained": 102,
+        "show": 36,
+        "winCredit": 31.0
+      },
+      "four-winds": {
+        "retained": 45,
+        "show": 13,
+        "winCredit": 13.0
+      },
+      "kong": {
+        "retained": 7,
+        "show": 2,
+        "winCredit": 2.0
+      }
+    },
+    "cases": [
+      {
+        "seed": "twin-placement-v1-15",
+        "game": 1.0,
+        "hand": 11,
+        "player": "p2",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 520,
+        "rivals": [
+          "three-winds",
+          "pung-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-12",
+        "game": 1.0,
+        "hand": 16,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 130,
+        "rivals": [
+          "chow"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-29",
+        "game": 1.0,
+        "hand": 16,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 405,
+        "rivals": [
+          "high-card",
+          "eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-31",
+        "game": 1.0,
+        "hand": 7,
+        "player": "p2",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 115,
+        "rivals": [
+          "pung-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-35",
+        "game": 1.0,
+        "hand": 5,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 190,
+        "rivals": [
+          "chow-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-40",
+        "game": 1.0,
+        "hand": 11,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 190,
+        "rivals": [
+          "two-eyes"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-44",
+        "game": 1.0,
+        "hand": 4,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 240,
+        "rivals": [
+          "three-dragons"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-43",
+        "game": 1.0,
+        "hand": 16,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 95,
+        "rivals": [
+          "eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-55",
+        "game": 1.0,
+        "hand": 16,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 385,
+        "rivals": [
+          "pung-eye",
+          "two-eyes"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-61",
+        "game": 1.0,
+        "hand": 6,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 145,
+        "rivals": [
+          "three-dragons"
+        ]
+      }
+    ]
+  },
+  "automatic-reset": {
+    "totals": {
+      "runs": 64,
+      "hands": 1024,
+      "allInHands": 99,
+      "showdownHands": 261,
+      "street4": 267,
+      "holdings": 4096,
+      "retainedTwins": 85,
+      "twinUncontested": 68,
+      "twinFolds": 0,
+      "twinRiichi": 26,
+      "twinNet": 15765,
+      "builtTwins": 72,
+      "strongerOrdinaryWithTwins": 0,
+      "twinBothPublic": 0
+    },
+    "rows": {
+      "chow-eye": {
+        "retained": 421,
+        "show": 127,
+        "winCredit": 47.0
+      },
+      "three-dragons": {
+        "retained": 81,
+        "show": 20,
+        "winCredit": 16.0
+      },
+      "two-eyes": {
+        "retained": 478,
+        "show": 123,
+        "winCredit": 19.0
+      },
+      "eye": {
+        "retained": 743,
+        "show": 90,
+        "winCredit": 4.0
+      },
+      "chow": {
+        "retained": 510,
+        "show": 73,
+        "winCredit": 8.0
+      },
+      "high-card": {
+        "retained": 839,
+        "show": 43,
+        "winCredit": 0
+      },
+      "long-chow": {
+        "retained": 106,
+        "show": 23,
+        "winCredit": 18.0
+      },
+      "three-winds": {
+        "retained": 215,
+        "show": 56,
+        "winCredit": 26.0
+      },
+      "pung": {
+        "retained": 216,
+        "show": 64,
+        "winCredit": 29.0
+      },
+      "three-dragons-eye": {
+        "retained": 61,
+        "show": 20,
+        "winCredit": 20.0
+      },
+      "twin-lotus": {
+        "retained": 85,
+        "show": 17,
+        "winCredit": 17.0
+      },
+      "pung-eye": {
+        "retained": 196,
+        "show": 72,
+        "winCredit": 46.0
+      },
+      "four-winds": {
+        "retained": 38,
+        "show": 10,
+        "winCredit": 9.0
+      },
+      "kong": {
+        "retained": 6,
+        "show": 2,
+        "winCredit": 2.0
+      }
+    },
+    "cases": [
+      {
+        "seed": "twin-placement-v1-6",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p4",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 900,
+        "rivals": [
+          "chow",
+          "two-eyes"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-7",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 1320,
+        "rivals": [
+          "chow",
+          "high-card",
+          "three-winds"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-8",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 790,
+        "rivals": [
+          "two-eyes",
+          "two-eyes"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-14",
+        "game": 3.0,
+        "hand": 2,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 415,
+        "rivals": [
+          "pung-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-17",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 900,
+        "rivals": [
+          "chow-eye",
+          "high-card"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-21",
+        "game": 3.0,
+        "hand": 4,
+        "player": "p2",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 385,
+        "rivals": [
+          "chow-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-35",
+        "game": 2.0,
+        "hand": 3,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 250,
+        "rivals": [
+          "four-winds"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-35",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 485,
+        "rivals": [
+          "eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-39",
+        "game": 4.0,
+        "hand": 2,
+        "player": "p2",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 345,
+        "rivals": [
+          "chow-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-42",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p4",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 840,
+        "rivals": [
+          "high-card",
+          "eye",
+          "chow-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-44",
+        "game": 1.0,
+        "hand": 4,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 180,
+        "rivals": [
+          "pung"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-44",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 700,
+        "rivals": [
+          "chow",
+          "pung-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-45",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 550,
+        "rivals": [
+          "chow-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-49",
+        "game": 4.0,
+        "hand": 3,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 230,
+        "rivals": [
+          "chow-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-56",
+        "game": 3.0,
+        "hand": 1,
+        "player": "p2",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 430,
+        "rivals": [
+          "pung-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-60",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 1035,
+        "rivals": [
+          "eye",
+          "chow"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-63",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 860,
+        "rivals": [
+          "high-card",
+          "two-eyes"
+        ]
+      }
+    ]
+  },
+  "below-dragons-continuous": {
+    "totals": {
+      "runs": 64,
+      "hands": 1024,
+      "allInHands": 90,
+      "showdownHands": 372,
+      "street4": 361,
+      "holdings": 4096,
+      "retainedTwins": 69,
+      "twinUncontested": 51,
+      "twinFolds": 9,
+      "twinRiichi": 27,
+      "twinNet": 2325,
+      "builtTwins": 56,
+      "strongerOrdinaryWithTwins": 0,
+      "twinBothPublic": 31
+    },
+    "rows": {
+      "eye": {
+        "retained": 709,
+        "show": 149,
+        "winCredit": 2.0
+      },
+      "chow-eye": {
+        "retained": 468,
+        "show": 199,
+        "winCredit": 76.0
+      },
+      "three-dragons": {
+        "retained": 106,
+        "show": 32,
+        "winCredit": 22.0
+      },
+      "two-eyes": {
+        "retained": 558,
+        "show": 241,
+        "winCredit": 37.0
+      },
+      "long-chow": {
+        "retained": 103,
+        "show": 37,
+        "winCredit": 30.0
+      },
+      "chow": {
+        "retained": 475,
+        "show": 117,
+        "winCredit": 12.0
+      },
+      "high-card": {
+        "retained": 721,
+        "show": 65,
+        "winCredit": 1.9999999999999998
+      },
+      "three-dragons-eye": {
+        "retained": 62,
+        "show": 26,
+        "winCredit": 23.0
+      },
+      "three-winds": {
+        "retained": 246,
+        "show": 104,
+        "winCredit": 46.0
+      },
+      "twin-lotus": {
+        "retained": 69,
+        "show": 9,
+        "winCredit": 4.0
+      },
+      "pung-eye": {
+        "retained": 207,
+        "show": 96,
+        "winCredit": 63.0
+      },
+      "pung": {
+        "retained": 224,
+        "show": 80,
+        "winCredit": 38.0
+      },
+      "four-winds": {
+        "retained": 47,
+        "show": 14,
+        "winCredit": 13.0
+      },
+      "kong": {
+        "retained": 12,
+        "show": 4,
+        "winCredit": 4.0
+      }
+    },
+    "cases": [
+      {
+        "seed": "twin-placement-v1-8",
+        "game": 1.0,
+        "hand": 6,
+        "player": "p2",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -135,
+        "rivals": [
+          "three-dragons"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-9",
+        "game": 1.0,
+        "hand": 14,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": false,
+        "fold": false,
+        "net": -60,
+        "rivals": [
+          "three-winds",
+          "long-chow"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-0",
+        "game": 1.0,
+        "hand": 5,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": false,
+        "fold": false,
+        "net": -85,
+        "rivals": [
+          "three-dragons-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-18",
+        "game": 1.0,
+        "hand": 11,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -30,
+        "rivals": [
+          "long-chow"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-12",
+        "game": 1.0,
+        "hand": 16,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -5,
+        "rivals": [
+          "chow"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-14",
+        "game": 1.0,
+        "hand": 5,
+        "player": "p4",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": false,
+        "fold": false,
+        "net": -125,
+        "rivals": [
+          "pung-eye",
+          "long-chow"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-19",
+        "game": 1.0,
+        "hand": 9,
+        "player": "p4",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": false,
+        "fold": false,
+        "net": -30,
+        "rivals": [
+          "three-dragons"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-28",
+        "game": 1.0,
+        "hand": 14,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -30,
+        "rivals": [
+          "four-winds"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-35",
+        "game": 1.0,
+        "hand": 16,
+        "player": "p4",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 345,
+        "rivals": [
+          "three-winds",
+          "chow",
+          "eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-31",
+        "game": 1.0,
+        "hand": 7,
+        "player": "p2",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 115,
+        "rivals": [
+          "pung-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-44",
+        "game": 1.0,
+        "hand": 4,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -60,
+        "rivals": [
+          "three-dragons-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-43",
+        "game": 1.0,
+        "hand": 16,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -10,
+        "rivals": [
+          "eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-41",
+        "game": 1.0,
+        "hand": 1,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -130,
+        "rivals": [
+          "three-dragons-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-53",
+        "game": 1.0,
+        "hand": 3,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": false,
+        "fold": false,
+        "net": -30,
+        "rivals": [
+          "three-dragons-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-53",
+        "game": 1.0,
+        "hand": 5,
+        "player": "p2",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -30,
+        "rivals": [
+          "three-dragons",
+          "three-dragons"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-55",
+        "game": 1.0,
+        "hand": 16,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 385,
+        "rivals": [
+          "pung",
+          "two-eyes"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-61",
+        "game": 1.0,
+        "hand": 6,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -5,
+        "rivals": [
+          "long-chow"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-63",
+        "game": 1.0,
+        "hand": 16,
+        "player": "p4",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 540,
+        "rivals": [
+          "pung-eye",
+          "high-card",
+          "high-card"
+        ]
+      }
+    ]
+  },
+  "below-dragons-reset": {
+    "totals": {
+      "runs": 64,
+      "hands": 1024,
+      "allInHands": 67,
+      "showdownHands": 248,
+      "street4": 271,
+      "holdings": 4096,
+      "retainedTwins": 79,
+      "twinUncontested": 51,
+      "twinFolds": 12,
+      "twinRiichi": 16,
+      "twinNet": 8800,
+      "builtTwins": 66,
+      "strongerOrdinaryWithTwins": 1,
+      "twinBothPublic": 32
+    },
+    "rows": {
+      "eye": {
+        "retained": 769,
+        "show": 77,
+        "winCredit": 4.0
+      },
+      "chow": {
+        "retained": 495,
+        "show": 72,
+        "winCredit": 7.0
+      },
+      "pung": {
+        "retained": 205,
+        "show": 49,
+        "winCredit": 19.0
+      },
+      "pung-eye": {
+        "retained": 187,
+        "show": 57,
+        "winCredit": 37.0
+      },
+      "two-eyes": {
+        "retained": 469,
+        "show": 118,
+        "winCredit": 14.0
+      },
+      "high-card": {
+        "retained": 833,
+        "show": 38,
+        "winCredit": 0
+      },
+      "chow-eye": {
+        "retained": 430,
+        "show": 129,
+        "winCredit": 57.0
+      },
+      "long-chow": {
+        "retained": 108,
+        "show": 31,
+        "winCredit": 27.0
+      },
+      "twin-lotus": {
+        "retained": 78,
+        "show": 15,
+        "winCredit": 11.0
+      },
+      "three-winds": {
+        "retained": 212,
+        "show": 57,
+        "winCredit": 28.0
+      },
+      "three-dragons": {
+        "retained": 96,
+        "show": 20,
+        "winCredit": 16.0
+      },
+      "three-dragons-eye": {
+        "retained": 63,
+        "show": 21,
+        "winCredit": 19.0
+      },
+      "four-winds": {
+        "retained": 36,
+        "show": 9,
+        "winCredit": 9.0
+      },
+      "kong": {
+        "retained": 7
+      }
+    },
+    "cases": [
+      {
+        "seed": "twin-placement-v1-6",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p4",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 1320,
+        "rivals": [
+          "chow",
+          "two-eyes",
+          "pung-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-7",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 1320,
+        "rivals": [
+          "chow",
+          "high-card",
+          "three-winds"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-10",
+        "game": 3.0,
+        "hand": 1,
+        "player": "p1",
+        "kind": "three-dragons",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 40,
+        "rivals": [
+          "three-dragons"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-14",
+        "game": 2.0,
+        "hand": 4,
+        "player": "p4",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -60,
+        "rivals": [
+          "three-dragons"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-14",
+        "game": 3.0,
+        "hand": 1,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": false,
+        "fold": false,
+        "net": -255,
+        "rivals": [
+          "long-chow"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-17",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": false,
+        "fold": false,
+        "net": -370,
+        "rivals": [
+          "eye",
+          "high-card",
+          "three-dragons"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-20",
+        "game": 1.0,
+        "hand": 2,
+        "player": "p4",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -5,
+        "rivals": [
+          "long-chow"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-23",
+        "game": 3.0,
+        "hand": 2,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 190,
+        "rivals": [
+          "two-eyes"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-19",
+        "game": 2.0,
+        "hand": 3,
+        "player": "p2",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -210,
+        "rivals": [
+          "three-dragons"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-21",
+        "game": 3.0,
+        "hand": 4,
+        "player": "p2",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 265,
+        "rivals": [
+          "pung"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-25",
+        "game": 4.0,
+        "hand": 1,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -255,
+        "rivals": [
+          "three-dragons-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-29",
+        "game": 4.0,
+        "hand": 3,
+        "player": "p2",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -245,
+        "rivals": [
+          "three-dragons"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-35",
+        "game": 2.0,
+        "hand": 3,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -90,
+        "rivals": [
+          "four-winds"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-34",
+        "game": 1.0,
+        "hand": 4,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -30,
+        "rivals": [
+          "pung-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-37",
+        "game": 3.0,
+        "hand": 3,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -95,
+        "rivals": [
+          "three-dragons-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-39",
+        "game": 4.0,
+        "hand": 2,
+        "player": "p2",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 345,
+        "rivals": [
+          "chow-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-41",
+        "game": 1.0,
+        "hand": 1,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -115,
+        "rivals": [
+          "three-dragons-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-42",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p4",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 840,
+        "rivals": [
+          "high-card",
+          "eye",
+          "chow-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-43",
+        "game": 3.0,
+        "hand": 3,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": false,
+        "fold": false,
+        "net": -280,
+        "rivals": [
+          "long-chow"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-44",
+        "game": 1.0,
+        "hand": 4,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -60,
+        "rivals": [
+          "three-dragons"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-44",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 480,
+        "rivals": [
+          "high-card"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-45",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 415,
+        "rivals": [
+          "eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-49",
+        "game": 2.0,
+        "hand": 1,
+        "player": "p2",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -120,
+        "rivals": [
+          "long-chow"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-53",
+        "game": 1.0,
+        "hand": 3,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": false,
+        "fold": false,
+        "net": -30,
+        "rivals": [
+          "three-dragons-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-60",
+        "game": 2.0,
+        "hand": 2,
+        "player": "p4",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 285,
+        "rivals": [
+          "three-winds"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-60",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 970,
+        "rivals": [
+          "eye",
+          "chow"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-63",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 860,
+        "rivals": [
+          "high-card",
+          "two-eyes"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-62",
+        "game": 2.0,
+        "hand": 2,
+        "player": "p4",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -195,
+        "rivals": [
+          "three-dragons"
+        ]
+      }
+    ]
+  },
+  "above-dragons-continuous": {
+    "totals": {
+      "runs": 64,
+      "sawTwin": 78,
+      "sawTwinAsBest": 78,
+      "strongerAfterTwin": 0,
+      "brokeTwinForStronger": 0,
+      "hands": 1024,
+      "allInHands": 80,
+      "showdownHands": 356,
+      "street4": 352,
+      "holdings": 4096,
+      "retainedTwins": 78,
+      "twinUncontested": 59,
+      "twinFolds": 5,
+      "twinRiichi": 34,
+      "twinNet": 3560,
+      "builtTwins": 65,
+      "strongerOrdinaryWithTwins": 0,
+      "twinBothPublic": 35
+    },
+    "rows": {
+      "eye": {
+        "retained": 706,
+        "show": 142,
+        "winCredit": 3.0
+      },
+      "chow-eye": {
+        "retained": 471,
+        "show": 190,
+        "winCredit": 68.0
+      },
+      "three-dragons": {
+        "retained": 102,
+        "show": 26,
+        "winCredit": 19.0
+      },
+      "two-eyes": {
+        "retained": 560,
+        "show": 229,
+        "winCredit": 37.0
+      },
+      "long-chow": {
+        "retained": 98,
+        "show": 35,
+        "winCredit": 30.0
+      },
+      "chow": {
+        "retained": 482,
+        "show": 121,
+        "winCredit": 12.0
+      },
+      "high-card": {
+        "retained": 721,
+        "show": 64,
+        "winCredit": 1.0
+      },
+      "three-dragons-eye": {
+        "retained": 65,
+        "show": 28,
+        "winCredit": 24.0
+      },
+      "three-winds": {
+        "retained": 248,
+        "show": 102,
+        "winCredit": 48.0
+      },
+      "twin-lotus": {
+        "retained": 78,
+        "show": 14,
+        "winCredit": 9.0
+      },
+      "four-winds": {
+        "retained": 45,
+        "show": 11,
+        "winCredit": 11.0
+      },
+      "pung-eye": {
+        "retained": 208,
+        "show": 89,
+        "winCredit": 57.0
+      },
+      "pung": {
+        "retained": 212,
+        "show": 77,
+        "winCredit": 35.0
+      },
+      "kong": {
+        "retained": 9,
+        "show": 2,
+        "winCredit": 2.0
+      }
+    },
+    "cases": [
+      {
+        "seed": "twin-placement-v1-9",
+        "game": 1.0,
+        "hand": 14,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 165,
+        "rivals": [
+          "three-winds"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-0",
+        "game": 1.0,
+        "hand": 5,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": false,
+        "fold": false,
+        "net": -85,
+        "rivals": [
+          "three-dragons-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-18",
+        "game": 1.0,
+        "hand": 11,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -30,
+        "rivals": [
+          "long-chow"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-12",
+        "game": 1.0,
+        "hand": 16,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 115,
+        "rivals": [
+          "chow"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-14",
+        "game": 1.0,
+        "hand": 5,
+        "player": "p4",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": false,
+        "fold": false,
+        "net": -125,
+        "rivals": [
+          "pung-eye",
+          "long-chow"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-20",
+        "game": 1.0,
+        "hand": 2,
+        "player": "p4",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -30,
+        "rivals": [
+          "three-dragons-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-20",
+        "game": 1.0,
+        "hand": 15,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": false,
+        "fold": false,
+        "net": -90,
+        "rivals": [
+          "four-winds"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-28",
+        "game": 1.0,
+        "hand": 14,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -30,
+        "rivals": [
+          "four-winds"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-29",
+        "game": 1.0,
+        "hand": 16,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 405,
+        "rivals": [
+          "high-card",
+          "eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-35",
+        "game": 1.0,
+        "hand": 16,
+        "player": "p4",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 345,
+        "rivals": [
+          "three-winds",
+          "chow",
+          "eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-31",
+        "game": 1.0,
+        "hand": 7,
+        "player": "p2",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 115,
+        "rivals": [
+          "pung-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-41",
+        "game": 1.0,
+        "hand": 1,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": false,
+        "fold": false,
+        "net": -140,
+        "rivals": [
+          "three-dragons-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-44",
+        "game": 1.0,
+        "hand": 4,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -60,
+        "rivals": [
+          "three-dragons-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-43",
+        "game": 1.0,
+        "hand": 16,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -10,
+        "rivals": [
+          "eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-53",
+        "game": 1.0,
+        "hand": 3,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": false,
+        "fold": false,
+        "net": -60,
+        "rivals": [
+          "three-dragons-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-53",
+        "game": 1.0,
+        "hand": 7,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 15,
+        "rivals": [
+          "chow",
+          "two-eyes",
+          "three-winds"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-53",
+        "game": 1.0,
+        "hand": 16,
+        "player": "p4",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 265,
+        "rivals": [
+          "two-eyes",
+          "eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-55",
+        "game": 1.0,
+        "hand": 16,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 385,
+        "rivals": [
+          "pung",
+          "two-eyes"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-63",
+        "game": 1.0,
+        "hand": 16,
+        "player": "p4",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 540,
+        "rivals": [
+          "pung-eye",
+          "high-card",
+          "high-card"
+        ]
+      }
+    ]
+  },
+  "above-dragons-reset": {
+    "totals": {
+      "runs": 64,
+      "hands": 1024,
+      "allInHands": 69,
+      "showdownHands": 255,
+      "street4": 270,
+      "holdings": 4096,
+      "sawTwin": 81,
+      "sawTwinAsBest": 81,
+      "strongerAfterTwin": 0,
+      "brokeTwinForStronger": 0,
+      "retainedTwins": 81,
+      "twinUncontested": 58,
+      "twinFolds": 4,
+      "twinRiichi": 25,
+      "twinNet": 12915,
+      "builtTwins": 68,
+      "strongerOrdinaryWithTwins": 0,
+      "twinBothPublic": 27
+    },
+    "rows": {
+      "chow-eye": {
+        "retained": 440,
+        "show": 134,
+        "winCredit": 55.0
+      },
+      "three-dragons": {
+        "retained": 87,
+        "show": 20,
+        "winCredit": 13.0
+      },
+      "two-eyes": {
+        "retained": 467,
+        "show": 130,
+        "winCredit": 15.0
+      },
+      "eye": {
+        "retained": 773,
+        "show": 77,
+        "winCredit": 4.0
+      },
+      "chow": {
+        "retained": 478,
+        "show": 68,
+        "winCredit": 7.0
+      },
+      "high-card": {
+        "retained": 850,
+        "show": 41,
+        "winCredit": 0
+      },
+      "long-chow": {
+        "retained": 112,
+        "show": 32,
+        "winCredit": 28.0
+      },
+      "three-winds": {
+        "retained": 213,
+        "show": 56,
+        "winCredit": 22.0
+      },
+      "pung": {
+        "retained": 196,
+        "show": 47,
+        "winCredit": 21.0
+      },
+      "three-dragons-eye": {
+        "retained": 61,
+        "show": 23,
+        "winCredit": 21.0
+      },
+      "twin-lotus": {
+        "retained": 81,
+        "show": 19,
+        "winCredit": 17.0
+      },
+      "four-winds": {
+        "retained": 39,
+        "show": 11,
+        "winCredit": 11.0
+      },
+      "pung-eye": {
+        "retained": 190,
+        "show": 60,
+        "winCredit": 40.0
+      },
+      "kong": {
+        "retained": 8,
+        "show": 1,
+        "winCredit": 1.0
+      }
+    },
+    "cases": [
+      {
+        "seed": "twin-placement-v1-6",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p4",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 900,
+        "rivals": [
+          "chow",
+          "two-eyes"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-7",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 1320,
+        "rivals": [
+          "chow",
+          "high-card",
+          "three-winds"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-10",
+        "game": 4.0,
+        "hand": 3,
+        "player": "p2",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 460,
+        "rivals": [
+          "two-eyes",
+          "three-winds"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-14",
+        "game": 2.0,
+        "hand": 4,
+        "player": "p4",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 80,
+        "rivals": [
+          "three-dragons"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-14",
+        "game": 3.0,
+        "hand": 1,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -15,
+        "rivals": [
+          "long-chow"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-17",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 760,
+        "rivals": [
+          "eye",
+          "high-card"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-20",
+        "game": 3.0,
+        "hand": 2,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 210,
+        "rivals": [
+          "pung-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-23",
+        "game": 3.0,
+        "hand": 2,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 190,
+        "rivals": [
+          "two-eyes"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-19",
+        "game": 2.0,
+        "hand": 3,
+        "player": "p2",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 230,
+        "rivals": [
+          "three-dragons"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-35",
+        "game": 2.0,
+        "hand": 3,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -90,
+        "rivals": [
+          "four-winds"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-39",
+        "game": 4.0,
+        "hand": 2,
+        "player": "p2",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 345,
+        "rivals": [
+          "chow-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-42",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p4",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 840,
+        "rivals": [
+          "high-card",
+          "eye",
+          "chow-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-44",
+        "game": 1.0,
+        "hand": 4,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 95,
+        "rivals": [
+          "three-dragons"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-44",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 755,
+        "rivals": [
+          "chow",
+          "two-eyes"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-43",
+        "game": 3.0,
+        "hand": 3,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": false,
+        "fold": false,
+        "net": -280,
+        "rivals": [
+          "long-chow"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-41",
+        "game": 1.0,
+        "hand": 1,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -125,
+        "rivals": [
+          "three-dragons-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-45",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 415,
+        "rivals": [
+          "eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-49",
+        "game": 2.0,
+        "hand": 1,
+        "player": "p2",
+        "kind": "twin-lotus",
+        "show": false,
+        "win": false,
+        "fold": true,
+        "net": -120,
+        "rivals": [
+          "long-chow"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-53",
+        "game": 1.0,
+        "hand": 3,
+        "player": "p1",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": false,
+        "fold": false,
+        "net": -60,
+        "rivals": [
+          "three-dragons-eye"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-53",
+        "game": 2.0,
+        "hand": 1,
+        "player": "p4",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 240,
+        "rivals": [
+          "three-winds"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-60",
+        "game": 2.0,
+        "hand": 2,
+        "player": "p4",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 285,
+        "rivals": [
+          "three-winds"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-60",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 970,
+        "rivals": [
+          "eye",
+          "chow"
+        ]
+      },
+      {
+        "seed": "twin-placement-v1-63",
+        "game": 4.0,
+        "hand": 4,
+        "player": "p3",
+        "kind": "twin-lotus",
+        "show": true,
+        "win": true,
+        "fold": false,
+        "net": 860,
+        "rivals": [
+          "high-card",
+          "two-eyes"
+        ]
+      }
+    ]
+  }
+}

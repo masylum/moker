@@ -1,0 +1,278 @@
+{
+  "control": {
+    "totals": {
+      "runs": 128,
+      "hands": 2048,
+      "showdowns": 608,
+      "allInHands": 210,
+      "street4": 609,
+      "holdings": 8192,
+      "openingTwins": 26,
+      "twinBothPublic": 0,
+      "twinShowBothPublic": 0,
+      "retainedTwins": 160,
+      "builtTwins": 134,
+      "foldedTwins": 0,
+      "twinShow": 27,
+      "twinShowWins": 27.0,
+      "twinUncontested": 133,
+      "twinNetChips": 20025,
+      "constituentGames": 320,
+      "loans": 17,
+      "endingSticksSum": 3349,
+      "twinsFacingBetterAtProposedRank": 3,
+      "twinWithStrongerOrdinary": 1
+    },
+    "rows": {
+      "chow-eye": {
+        "retained": 882,
+        "eligibleRetained": 882,
+        "folded": 431,
+        "noLotusRetained": 882,
+        "show": 298,
+        "winCredit": 110.0
+      },
+      "three-winds": {
+        "retained": 461,
+        "eligibleRetained": 461,
+        "folded": 77,
+        "noLotusRetained": 461,
+        "show": 145,
+        "winCredit": 66.0
+      },
+      "two-eyes": {
+        "retained": 1046,
+        "eligibleRetained": 1041,
+        "folded": 569,
+        "noLotusRetained": 1041,
+        "show": 350,
+        "winCredit": 48.0
+      },
+      "pung": {
+        "retained": 439,
+        "eligibleRetained": 439,
+        "folded": 137,
+        "noLotusRetained": 439,
+        "show": 145,
+        "winCredit": 68.0
+      },
+      "high-card": {
+        "retained": 1679,
+        "eligibleRetained": 1573,
+        "folded": 1567,
+        "noLotusRetained": 1573,
+        "show": 102,
+        "winCredit": 2.0
+      },
+      "pung-eye": {
+        "retained": 414,
+        "eligibleRetained": 414,
+        "folded": 69,
+        "noLotusRetained": 414,
+        "show": 171,
+        "winCredit": 110.0
+      },
+      "chow": {
+        "retained": 1013,
+        "eligibleRetained": 989,
+        "folded": 787,
+        "noLotusRetained": 989,
+        "show": 171,
+        "winCredit": 20.0
+      },
+      "eye": {
+        "retained": 1494,
+        "eligibleRetained": 1441,
+        "folded": 1261,
+        "noLotusRetained": 1441,
+        "show": 223,
+        "winCredit": 11.0
+      },
+      "three-dragons-eye": {
+        "retained": 125,
+        "eligibleRetained": 125,
+        "folded": 11,
+        "noLotusRetained": 125,
+        "show": 45,
+        "winCredit": 42.0
+      },
+      "three-dragons": {
+        "retained": 175,
+        "eligibleRetained": 175,
+        "folded": 11,
+        "noLotusRetained": 175,
+        "show": 46,
+        "winCredit": 29.0
+      },
+      "twin-lotus": {
+        "retained": 160,
+        "eligibleRetained": 160,
+        "folded": 0,
+        "show": 27,
+        "winCredit": 27.0
+      },
+      "long-chow": {
+        "retained": 208,
+        "eligibleRetained": 208,
+        "folded": 15,
+        "noLotusRetained": 208,
+        "show": 59,
+        "winCredit": 49.0
+      },
+      "four-winds": {
+        "retained": 83,
+        "eligibleRetained": 83,
+        "folded": 1,
+        "noLotusRetained": 83,
+        "show": 23,
+        "winCredit": 22.0
+      },
+      "kong": {
+        "retained": 13,
+        "eligibleRetained": 13,
+        "folded": 0,
+        "noLotusRetained": 13,
+        "show": 4,
+        "winCredit": 4.0
+      }
+    }
+  },
+  "ranked": {
+    "totals": {
+      "runs": 128,
+      "hands": 2048,
+      "showdowns": 620,
+      "allInHands": 157,
+      "street4": 632,
+      "holdings": 8192,
+      "twinBothPublic": 63,
+      "twinShowBothPublic": 9,
+      "retainedTwins": 148,
+      "builtTwins": 122,
+      "foldedTwins": 21,
+      "twinShow": 25,
+      "twinShowWins": 15.5,
+      "twinUncontested": 102,
+      "twinNetChips": 11125,
+      "constituentGames": 320,
+      "loans": 17,
+      "endingSticksSum": 3291,
+      "openingTwins": 26,
+      "twinsFacingBetterAtProposedRank": 9,
+      "twinWithStrongerOrdinary": 1
+    },
+    "rows": {
+      "eye": {
+        "retained": 1535,
+        "eligibleRetained": 1478,
+        "folded": 1297,
+        "noLotusRetained": 1478,
+        "show": 226,
+        "winCredit": 6.0
+      },
+      "chow-eye": {
+        "retained": 898,
+        "eligibleRetained": 898,
+        "folded": 430,
+        "noLotusRetained": 898,
+        "show": 328,
+        "winCredit": 133.0
+      },
+      "three-dragons": {
+        "retained": 202,
+        "eligibleRetained": 202,
+        "folded": 8,
+        "noLotusRetained": 201,
+        "show": 52,
+        "winCredit": 38.0
+      },
+      "two-eyes": {
+        "retained": 1032,
+        "eligibleRetained": 1027,
+        "folded": 552,
+        "noLotusRetained": 1027,
+        "show": 359,
+        "winCredit": 51.0
+      },
+      "long-chow": {
+        "retained": 211,
+        "eligibleRetained": 211,
+        "folded": 13,
+        "noLotusRetained": 211,
+        "show": 68,
+        "winCredit": 57.0
+      },
+      "chow": {
+        "retained": 992,
+        "eligibleRetained": 970,
+        "folded": 747,
+        "noLotusRetained": 970,
+        "show": 189,
+        "winCredit": 19.0
+      },
+      "high-card": {
+        "retained": 1665,
+        "eligibleRetained": 1554,
+        "folded": 1552,
+        "noLotusRetained": 1554,
+        "show": 103,
+        "winCredit": 1.9999999999999998
+      },
+      "three-dragons-eye": {
+        "retained": 125,
+        "eligibleRetained": 125,
+        "folded": 5,
+        "noLotusRetained": 125,
+        "show": 47,
+        "winCredit": 42.0
+      },
+      "three-winds": {
+        "retained": 460,
+        "eligibleRetained": 458,
+        "folded": 67,
+        "noLotusRetained": 458,
+        "show": 161,
+        "winCredit": 74.0
+      },
+      "twin-lotus": {
+        "retained": 147,
+        "eligibleRetained": 147,
+        "folded": 21,
+        "show": 24,
+        "winCredit": 15.0
+      },
+      "pung-eye": {
+        "retained": 394,
+        "eligibleRetained": 394,
+        "folded": 70,
+        "noLotusRetained": 394,
+        "show": 153,
+        "winCredit": 100.0
+      },
+      "pung": {
+        "retained": 429,
+        "eligibleRetained": 429,
+        "folded": 127,
+        "noLotusRetained": 429,
+        "show": 129,
+        "winCredit": 57.0
+      },
+      "four-winds": {
+        "retained": 83,
+        "eligibleRetained": 83,
+        "folded": 1,
+        "noLotusRetained": 83,
+        "show": 23,
+        "winCredit": 22.0
+      },
+      "kong": {
+        "retained": 19,
+        "eligibleRetained": 19,
+        "folded": 0,
+        "noLotusRetained": 19,
+        "show": 4,
+        "winCredit": 4.0
+      }
+    }
+  }
+}

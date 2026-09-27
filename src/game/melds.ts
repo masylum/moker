@@ -43,6 +43,16 @@ export function generateHandCandidates(cards: readonly Card[]): HandCandidate[] 
     forEachSubset(cards.length, size, (indexes, mask) => {
       const subset = indexes.map((index) => cards[index]!)
       if (size === 2) {
+        if (subset.every((card) => card.kind === "flower"))
+          candidates.push({
+            kind: "twin-lotus",
+            label: "Twin Lotus",
+            description: "Both Lotuses",
+            score: HAND_RANKS["twin-lotus"],
+            cardIds: subset.map((card) => card.id),
+            mask,
+            tieBreak: [],
+          })
         addEye(subset, mask, candidates)
       } else if (size === 3) {
         addChow(subset, mask, candidates)

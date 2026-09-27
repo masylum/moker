@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import { GameEngine } from "../src/game/engine"
 import { stepHeuristic } from "../src/game/automation"
 import { chooseHeuristicAction, defaultBotPolicy } from "../src/game/heuristic"
-import { createDeck } from "../src/game/cards"
+import { numberedFace, createDeck } from "../src/game/cards"
 
 function fixture(mode: "basic" | "riichi") {
   const game = GameEngine.create(
@@ -73,18 +73,25 @@ describe("shared Check/Call fishing", () => {
     player.publicCards = []
     game.state.discardA = [flowers[1]!, cards.find((c) => c.kind === "wind")!]
     game.state.discardB = []
+    game.state.pot = 1000
     game.state.currentWager = 5
-    const action = chooseHeuristicAction(game.state, player.id, 24, {
+    const decision = chooseHeuristicAction(game.state, player.id, 24, {
       ...defaultBotPolicy("riichi"),
       betEquityFloor: 2,
       raiseEquityFloor: 2,
       bluffFrequency: 0,
       lotusBluffFrequency: 0,
-    }).action
-    expect(action.type).toBe("call")
-    expect(action.type !== "fold" && action.useRiichiStick).toBe(true)
-    expect(action.type !== "fold" && action.drawSource).toBe("discard-a")
-    expect(action.type === "call" && action.riichiDrawSource).toBe("discard-a")
+    })
+    const paid = decision.evaluations.find(
+      (e) => e.action.type === "call" && e.action.useRiichiStick,
+    )
+    expect(paid?.action).toMatchObject({
+      type: "call",
+      drawSource: "discard-a",
+      riichiDrawSource: "discard-a",
+    })
+    expect(paid!.estimatedWinRate).toBeGreaterThan(0.5)
+    expect(paid!.estimatedWinRate).toBeLessThan(1)
   })
 })
 
@@ -203,7 +210,8 @@ it("does not invent substantial fold equity for a five-chip raise into a thousan
     (e) => e.action.type === "bet" && e.action.amount === 105,
   )!
   expect(tinyRaise.estimatedFoldout).toBeLessThan(0.01)
-  expect(tinyRaise.estimatedWinRate).toBe(1)
+  expect(tinyRaise.estimatedWinRate).toBeGreaterThan(0.5)
+  expect(tinyRaise.estimatedWinRate).toBeLessThan(1)
 })
 
 it("folds an unwinnable all-in call instead of inventing equity from uncertainty", () => {
@@ -264,11 +272,12 @@ it("reserves the possible Single Lotus fee before guaranteeing a final Riichi le
   expect(chooseHeuristicAction(game.state, player.id, 24).rationale).toContain("guarantees")
 })
 
-it("does not pay for a cheap free fish against known Twin Lotus", () => {
+it("does not consider known Twin Lotus unbeatable", () => {
   const { game, player } = fixture("riichi")
-  player.privateCards = createDeck("riichi")
-    .filter((c) => c.kind === "numbered")
-    .slice(0, 7)
+  player.privateCards = [1, 2, 3, 4, 5, 6, 7].map((rank) => ({
+    id: `long-${rank}`,
+    ...numberedFace("dots", rank as 1 | 2 | 3 | 4 | 5 | 6 | 7),
+  }))
   player.publicCards = []
   const opponent = game.state.players.find((p) => p !== player)!
   opponent.publicCards = createDeck("riichi").filter((c) => c.kind === "flower")
@@ -276,6 +285,6 @@ it("does not pay for a cheap free fish against known Twin Lotus", () => {
   game.state.pot = 1000
   game.state.allInPlayerIds = []
   const decision = chooseHeuristicAction(game.state, player.id, 24)
-  expect(decision.action.type).toBe("fold")
-  expect(decision.rationale).toContain("cannot be beaten or outdrawn")
+  expect(decision.rationale).not.toContain("cannot be beaten or outdrawn")
+  expect(decision.evaluations.some((e) => e.estimatedWinRate > 0)).toBe(true)
 })

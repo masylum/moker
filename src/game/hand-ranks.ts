@@ -11,10 +11,11 @@ export const HAND_RANKS = {
   "three-winds": 7,
   "pung-eye": 8,
   "three-dragons": 9,
-  "long-chow": 10,
-  "three-dragons-eye": 11,
-  "four-winds": 12,
-  kong: 13,
+  "twin-lotus": 10,
+  "long-chow": 11,
+  "three-dragons-eye": 12,
+  "four-winds": 13,
+  kong: 14,
 } as const satisfies Record<HandKind, number>
 
 export function handRank(kind: HandKind, mode: "basic" | "riichi"): number {

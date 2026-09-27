@@ -976,10 +976,6 @@ export class GameEngine {
   }
 
   private showdownWinners(contenders: PlayerState[]): PlayerState[] {
-    const twins = contenders.filter(
-      (p) => [...p.privateCards, ...p.publicCards].filter((c) => c.kind === "flower").length === 2,
-    )
-    if (twins.length > 0) return twins
     const eligible = contenders.filter((player) => !this.hasSingleLotus(player))
     if (eligible.length === 0) return contenders
     const pool = eligible.length > 0 ? eligible : contenders

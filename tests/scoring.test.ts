@@ -45,13 +45,14 @@ const fixtures: Array<[number, HandKind, Card[]]> = [
   [7, "three-winds", [...w("east"), ...w("west"), ...w("north")]],
   [8, "pung-eye", [...n("dots", 5, 3), ...n("bamboo", 8, 2)]],
   [9, "three-dragons", [...d("red"), ...d("green"), ...d("white")]],
-  [10, "long-chow", [5, 6, 7, 8, 9].flatMap((rank) => n("dots", rank as NumberedRank))],
-  [11, "three-dragons-eye", [...d("red"), ...d("green"), ...d("white"), ...n("dots", 9, 2)]],
-  [12, "four-winds", [...w("east"), ...w("west"), ...w("south"), ...w("north")]],
-  [13, "kong", [...n("bamboo", 7, 3), j("green")]],
+  [10, "twin-lotus", [f("white-lotus"), f("black-lotus")]],
+  [11, "long-chow", [5, 6, 7, 8, 9].flatMap((rank) => n("dots", rank as NumberedRank))],
+  [12, "three-dragons-eye", [...d("red"), ...d("green"), ...d("white"), ...n("dots", 9, 2)]],
+  [13, "four-winds", [...w("east"), ...w("west"), ...w("south"), ...w("north")]],
+  [14, "kong", [...n("bamboo", 7, 3), j("green")]],
 ]
 
-describe("canonical 13-rank Advanced ladder", () => {
+describe("canonical 14-rank Advanced ladder", () => {
   it.each(fixtures)("scores rank %i %s", (rank, hand, cards) => {
     expect(HAND_RANKS[hand]).toBe(rank)
     expect(scoreHand(cards).total).toBe(rank)
@@ -65,6 +66,16 @@ describe("canonical 13-rank Advanced ladder", () => {
         expect(compareHandScores(scores[high]!, scores[low]!)).toBeGreaterThan(0)
       }
     }
+  })
+
+  it("uses a stronger Long Chow even when Twin Lotus is also present", () => {
+    const cards = [
+      ...[1, 2, 3, 4, 5].flatMap((rank) => n("dots", rank as NumberedRank)),
+      f("white-lotus"),
+      f("black-lotus"),
+    ]
+    expect(kind(cards)).toBe("long-chow")
+    expect(scoreHand(cards).total).toBe(11)
   })
 
   it("keeps the optimized scorer identical on random seven-card hands", () => {
@@ -110,11 +121,11 @@ describe("special-tile and natural-tile restrictions", () => {
     expect(kind([...w("east"), ...w("south"), ...w("west"), j("red")])).not.toBe("four-winds")
   })
 
-  it("excludes Lotuses from the hand ladder (automatic wins are resolved by the engine)", () => {
+  it("ranks two natural Lotuses and never substitutes a Joker", () => {
     expect(kind([f("white-lotus"), j("black")])).toBe("high-card")
-    expect(kind([f("white-lotus"), f("black-lotus")])).toBe("high-card")
+    expect(kind([f("white-lotus"), f("black-lotus")])).toBe("twin-lotus")
     expect(kind([...n("dots", 2), f("white-lotus"), f("black-lotus"), ...n("bamboo", 9)])).toBe(
-      "high-card",
+      "twin-lotus",
     )
   })
 })

@@ -10,11 +10,11 @@ const STRENGTH_CACHE_LIMIT = 200_000
 /** Scores any subset of the seven Roll Your Own tiles. */
 export function scoreHand(cards: readonly Card[], mode: "basic" | "riichi" = "riichi"): HandScore {
   return scoreCandidates(
-    generateHandCandidates(playableCards(cards))
+    generateHandCandidates(cards)
       .filter(
         (c) =>
           mode === "riichi" ||
-          !["pung-eye", "three-dragons-eye", "kong", "long-chow"].includes(c.kind),
+          !["pung-eye", "three-dragons-eye", "kong", "long-chow", "twin-lotus"].includes(c.kind),
       )
       .map((c) => ({ ...c, score: handRank(c.kind, mode) })),
     highCards(playableCards(cards)),

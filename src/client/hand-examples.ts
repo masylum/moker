@@ -16,6 +16,12 @@ const examples: Record<string, CardFace[][]> = {
   "Three Winds": [winds.slice(0, 3)],
   Pung: [[bam, bam, bam]],
   "Three Dragons": [dragons],
+  "Twin Lotus": [
+    [
+      { kind: "flower", flower: "white-lotus", color: null },
+      { kind: "flower", flower: "black-lotus", color: null },
+    ],
+  ],
   "Long Chow": [[5, 6, 7, 8, 9].map((rank) => numberedFace("dots", rank as 5 | 6 | 7 | 8 | 9))],
   "Four Winds": [winds],
   "Pung and Eyes": [[bam, bam, bam], pair],

@@ -1,0 +1,45 @@
+{
+  "files": {
+    "sample-0.json": {
+      "hands": 16,
+      "decisions": 173
+    },
+    "sample-1.json": {
+      "hands": 16,
+      "decisions": 172
+    },
+    "sample-2.json": {
+      "hands": 16,
+      "decisions": 167
+    },
+    "sample-3.json": {
+      "hands": 16,
+      "decisions": 155
+    },
+    "sample-4.json": {
+      "hands": 16,
+      "decisions": 148
+    },
+    "sample-64.json": {
+      "hands": 16,
+      "decisions": 164
+    },
+    "sample-65.json": {
+      "hands": 16,
+      "decisions": 153
+    },
+    "sample-66.json": {
+      "hands": 16,
+      "decisions": 127
+    },
+    "sample-67.json": {
+      "hands": 16,
+      "decisions": 163
+    },
+    "sample-68.json": {
+      "hands": 16,
+      "decisions": 134
+    }
+  },
+  "twinDecisions": []
+}

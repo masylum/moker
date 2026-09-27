@@ -30,7 +30,7 @@ describe("evaluation optimization", () => {
           nextRank: next?.rank ?? null,
           nextMissing: next?.missing ?? null,
         })
-        expect(nextHandPotential(cards, mode, 13)).toEqual({ nextRank: null, nextMissing: null })
+        expect(nextHandPotential(cards, mode, 14)).toEqual({ nextRank: null, nextMissing: null })
       }
       expect(hash.digest("hex")).toBe(golden.hashes[mode])
     },

@@ -1,0 +1,15 @@
+{
+  "src/game/heuristic.ts": "b0c155f8ba8a79cfe659a62e36a975a3695466e608a0c29b10c1aaa95b23bcda",
+  "src/game/engine.ts": "9dee8452cdf03c5e5465fbfd0197a90a3d36c0cc79421560ea6967fd9795a968",
+  "src/game/random.ts": "762d9e84062490b79439706cbe7c377d67ccaf8d737efd9146b0bf8b144c85a3",
+  "src/game/types.ts": "a6a60f22d551c735a1bb7268e19650b04fe1de2e053cfceacd724b60e7241399",
+  "src/game/rules.ts": "52df9c45eaf7055f800752180bab2094dba9539d98e3f765c2a2fff847a6224a",
+  "src/game/cards.ts": "b1133434d4fc65ed88c806e75f49281d3db9a3b23a981a3dfb8382ea973d5968",
+  "src/game/scoring.ts": "57fcf66f213e49370e5aed442b2f4a7ff445b7289e8a2dd8266e163c7831e4b7",
+  "src/game/automation.ts": "6de8d9593ff3af4d94bbd5922acb5d282a22eec310deda34bd72f72af100380d",
+  "src/game/hand-progress.ts": "7253f6db109c6401d4fcfd29b4c0578a77d70d1c065dec507614934731f47ef6",
+  "src/game/information.ts": "daddea5415cf3c7c82249d71f3389659b7d7124fccb0ae00187a0adf09675744",
+  "src/game/melds.ts": "24f3635cc27991012396b41ecef142d5ddf359501f9e46a5bc4952d5fddc9eb5",
+  "src/game/hand-ranks.ts": "2924d54f2d605a0f0965c5af21f299b29a55ee466f5e3d599bfa46f4380e9129",
+  "src/game/simulation.ts": "de5f77a99c2d9e40d2202ee5672b2e34cb5ebb5b63f3c879f7d38a77ed56ceb2"
+}

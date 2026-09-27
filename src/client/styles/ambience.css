@@ -83,5 +83,5 @@ body::after {
 }
 .opponent.betting,
 .hand-panel.betting {
-  background: var(--color-betting-seat);
+  background: var(--color-seat);
 }

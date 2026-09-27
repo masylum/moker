@@ -1377,7 +1377,7 @@
 }
 
 .riichi-stick-art img {
-  transform: translateY(var(--stick-shift)) rotate(var(--stick-tilt));
+  transform: rotate(-12deg);
   width: 42px;
   height: 62px;
   object-fit: contain;
@@ -1435,10 +1435,10 @@
   box-shadow: var(--shadow-card);
 }
 .opponent-known-hand {
-  min-height: 32px;
+  min-height: 42px;
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: end;
   justify-content: space-between;
   gap: var(--space-1) var(--space-3);
 }
@@ -1473,7 +1473,7 @@
   align-items: center;
   gap: 4px;
   font-size: var(--font-sm);
-  margin-right: 12px;
+  margin-right: 0;
 }
 .opponent-sticks img {
   width: 28px;
@@ -1484,12 +1484,15 @@
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 8px 16px;
-  margin: 12px 24px;
-  padding: 12px;
+  gap: var(--space-2);
+  width: fit-content;
+  max-width: calc(100% - 32px);
+  margin: var(--space-2) auto;
+  padding: var(--space-1-half) var(--space-3);
   border-radius: var(--radius-control);
-  background: var(--color-selected);
-  color: var(--color-on-action);
+  background: var(--color-control);
+  color: var(--color-text);
+  font-size: var(--font-sm);
 }
 
 .riichi-stick-count,
@@ -1534,7 +1537,7 @@
   gap: var(--space-2);
 }
 .game-counter .scores-link {
-  color: var(--color-muted);
+  color: var(--color-link);
   font-size: var(--font-sm);
   padding: 0;
   min-height: 0;
@@ -1543,8 +1546,92 @@
   box-shadow: none;
   text-decoration: underline;
   text-underline-offset: 3px;
-  text-decoration-color: var(--color-border-strong);
+  text-decoration-color: currentColor;
 }
 .game-counter .scores-link:hover {
   color: var(--color-action);
+}
+
+.counter-label {
+  display: flex;
+  align-items: baseline;
+  white-space: nowrap;
+}
+.counter-label .scores-link {
+  margin-left: var(--space-2);
+}
+.game-counter .cycle-bars {
+  width: auto;
+  min-width: 130px;
+}
+
+/* Shared seat surfaces and inventories. */
+.opponent,
+.opponent.betting,
+.hand-panel,
+.hand-panel.betting {
+  background: var(--color-seat);
+}
+.opponent-cards {
+  position: relative;
+  margin-top: 16px;
+}
+.riichi-stick-art img {
+  transform: rotate(-12deg);
+}
+.compact-sticks {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-1);
+}
+.compact-sticks .riichi-stick-art {
+  height: 42px;
+}
+.compact-sticks .riichi-stick-art img {
+  width: 28px;
+  height: 42px;
+}
+.compact-sticks .riichi-stick-art img + img {
+  margin-left: -8px;
+}
+.compact-sticks .stick-tag {
+  padding: 0;
+  background: none;
+  color: var(--color-text);
+  opacity: 1;
+  font-size: var(--font-sm);
+}
+.hand-cards {
+  position: relative;
+}
+.riichi-declared {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 20%;
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  pointer-events: none;
+}
+.riichi-declared > div {
+  display: flex;
+}
+.riichi-declared img {
+  width: 32px;
+  height: 64px;
+  transform: rotate(-20deg);
+  filter: drop-shadow(var(--shadow-decor));
+}
+.riichi-declared .stick-tag {
+  opacity: 1;
+}
+@media (width >= 901px) {
+  .hand-panel:has(.player-sticks) {
+    min-height: 210px;
+  }
+  .hand-panel:has(.player-sticks) .action-area {
+    margin-inline: 170px;
+    width: calc(100% - 340px);
+  }
 }

@@ -222,7 +222,7 @@ At the end of the round, reveal your Lotuses.
 
 | Situation                                           | Result                                                                         |
 | --------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Hold both Lotuses at showdown                       | Win the showdown regardless of other hands                                     |
+| Hold both Lotuses at showdown                       | Twin Lotus: above Three Dragons, below Long Chow                               |
 | Hold exactly one Lotus at showdown                  | Lose regardless of other cards                                                 |
 | Every remaining showdown player holds one Lotus     | Split the pot equally                                                          |
 | Hold exactly one Lotus and everyone else has folded | Win the pot plus three times the ante from each opponent who played that round |
@@ -273,7 +273,7 @@ If a player's Bet uses their last chips, they may declare Riichi before anyone r
 
 ## 12. Advanced Hand Ladder
 
-Ranks run from weakest to strongest. The two-Lotus automatic win is a separate showdown rule, not a rank in this ladder.
+Ranks run from weakest to strongest. Twin Lotus is rank 10, above Three Dragons and below Long Chow.
 
 | Rank | Hand                   | Required combination                |
 | ---: | ---------------------- | ----------------------------------- |
@@ -286,7 +286,8 @@ Ranks run from weakest to strongest. The two-Lotus automatic win is a separate s
 |    7 | Three Winds            | Three different Winds               |
 |    8 | Pung and Eyes          | A Pung plus a pair                  |
 |    9 | Three Dragons          | One of each Dragon                  |
-|   10 | Long Chow              | Five consecutive cards of one suit  |
-|   11 | Three Dragons and Eyes | One of each Dragon plus a pair      |
-|   12 | Four Winds             | One of each Wind                    |
-|   13 | Kong                   | Four identical cards                |
+|   10 | Twin Lotus             | Both Lotuses                        |
+|   11 | Long Chow              | Five consecutive cards of one suit  |
+|   12 | Three Dragons and Eyes | One of each Dragon plus a pair      |
+|   13 | Four Winds             | One of each Wind                    |
+|   14 | Kong                   | Four identical cards                |

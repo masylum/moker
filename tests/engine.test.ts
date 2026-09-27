@@ -327,7 +327,7 @@ describe("All-in, Lotuses and exact ties", () => {
     expect(g.state.handResults[0]?.winnerIds).toHaveLength(3)
     expect(g.state.players.map((p) => p.chips)).toEqual([200, 200, 200])
   })
-  it("two Lotuses beat Four Winds; all single-Lotus players split equally", () => {
+  it("Four Winds beat two Lotuses; all single-Lotus players split equally", () => {
     const g = engine({ mode: "riichi" }, 2)
     finishPass(g)
     g.state.players[0]!.privateCards = [
@@ -343,7 +343,7 @@ describe("All-in, Lotuses and exact ties", () => {
       checkStreet(g)
       if (g.state.phase === "exposing") reveal(g)
     }
-    expect(g.state.handWinners).toEqual(["p1"])
+    expect(g.state.handWinners).toEqual(["p2"])
     const tied = engine({ mode: "riichi" }, 2)
     finishPass(tied)
     tied.state.players.forEach((p, i) => {

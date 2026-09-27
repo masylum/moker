@@ -80,6 +80,26 @@ describe("rules-v5 bot intelligence", () => {
     ).toBe(true)
   })
 
+  it("keeps bot decisions unchanged when unseen hands and deck order change", () => {
+    const game = GameEngine.create(
+      ["p1", "p2", "p3"].map((id) => ({ id, name: id, controller: "heuristic" as const })),
+      { seed: "hidden-information", mode: "basic", heuristicSamples: 8 },
+    )
+    const actor = game.state.actingPlayerId!
+    const before = analyzePokerMath(game.state, actor, 8)
+    const decision = chooseHeuristicAction(game.state, actor, 8)
+    for (const opponent of game.state.players.filter((p) => p.id !== actor)) {
+      opponent.privateCards = opponent.privateCards.map((card) => {
+        const replacement = game.state.deck.pop()!
+        game.state.deck.unshift(card)
+        return replacement
+      })
+    }
+    game.state.deck.reverse()
+    expect(analyzePokerMath(game.state, actor, 8)).toEqual(before)
+    expect(chooseHeuristicAction(game.state, actor, 8)).toEqual(decision)
+  })
+
   it("chooses legal actions and supplies a fishing source for Checks", () => {
     const game = engine("bot-actions")
     finishCharleston(game)

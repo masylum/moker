@@ -274,34 +274,12 @@ export function chooseHeuristicAction(
   const opponents = activeOpponents(state, playerId)
   const legal = legalActions(state, player)
   const fairShare = 1 / Math.max(1, opponents.length + 1)
-  const certain = hasTwinLotus([...player.privateCards, ...player.publicCards])
-  const knownPrivate = publicKnownPrivateCards(state, player.id)
-  if (
-    !certain &&
-    opponents.some((opponent) =>
-      hasTwinLotus([...opponent.publicCards, ...(knownPrivate[opponent.id] ?? [])]),
-    )
-  ) {
-    const rationale = "Known Twin Lotus cannot be beaten or outdrawn"
-    const fold: DecisionEvaluation = {
-      action: { type: "fold" },
-      expectedScore: math.expectedScore,
-      estimatedWinRate: 0,
-      estimatedFoldout: 0,
-      expectedChipDelta: 0,
-      utility: 0,
-      samples,
-      rationale,
-    }
-    return { playerId, street: state.street, action: fold.action, evaluations: [fold], rationale }
-  }
   const sampledEquity = math.certainLoss
     ? 0
     : uncertaintyAdjustedEquity(math.showdownEquity, math.effectiveSamples ?? samples)
   // A player who has bet is a stronger range than an unselected random hand.
-  const equity = certain
-    ? 1
-    : state.currentWager > player.roundCommitted
+  const equity =
+    state.currentWager > player.roundCommitted
       ? sampledEquity * (policy.equityCalibration + (1 - policy.equityCalibration) * sampledEquity)
       : sampledEquity
   const doublePlan =
@@ -315,7 +293,6 @@ export function chooseHeuristicAction(
     if (!projected && !deckFish) return undefined
     const forecastState = projected ?? state
     const own = getPlayer(forecastState, player.id)
-    if (hasTwinLotus([...own.privateCards, ...own.publicCards])) return 1
     const estimate = analyzeCurrentEquity(
       forecastState,
       own,
@@ -504,7 +481,6 @@ export function chooseHeuristicAction(
   // opponents cannot actually transfer their entire stacks, but counting them
   // keeps this decision independent of assumptions about their future play.
   if (
-    !certain &&
     state.gameNumber === state.config.tournamentGames &&
     (state.config.mode === "basic" || finalHand)
   ) {
@@ -557,7 +533,7 @@ function shouldRiichi(
   policy: Readonly<BotPolicy>,
 ): boolean {
   const cards = [...player.privateCards, ...player.publicCards]
-  const rank = hasTwinLotus(cards) ? 14 : scoreHandStrength(cards, state.config.mode).total
+  const rank = scoreHandStrength(cards, state.config.mode).total
   return (
     equity >= policy.riichiEquityFloor &&
     (rank >= 8 || state.street >= 3) &&
@@ -919,18 +895,15 @@ function analyzeCurrentEquity(
   const unknown = unknownCards(state, player)
   // Sampling uncertainty must never invent outs against a publicly unbeatable
   // hand. In Riichi, an ordinary exposed meld can still be disqualified by a
-  // hidden single Lotus, so only known Twin Lotus is sufficient here.
-  const certainLoss =
-    !hasTwinLotus(ownCards) &&
-    opponents.some((opponent) => {
-      const visible = [...opponent.publicCards, ...(knownPrivate[opponent.id] ?? [])]
-      if (hasTwinLotus(visible)) return true
-      return (
-        !fishDeck &&
-        state.config.mode === "basic" &&
-        compareHandStrengths(scoreHandStrength(visible, "basic"), baseOwn.score) > 0
-      )
-    })
+  // hidden single Lotus, so this certainty shortcut applies only to Basic.
+  const certainLoss = opponents.some((opponent) => {
+    const visible = [...opponent.publicCards, ...(knownPrivate[opponent.id] ?? [])]
+    return (
+      !fishDeck &&
+      state.config.mode === "basic" &&
+      compareHandStrengths(scoreHandStrength(visible, "basic"), baseOwn.score) > 0
+    )
+  })
   // A concealed hand has been selected through Charleston and fishing;
   // it is not a fresh uniform deal. Each equity trial chooses the strongest
   // of a small number of feasible completions reflecting those public chances
@@ -1089,7 +1062,7 @@ function projectedHand(cards: readonly Card[], mode: "basic" | "riichi") {
   const lotusCount = cards.filter((card) => card.kind === "flower").length
   return {
     eligible: lotusCount !== 1,
-    score: lotusCount === 2 ? { total: 14, tieBreak: [] } : scoreHandStrength(cards, mode),
+    score: scoreHandStrength(cards, mode),
   }
 }
 
@@ -1098,7 +1071,7 @@ function handPotential(cards: readonly Card[], mode: "basic" | "riichi"): number
   const cached = potentialCache.get(key)
   if (cached !== undefined) return cached
   const scored = scoreHandStrength(cards, mode)
-  const strength = hasTwinLotus(cards) ? 14 : scored.total
+  const strength = scored.total
   const tieValue = scored.tieBreak.reduce((sum, value, index) => sum + value / 16 ** index, 0)
   const blankOption = cards.some((card) => card.kind === "blank") ? 12 : 0
   const jokerOption = cards.filter((card) => card.kind === "joker").length * 25

@@ -95,6 +95,7 @@
 }
 
 .dialog-heading button {
+  margin-left: auto;
   min-width: 36px;
   min-height: 36px;
   padding: var(--space-1);
@@ -621,4 +622,45 @@
 }
 .game-completion {
   margin-bottom: 24px;
+}
+
+.score-player {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.score-player .avatar {
+  width: 32px;
+  height: 32px;
+}
+.winner-trophy {
+  font-size: var(--font-lg);
+}
+
+.loan-description-stick {
+  float: right;
+  width: 100px;
+  height: 70px;
+  object-fit: contain;
+  margin: 0 0 16px 20px;
+}
+.result-player-summary > b {
+  font-family: var(--font-display);
+  font-size: var(--font-lg);
+}
+.result-player-summary > span {
+  font-size: var(--font-md);
+}
+.result-committed {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+  font-size: var(--font-md);
+}
+.result-committed .chip-stacks {
+  zoom: 0.65;
+}
+.result-dialog .dialog-heading:not(:has(h2)) {
+  margin-bottom: 0;
 }

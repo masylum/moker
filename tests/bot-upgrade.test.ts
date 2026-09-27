@@ -75,7 +75,7 @@ describe("bot utility and fishing regressions", () => {
     expect(math.potAfterCall).toBe(890)
     expect(math.potOdds).toBeCloseTo(10 / 890)
   })
-  it("never shrinks certain Twin Lotus equity or folds it to pressure", () => {
+  it("values Twin Lotus highly without treating it as certain", () => {
     const { game, player, deck } = fixture()
     player.privateCards.splice(0, 2, ...deck.filter((c) => c.kind === "flower"))
     game.state.currentWager = player.chips
@@ -85,7 +85,7 @@ describe("bot utility and fishing regressions", () => {
     expect(
       decision.evaluations
         .filter((e) => e.action.type !== "fold")
-        .every((e) => e.estimatedWinRate === 1),
+        .every((e) => e.estimatedWinRate < 1),
     ).toBe(true)
   })
   it("uses the free Call fish without wasting a stick on an already available Lotus", () => {
@@ -99,13 +99,15 @@ describe("bot utility and fishing regressions", () => {
     const paid = calls.find((e) => e.action.type === "call" && e.action.useRiichiStick)!
     const free = calls.find((e) => e.action.type === "call" && !e.action.useRiichiStick)!
     expect(paid).toBeUndefined()
-    expect(free.estimatedWinRate).toBe(1)
+    expect(free.estimatedWinRate).toBeGreaterThan(0.5)
+    expect(free.estimatedWinRate).toBeLessThan(1)
     expect(decision.action.type === "call" && Boolean(decision.action.useRiichiStick)).toBe(false)
   })
   it("uses two Check draws to dig past an unhelpful top and keeps the lane clear", () => {
     const { game, player, deck } = fixture()
     const flowers = deck.filter((c) => c.kind === "flower")
     player.privateCards[0] = flowers[0]!
+    game.state.pot = 1000
     const junk = deck.find((c) => c.kind === "wind")!
     game.state.discardA = [flowers[1]!, junk]
     game.state.discardB = [deck.find((c) => c.kind === "dragon")!]
@@ -127,6 +129,7 @@ describe("bot utility and fishing regressions", () => {
     const { game, player, deck } = fixture()
     const flowers = deck.filter((c) => c.kind === "flower")
     player.privateCards[0] = flowers[0]!
+    game.state.pot = 1000
     const blank = deck.find((c) => c.kind === "blank")!
     game.state.discardA = [blank]
     game.state.discardB = [flowers[1]!, ...deck.filter((c) => c.kind === "wind").slice(0, 3)]
@@ -155,7 +158,8 @@ describe("bot utility and fishing regressions", () => {
     )
     expect(fishingBets.length).toBeGreaterThan(0)
     for (const evaluation of fishingBets) {
-      expect(evaluation.estimatedWinRate).toBe(1)
+      expect(evaluation.estimatedWinRate).toBeGreaterThan(0.5)
+      expect(evaluation.estimatedWinRate).toBeLessThan(1)
       expect(evaluation.action).toHaveProperty("amount")
       expect((evaluation.action as { amount: number }).amount).toBeLessThan(
         player.chips + player.roundCommitted,
@@ -174,11 +178,9 @@ describe("bot utility and fishing regressions", () => {
         p.roundCommitted = 0
       })
     const decision = chooseHeuristicAction(game.state, player.id, 24)
-    const shove = decision.evaluations.find(
-      (e) => e.action.type === "bet" && e.action.amount === 1000,
-    )!
-    expect(shove.expectedChipDelta).toBeLessThanOrEqual(160)
-    expect(shove.expectedChipDelta).toBeGreaterThanOrEqual(100)
+    const bets = decision.evaluations.filter((e) => e.action.type === "bet")
+    expect(bets.length).toBeGreaterThan(0)
+    for (const bet of bets) expect(bet.expectedChipDelta).toBeLessThanOrEqual(160)
   })
   it("keeps decisions invariant when unseen deck order and opponents' hidden cards change", () => {
     const { game, player } = fixture()
@@ -196,7 +198,7 @@ describe("bot utility and fishing regressions", () => {
       })
     expect(chooseHeuristicAction(changed, player.id, 24)).toEqual(before)
   })
-  it("declares Riichi with certain Twin Lotus even when the ordinary hand rank is low", () => {
+  it("can declare Riichi with Twin Lotus without guaranteed equity", () => {
     const { game, player, deck } = fixture()
     player.privateCards = [
       ...deck.filter((c) => c.kind === "flower"),
@@ -210,7 +212,7 @@ describe("bot utility and fishing regressions", () => {
     expect(
       decision.evaluations.find((e) => e.action.type === "bet" && e.action.riichi)
         ?.estimatedWinRate,
-    ).toBe(1)
+    ).toBeLessThan(1)
   })
 })
 

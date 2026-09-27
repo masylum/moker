@@ -13,7 +13,7 @@ import { createGameAudio } from "./audio"
 import { knownHand } from "./known-hand"
 import { SpiritAvatar } from "./SpiritAvatar"
 import { cardLabel, compareCards } from "../game/cards"
-import { CHIP_UNIT } from "../game/rules"
+import { CHIP_UNIT, LOAN_VALUE, LOAN_PENALTY } from "../game/rules"
 import { scoreHand } from "../game/scoring"
 import type {
   BettingAction,
@@ -48,6 +48,7 @@ const ADVANCED_LADDER = [
   BASIC_LADDER[5]!,
   ["Pung and Eyes", "A Pung + a pair"],
   BASIC_LADDER[7]!,
+  ["Twin Lotus", "Both Lotuses"],
   ["Long Chow", "Five consecutive cards of the same suit"],
   ["Three Dragons and Eyes", "Three Dragons + a pair"],
   BASIC_LADDER[8]!,
@@ -64,6 +65,7 @@ export function App() {
   const [effectsOn, setEffectsOn] = createSignal(audio.effectsEnabled())
   const [session, setSession] = createSignal(localStorage.getItem("moker-v6-session") ?? "")
   const [state, setState] = createSignal<PublicGameState>()
+  const [loanNotice, setLoanNotice] = createSignal<string[]>([])
   const [spentSticks, setSpentSticks] = createSignal<string[]>([])
   let spentTimer: ReturnType<typeof setTimeout> | undefined
   onCleanup(() => clearTimeout(spentTimer))
@@ -75,6 +77,12 @@ export function App() {
   onCleanup(() => motion.dispose())
   function updateState(next: PublicGameState) {
     const previous = state()
+    if (
+      !previous ||
+      previous.gameNumber !== next.gameNumber ||
+      previous.handNumber !== next.handNumber
+    )
+      setResultStage("round")
     pendingMoves = []
     setDrawNotice(undefined)
     if (previous && previous.handNumber === next.handNumber) {
@@ -90,6 +98,14 @@ export function App() {
           name: next.players.find((p) => p.id === record.playerId)?.name ?? "Opponent",
         }))
     }
+    const borrowers = next.players.filter(
+      (p) =>
+        p.loans >
+        (previous?.gameNumber === next.gameNumber
+          ? (previous.players.find((old) => old.id === p.id)?.loans ?? 0)
+          : 0),
+    )
+    if (borrowers.length) setLoanNotice(borrowers.map((p) => p.name))
     const before = motion.capture()
     const deal = !state() || state()?.handNumber !== next.handNumber
     const spent = previous
@@ -148,7 +164,6 @@ export function App() {
   const [error, setError] = createSignal("")
   const [selection, setSelection] = createSignal<string[]>([])
   const [wager, setWager] = createSignal(10)
-  const [source, setSource] = createSignal("deck")
   const [auto, setAuto] = createSignal(true)
   const [acceptedCharleston, setAcceptedCharleston] = createSignal<string[]>([])
   const charlestonReceiptKey = () => `${session()}:${state()?.handNumber}:${viewer()}`
@@ -168,8 +183,10 @@ export function App() {
   const acceptCharleston = () => setAcceptedCharleston((keys) => [...keys, charlestonReceiptKey()])
   const [rules, setRules] = createSignal(false)
   const [closedResult, setClosedResult] = createSignal("")
+  const [resultStage, setResultStage] = createSignal<"round" | "game" | "tournament">("round")
   const [scoresOpen, setScoresOpen] = createSignal(false)
   const [ladderOpen, setLadderOpen] = createSignal(false)
+  const [blankPick, setBlankPick] = createSignal<string>()
   const [pickingFish, setPickingFish] = createSignal(false)
   const [pickingStick, setPickingStick] = createSignal(false)
   let fishingTable: HTMLDivElement | undefined
@@ -228,6 +245,7 @@ export function App() {
         setHandoff(undefined)
         updateState(result.state)
       }
+      setBlankPick(undefined)
       setPickingFish(false)
       const awaitingExchangeOrReveal =
         (previous?.phase === "exposing" || previous?.phase === "charleston") &&
@@ -287,6 +305,7 @@ export function App() {
       busy() ||
       !auto() ||
       !!drawNotice() ||
+      loanNotice().length > 0 ||
       receivedCharleston().length > 0 ||
       (game.phase === "charleston" &&
         game.players.some(
@@ -316,10 +335,12 @@ export function App() {
     ((human()?.chips ?? 0) > 0 || state()?.stickWindow?.playerId === viewer()) &&
     !human()?.folded
   const cancelFishing = () => {
+    setBlankPick(undefined)
     setPickingFish(false)
     setPickingStick(false)
   }
   const chooseStick = () => {
+    setBlankPick(undefined)
     setPickingStick(true)
     setPickingFish(true)
   }
@@ -338,6 +359,7 @@ export function App() {
   const openAction = (kind: "check" | "call" | "bet") => {
     setPickingStick(false)
     setError("")
+    setBlankPick(undefined)
     setPickingFish(false)
     if ((kind === "check" && canFish()) || (kind === "call" && canFishOnCall())) {
       setPickingFish(true)
@@ -352,19 +374,6 @@ export function App() {
     } else if (kind === "check" || kind === "call") {
       void act({ type: kind })
     } else setActionDialog(kind)
-  }
-  function drawFields() {
-    if (source().startsWith("blank:")) {
-      const [, blankCardId, pile, index] = source().split(":")
-      return {
-        blankExchange: {
-          blankCardId: blankCardId!,
-          pile: pile as "a" | "b",
-          cardIndex: Number(index),
-        },
-      }
-    }
-    return { drawSource: source() as CardSource }
   }
   function toggleCard(id: string) {
     audio.play("click2")
@@ -591,12 +600,14 @@ export function App() {
                     label="Game"
                     current={game().gameNumber}
                     total={game().config.tournamentGames}
+                    action={
+                      <Show when={game().config.tournamentGames > 1}>
+                        <Button class="text-button scores-link" onClick={() => setScoresOpen(true)}>
+                          Scores
+                        </Button>
+                      </Show>
+                    }
                   />
-                  <Show when={game().config.tournamentGames > 1}>
-                    <Button class="text-button scores-link" onClick={() => setScoresOpen(true)}>
-                      Scores
-                    </Button>
-                  </Show>
                 </div>
                 <CycleBars
                   label="Round"
@@ -631,10 +642,7 @@ export function App() {
                     .map((p) => p.name)
                     .join(", ")}
                 </strong>
-                <span>
-                  No further bets or raises. Calls include fishing and may use a Riichi stick.
-                  Showdown follows the final fishing decision.
-                </span>
+                <span>Call or fold. Fishing follows a call.</span>
               </div>
             </Show>
             <div
@@ -723,7 +731,9 @@ export function App() {
                       <Button
                         class="deck"
                         aria-label={`Draw from deck, ${game().deck.count} cards`}
-                        disabled={!pickingFish() || busy() || game().deck.count === 0}
+                        disabled={
+                          !pickingFish() || !!blankPick() || busy() || game().deck.count === 0
+                        }
                         onClick={() => fishFrom("deck")}
                       >
                         <img
@@ -751,6 +761,15 @@ export function App() {
                       }
                       enabled={pickingFish() && !busy()}
                       onPick={() => fishFrom("discard-a")}
+                      onSwap={
+                        blankPick()
+                          ? (cardIndex) =>
+                              act({
+                                type: callCost() ? "call" : "check",
+                                blankExchange: { blankCardId: blankPick()!, pile: "a", cardIndex },
+                              })
+                          : undefined
+                      }
                     />
                     <Lane
                       discarding={myTurn() && game().phase === "discarding"}
@@ -769,6 +788,15 @@ export function App() {
                       }
                       enabled={pickingFish() && !busy()}
                       onPick={() => fishFrom("discard-b")}
+                      onSwap={
+                        blankPick()
+                          ? (cardIndex) =>
+                              act({
+                                type: callCost() ? "call" : "check",
+                                blankExchange: { blankCardId: blankPick()!, pile: "b", cardIndex },
+                              })
+                          : undefined
+                      }
                     />
                   </div>
                 </section>
@@ -804,41 +832,10 @@ export function App() {
                         </small>
                         <Show when={game().config.mode === "riichi"}>
                           <div class="player-sticks">
-                            <div
-                              class="riichi-stick-count"
-                              role="img"
-                              aria-label={`${human()?.riichiSticks ?? 0} Riichi sticks`}
-                            >
-                              <Show when={spentSticks().includes(viewer()!)}>
-                                <img
-                                  class="spent-stick"
-                                  src="/assets/sticks/riichi-decor.svg"
-                                  alt="Riichi stick spent"
-                                />
-                              </Show>
-                              <div class="riichi-stick-art" aria-hidden="true">
-                                <For
-                                  each={Array.from({
-                                    length: Math.min(human()?.riichiSticks ?? 0, 6),
-                                  })}
-                                >
-                                  {(_, index) => (
-                                    <img
-                                      src="/assets/sticks/riichi-decor.svg"
-                                      alt=""
-                                      style={{
-                                        "--stick-tilt": `${[-12, -17, -14, -19, -13, -16][index()]}deg`,
-                                        "--stick-shift": `${[0, -2, 1, -1, 2, 0][index()]}px`,
-                                      }}
-                                    />
-                                  )}
-                                </For>
-                              </div>
-                              <span class="stick-tag">
-                                {human()?.riichiSticks ?? 0} Riichi
-                                {human()?.riichi ? " · Active" : ""}
-                              </span>
-                            </div>
+                            <RiichiSticks
+                              count={human()?.riichiSticks ?? 0}
+                              spent={spentSticks().includes(viewer()!)}
+                            />
                             <Show when={human()?.loans}>
                               <div class="loan-stick-count">
                                 <span class="loan-stick-art">
@@ -869,13 +866,7 @@ export function App() {
                             <span>
                               <small>Current hand</small>
                               <b>
-                                {human()?.folded
-                                  ? "Folded"
-                                  : [...cards(), ...(human()?.publicCards ?? [])].filter(
-                                        (c) => c.kind === "flower",
-                                      ).length === 2
-                                    ? "Twin Lotus"
-                                    : `${currentHand().total} - ${currentHand().combinations[0]?.label ?? "High Card"}`}
+                                {`${currentHand().total} - ${currentHand().combinations[0]?.label ?? "High Card"}`}
                               </b>
                             </span>
                             <span>{ladderOpen() ? "−" : "+"}</span>
@@ -928,6 +919,9 @@ export function App() {
                     </div>
                   </div>
                   <div class="hand-cards">
+                    <Show when={human()?.riichi}>
+                      <RiichiDeclared />
+                    </Show>
                     <For
                       each={sortHand(
                         [...cards(), ...(human()?.publicCards ?? [])],
@@ -950,9 +944,15 @@ export function App() {
                           <Button
                             class="card-choice"
                             classList={{
-                              picked: selection().includes(card.id),
+                              picked: selection().includes(card.id) || blankPick() === card.id,
                               "is-public": revealed(),
-                              "is-highlighted": drawn() || received(),
+                              "is-highlighted":
+                                drawn() ||
+                                received() ||
+                                (pickingFish() &&
+                                  !pickingStick() &&
+                                  card.kind === "blank" &&
+                                  !revealed()),
                             }}
                             aria-label={`${cardLabel(card)}${received() ? ", received from Charleston" : ""}${drawn() ? ", just drawn" : ""}${revealed() ? ", revealed" : ""}${selection().includes(card.id) ? ", selected" : ""}`}
                             aria-describedby={
@@ -960,9 +960,18 @@ export function App() {
                                 ? "discard-instruction"
                                 : undefined
                             }
-                            aria-pressed={selection().includes(card.id)}
-                            disabled={revealed() || !choosing() || busy()}
-                            onClick={() => toggleCard(card.id)}
+                            aria-pressed={selection().includes(card.id) || blankPick() === card.id}
+                            disabled={
+                              revealed() ||
+                              (!choosing() &&
+                                !(pickingFish() && !pickingStick() && card.kind === "blank")) ||
+                              busy()
+                            }
+                            onClick={() =>
+                              pickingFish() && card.kind === "blank"
+                                ? setBlankPick(blankPick() === card.id ? undefined : card.id)
+                                : toggleCard(card.id)
+                            }
                           >
                             <span class="hand-card-surface">
                               <PlayingCard card={card} />
@@ -1000,19 +1009,12 @@ export function App() {
                         <span>
                           {pickingStick()
                             ? "Spend a Riichi stick: choose a card from the deck or a discard lane."
-                            : "Choose a card from the deck or a discard lane."}
+                            : blankPick()
+                              ? "Choose any card in either discard lane to swap with your Blank."
+                              : cards().some((card) => card.kind === "blank")
+                                ? "Choose a card from the deck or a discard lane, or select a Blank to swap."
+                                : "Choose a card from the deck or a discard lane."}
                         </span>
-                        <Show when={game().config.mode === "riichi" && !pickingStick()}>
-                          <Button
-                            disabled={busy()}
-                            onClick={() => {
-                              setPickingFish(false)
-                              setActionDialog(callCost() ? "call" : "check")
-                            }}
-                          >
-                            Blank swap
-                          </Button>
-                        </Show>
                         <Button disabled={busy()} onClick={cancelFishing}>
                           {pickingStick() ? "Cancel Riichi stick" : "Cancel fishing"}
                         </Button>
@@ -1055,17 +1057,19 @@ export function App() {
                         </Show>
                       </div>
                     </Show>
-                    <Show when={myTurn() && game().stickWindow && !receivedCharleston().length}>
+                    <Show
+                      when={
+                        myTurn() &&
+                        game().stickWindow &&
+                        !receivedCharleston().length &&
+                        !pickingFish()
+                      }
+                    >
                       <div class="button-row main-actions">
-                        <span>Spend a Riichi stick before ending your turn?</span>
-                        <Button
-                          class="primary"
-                          disabled={busy() || pickingFish()}
-                          onClick={chooseStick}
-                        >
+                        <Button disabled={busy() || pickingFish()} onClick={chooseStick}>
                           Spend Riichi stick
                         </Button>
-                        <Button disabled={busy()} onClick={() => resolveStick()}>
+                        <Button class="primary" disabled={busy()} onClick={() => resolveStick()}>
                           End turn
                         </Button>
                       </div>
@@ -1118,29 +1122,9 @@ export function App() {
                       <Show when={actionDialog()}>
                         <Modal
                           class="drawer bet-drawer"
-                          title={
-                            actionDialog() === "bet"
-                              ? "Place your bet"
-                              : actionDialog() === "call"
-                                ? canFishOnCall()
-                                  ? "Call & fish"
-                                  : "Call the bet"
-                                : "Check & choose"
-                          }
+                          title="Place your bet"
                           onClose={() => setActionDialog(undefined)}
                         >
-                          <Show when={actionDialog() === "check"}>
-                            <p>Choose a card to fish.</p>
-                          </Show>
-                          <Show when={actionDialog() === "call"}>
-                            <p>
-                              Pay {format(Math.min(callCost(), human()?.chips ?? 0))} chips to stay
-                              in.
-                              {callCost() >= (human()?.chips ?? 0)
-                                ? " This puts you all-in."
-                                : " Calling includes one free fish unless fishing is locked."}
-                            </p>
-                          </Show>
                           <Show when={actionDialog() === "bet"}>
                             <section class="bet-editor">
                               <div class="bet-amount">
@@ -1181,94 +1165,10 @@ export function App() {
                               </div>
                             </section>
                           </Show>
-                          <Show
-                            when={
-                              (actionDialog() === "call" ? canFishOnCall() : canFish()) &&
-                              actionDialog() !== "bet"
-                            }
-                          >
-                            <div class="fishing-row">
-                              <label>
-                                Fishing source
-                                <select
-                                  value={source()}
-                                  onChange={(e) => setSource(e.currentTarget.value)}
-                                >
-                                  <option value="deck" disabled={!game().deck.count}>
-                                    Deck · face down
-                                  </option>
-                                  <option value="discard-a" disabled={!game().discardA.length}>
-                                    Lane A ·{" "}
-                                    {game().discardA.at(-1)
-                                      ? cardLabel(game().discardA.at(-1)!)
-                                      : "empty"}
-                                  </option>
-                                  <option value="discard-b" disabled={!game().discardB.length}>
-                                    Lane B ·{" "}
-                                    {game().discardB.at(-1)
-                                      ? cardLabel(game().discardB.at(-1)!)
-                                      : "empty"}
-                                  </option>
-                                  <For each={cards().filter((c) => c.kind === "blank")}>
-                                    {(blank) => (
-                                      <For each={["a", "b"] as const}>
-                                        {(pile) => (
-                                          <For
-                                            each={pile === "a" ? game().discardA : game().discardB}
-                                          >
-                                            {(c, index) => (
-                                              <option
-                                                value={`blank:${blank.id}:${pile}:${index()}`}
-                                              >
-                                                Blank swap · {pile.toUpperCase()}
-                                                {index() + 1} · {cardLabel(c)}
-                                              </option>
-                                            )}
-                                          </For>
-                                        )}
-                                      </For>
-                                    )}
-                                  </For>
-                                </select>
-                              </label>
-                            </div>
-                          </Show>
-
                           <p role="alert" class="dialog-error">
                             {error()}
                           </p>
                           <div class="button-row dialog-actions">
-                            <Show when={actionDialog() === "check"}>
-                              <Show when={canFish()}>
-                                <Button
-                                  class="primary"
-                                  disabled={busy()}
-                                  onClick={() =>
-                                    act({
-                                      type: "check",
-                                      ...drawFields(),
-                                    })
-                                  }
-                                >
-                                  Check & fish
-                                </Button>
-                              </Show>
-                            </Show>
-                            <Show when={actionDialog() === "call"}>
-                              <Button
-                                class="primary"
-                                disabled={busy()}
-                                onClick={() =>
-                                  act({
-                                    type: "call",
-                                    ...drawFields(),
-                                  })
-                                }
-                              >
-                                Call {format(Math.min(callCost(), human()?.chips ?? 0))}
-                                {canFishOnCall() ? " + Fish" : ""}
-                              </Button>
-                            </Show>
                             <Show when={actionDialog() === "bet"}>
                               <Button
                                 class="primary"
@@ -1334,7 +1234,14 @@ export function App() {
                       </Show>
                     </Show>
                     <Show when={["between-hands", "finished"].includes(game().phase)}>
-                      <Button onClick={() => setClosedResult("")}>View round result</Button>
+                      <Button
+                        onClick={() => {
+                          setResultStage("round")
+                          setClosedResult("")
+                        }}
+                      >
+                        View round result
+                      </Button>
                     </Show>
                     <Show when={game().phase === "between-hands"}>
                       <Button
@@ -1392,30 +1299,23 @@ export function App() {
                   {(result) => (
                     <Modal
                       title={
-                        game().phase === "finished"
-                          ? game().config.tournamentGames > 1
-                            ? "Tournament complete"
-                            : "Game complete"
-                          : game().gameScores.length >= game().gameNumber
+                        resultStage() === "round"
+                          ? "Round result"
+                          : resultStage() === "game"
                             ? `Game ${game().gameNumber} complete`
-                            : "Round result"
+                            : "Tournament complete"
                       }
+                      hideTitle={resultStage() === "round"}
                       class="result-dialog"
                       onClose={() =>
                         setClosedResult(`${session()}:${game().gameNumber}:${result().handNumber}`)
                       }
                     >
-                      <Show when={game().gameScores.length >= game().gameNumber}>
+                      <Show when={resultStage() === "game"}>
                         <section class="game-completion">
-                          <p>
-                            This game’s scores are recorded from each player’s remaining chips
-                            {game().config.mode === "riichi" ? ", minus 250 for each loan" : ""}.
-                          </p>
-                          <TournamentScores game={game()} />
-                          <Show
-                            when={game().phase !== "finished"}
-                            fallback={<p>The highest total wins. Equal totals share the win.</p>}
-                          >
+                          <ScoreWinners game={game()} singleGame />
+                          <TournamentScores game={game()} singleGame />
+                          <Show when={game().phase !== "finished"}>
                             <p>
                               Next is game {game().gameNumber + 1} of{" "}
                               {game().config.tournamentGames}. Everyone returns with{" "}
@@ -1428,118 +1328,157 @@ export function App() {
                                 more.
                               </p>
                             </Show>
-                            <p>Start the next game when you’re ready using the button below.</p>
                           </Show>
-                        </section>
-                      </Show>
-                      <section class="round-result">
-                        <p class="eyebrow">
-                          {result().reason === "showdown" ? "SHOWDOWN" : "EVERYONE ELSE FOLDED"}
-                        </p>
-                        <h2>
-                          {result()
-                            .winnerIds.map((id) => game().players.find((p) => p.id === id)?.name)
-                            .join(" & ")}{" "}
-                          {result().winnerIds.length === 1
-                            ? "takes the pot of"
-                            : "share the pot of"}{" "}
-                          {format(result().pot)} chips.
-                        </h2>
-                        <Show when={result().lotusBluff}>
-                          <p>Lotus bonus: +{result().lotusBluff?.total} chips.</p>
-                        </Show>
-                        <div class="result-hands">
-                          <For each={result().players.filter((p) => !p.eliminated)}>
-                            {(p) => (
-                              <article>
-                                <div class="result-player-summary">
-                                  <b>{p.name}</b>
-                                  <span>
-                                    {p.folded
-                                      ? "Folded"
-                                      : p.lotusDisqualified
-                                        ? "One Lotus · loses showdown"
-                                        : p.score.total === 0
-                                          ? "Hand kept hidden"
-                                          : p.cards.filter((c) => c.kind === "flower").length === 2
-                                            ? "Twin Lotus · automatic win"
-                                            : (p.score.combinations[0]?.label ?? "High Card")}
-                                  </span>
-                                  <small class="result-committed">
-                                    <strong>
-                                      {(p.netChips ?? p.payout - p.committed) > 0 ? "+" : ""}
-                                      {format(p.netChips ?? p.payout - p.committed)}
-                                    </strong>{" "}
-                                    chips{" "}
-                                    {(p.netChips ?? p.payout - p.committed) > 0
-                                      ? "won"
-                                      : (p.netChips ?? p.payout - p.committed) < 0
-                                        ? "lost"
-                                        : "net"}
-                                  </small>
-                                </div>
-                                <div class="mini-hand">
-                                  <For each={sortHand(p.cards, p.publicCards)}>
-                                    {(c) => <PlayingCard card={c} compact />}
-                                  </For>
-                                </div>
-                              </article>
-                            )}
-                          </For>
-                        </div>
-                        <p role="alert" class="dialog-error">
-                          {error()}
-                        </p>
-                        <div class="result-actions">
-                          <Show when={game().phase === "between-hands"}>
-                            <Button
-                              class="primary"
-                              disabled={busy()}
-                              onClick={() =>
-                                perform(() =>
-                                  gameAction(session(), {
-                                    kind: "next-hand",
-                                    viewerId: viewer() ?? "",
-                                  }),
-                                )
+                          <div class="result-actions">
+                            <Show
+                              when={game().phase !== "finished"}
+                              fallback={
+                                <Show
+                                  when={game().config.tournamentGames > 1}
+                                  fallback={
+                                    <Button
+                                      class="primary"
+                                      onClick={() => {
+                                        setState(undefined)
+                                        setViewer(undefined)
+                                        setAuto(false)
+                                      }}
+                                    >
+                                      Set up another game
+                                    </Button>
+                                  }
+                                >
+                                  <Button
+                                    class="primary"
+                                    onClick={() => setResultStage("tournament")}
+                                  >
+                                    See tournament result
+                                  </Button>
+                                </Show>
                               }
                             >
-                              {game().dealerSteps >=
-                              game().players.length * (game().config.orbits ?? 1)
-                                ? "Start next tournament game"
-                                : "Deal next round"}{" "}
-                              →
-                            </Button>
-                          </Show>
-                          <Show when={game().phase === "finished"}>
-                            <div class="standings">
-                              <For
-                                each={[...game().players].sort(
-                                  (a, b) =>
-                                    (game().finalScores?.[b.id] ?? 0) -
-                                    (game().finalScores?.[a.id] ?? 0),
-                                )}
+                              <Button
+                                class="primary"
+                                disabled={busy()}
+                                onClick={() =>
+                                  perform(() =>
+                                    gameAction(session(), {
+                                      kind: "next-hand",
+                                      viewerId: viewer() ?? "",
+                                    }),
+                                  )
+                                }
                               >
-                                {(p) => (
-                                  <span>
-                                    <b>{p.name}</b> {format(game().finalScores?.[p.id] ?? 0)} points
-                                  </span>
-                                )}
-                              </For>
-                            </div>
-                            <Button
-                              class="primary"
-                              onClick={() => {
-                                setState(undefined)
-                                setViewer(undefined)
-                                setAuto(false)
-                              }}
-                            >
-                              Set up another game →
-                            </Button>
+                                Start next tournament game
+                              </Button>
+                            </Show>
+                          </div>
+                        </section>
+                      </Show>
+                      <Show when={resultStage() === "tournament"}>
+                        <ScoreWinners game={game()} />
+                        <TournamentScores game={game()} />
+                        <Button
+                          class="primary"
+                          onClick={() => {
+                            setState(undefined)
+                            setViewer(undefined)
+                            setAuto(false)
+                          }}
+                        >
+                          Set up another game
+                        </Button>
+                      </Show>
+                      <Show when={resultStage() === "round"}>
+                        <section class="round-result">
+                          <p class="eyebrow">
+                            {result().reason === "showdown" ? "SHOWDOWN" : "EVERYONE ELSE FOLDED"}
+                          </p>
+                          <h2>
+                            {result()
+                              .winnerIds.map((id) => game().players.find((p) => p.id === id)?.name)
+                              .join(" & ")}{" "}
+                            {result().winnerIds.length === 1
+                              ? game().players.find((p) => p.id === result().winnerIds[0])?.name ===
+                                "You"
+                                ? "take the pot of"
+                                : "takes the pot of"
+                              : "share the pot of"}{" "}
+                            {format(result().pot)} chips.
+                          </h2>
+                          <Show when={result().lotusBluff}>
+                            <p>Lotus bonus: +{result().lotusBluff?.total} chips.</p>
                           </Show>
-                        </div>
-                      </section>
+                          <div class="result-hands">
+                            <For each={result().players.filter((p) => !p.eliminated)}>
+                              {(p) => (
+                                <article>
+                                  <div class="result-player-summary">
+                                    <b>{p.name}</b>
+                                    <span>
+                                      {p.folded
+                                        ? "Folded"
+                                        : p.lotusDisqualified
+                                          ? "One Lotus · loses showdown"
+                                          : p.score.total === 0
+                                            ? "Hand kept hidden"
+                                            : `${p.score.total} - ${p.score.combinations[0]?.label ?? "High Card"}`}
+                                    </span>
+                                    <small class="result-committed">
+                                      <strong>
+                                        {(p.netChips ?? p.payout - p.committed) > 0 ? "+" : ""}
+                                        {format(p.netChips ?? p.payout - p.committed)}
+                                      </strong>{" "}
+                                      chips{" "}
+                                      {(p.netChips ?? p.payout - p.committed) > 0
+                                        ? "won"
+                                        : (p.netChips ?? p.payout - p.committed) < 0
+                                          ? "lost"
+                                          : "net"}
+                                      <ChipStack
+                                        amount={Math.abs(p.netChips ?? p.payout - p.committed)}
+                                      />
+                                    </small>
+                                  </div>
+                                  <div class="mini-hand">
+                                    <For each={sortHand(p.cards, p.publicCards)}>
+                                      {(c) => <PlayingCard card={c} compact />}
+                                    </For>
+                                  </div>
+                                </article>
+                              )}
+                            </For>
+                          </div>
+                          <p role="alert" class="dialog-error">
+                            {error()}
+                          </p>
+                          <div class="result-actions">
+                            <Show
+                              when={game().gameScores.length >= game().gameNumber}
+                              fallback={
+                                <Button
+                                  class="primary"
+                                  disabled={busy()}
+                                  onClick={() =>
+                                    perform(() =>
+                                      gameAction(session(), {
+                                        kind: "next-hand",
+                                        viewerId: viewer() ?? "",
+                                      }),
+                                    )
+                                  }
+                                >
+                                  Deal next round
+                                </Button>
+                              }
+                            >
+                              <Button class="primary" onClick={() => setResultStage("game")}>
+                                See this game result
+                              </Button>
+                            </Show>
+                          </div>
+                        </section>
+                      </Show>
                     </Modal>
                   )}
                 </Show>
@@ -1547,6 +1486,31 @@ export function App() {
             </div>
           </>
         )}
+      </Show>
+      <Show when={loanNotice().length > 0}>
+        <Modal title="Loan taken" class="loan-dialog" onClose={() => setLoanNotice([])}>
+          <img
+            class="loan-description-stick"
+            src="/assets/sticks/loan-decor.svg"
+            alt="Loan stick"
+          />
+          <p>
+            {loanNotice().join(" & ")} could not cover the ante and automatically received{" "}
+            <strong>{LOAN_VALUE}</strong> chips to stay in the game.
+          </p>
+          <p>
+            The ante is paid from those chips. At the end of this game,{" "}
+            <strong>{LOAN_PENALTY}</strong> points are deducted for the loan, even if the score
+            becomes negative. That score counts toward the tournament total.
+          </p>
+          <p>
+            Only one loan is available per game. If the ante becomes unaffordable again, the player
+            is out until the next game. Loans reset at the start of the next tournament game.
+          </p>
+          <Button class="primary" onClick={() => setLoanNotice([])}>
+            Got it
+          </Button>
+        </Modal>
       </Show>
       <Show when={handoff()}>
         {(next) => (
@@ -1583,13 +1547,34 @@ export function App() {
   )
 }
 
-function TournamentScores(props: { game: PublicGameState }) {
-  const total = (id: string) =>
-    props.game.gameScores.reduce((sum, scores) => sum + (scores[id] ?? 0), 0)
+function ScoreWinners(props: { game: PublicGameState; singleGame?: boolean }) {
+  const scores = () =>
+    props.singleGame
+      ? (props.game.gameScores[props.game.gameNumber - 1] ?? {})
+      : (props.game.finalScores ?? {})
+  const best = () => Math.max(...Object.values(scores()))
+  const winners = () => props.game.players.filter((p) => scores()[p.id] === best())
+  return (
+    <h2>
+      {winners()
+        .map((p) => p.name)
+        .join(" & ")}{" "}
+      {winners().length === 1 ? (winners()[0]?.name === "You" ? "win" : "wins") : "share the win"}{" "}
+      with {format(best())} points.
+    </h2>
+  )
+}
+
+function TournamentScores(props: { game: PublicGameState; singleGame?: boolean }) {
+  const recorded = () =>
+    props.singleGame
+      ? props.game.gameScores.slice(props.game.gameNumber - 1, props.game.gameNumber)
+      : props.game.gameScores
+  const total = (id: string) => recorded().reduce((sum, scores) => sum + (scores[id] ?? 0), 0)
   const inProgress = () => props.game.gameScores.length < props.game.gameNumber
   return (
     <div class="tournament-scores">
-      <p>
+      <p hidden={props.singleGame || !inProgress()}>
         Totals include completed games only.{" "}
         <Show when={inProgress()}>
           Current chips are still in play and exclude chips committed to the pot.
@@ -1600,10 +1585,17 @@ function TournamentScores(props: { game: PublicGameState }) {
           <thead>
             <tr>
               <th scope="col">Player</th>
-              <For each={props.game.gameScores}>
-                {(_, index) => <th scope="col">Game {index() + 1}</th>}
+              <Show when={props.singleGame && props.game.config.mode === "riichi"}>
+                <th scope="col">Loan deduction</th>
+              </Show>
+              <For each={recorded()}>
+                {(_, index) => (
+                  <th scope="col">Game {props.singleGame ? props.game.gameNumber : index() + 1}</th>
+                )}
               </For>
-              <th scope="col">Total</th>
+              <Show when={!props.singleGame}>
+                <th scope="col">Total</th>
+              </Show>
               <Show when={inProgress()}>
                 <th scope="col">Current chips</th>
               </Show>
@@ -1613,13 +1605,37 @@ function TournamentScores(props: { game: PublicGameState }) {
             <For each={[...props.game.players].sort((a, b) => total(b.id) - total(a.id))}>
               {(player) => (
                 <tr>
-                  <th scope="row">{player.name}</th>
-                  <For each={props.game.gameScores}>
+                  <th scope="row">
+                    <span class="score-player">
+                      <SpiritAvatar
+                        name={player.name}
+                        colorIndex={props.game.players.findIndex((p) => p.id === player.id)}
+                      />
+                      {player.name}
+                      <Show
+                        when={
+                          !inProgress() &&
+                          total(player.id) ===
+                            Math.max(...props.game.players.map((p) => total(p.id)))
+                        }
+                      >
+                        <span class="winner-trophy" role="img" aria-label="Winner">
+                          🏆
+                        </span>
+                      </Show>
+                    </span>
+                  </th>
+                  <Show when={props.singleGame && props.game.config.mode === "riichi"}>
+                    <td>{player.loans ? `−${format(player.loans * LOAN_PENALTY)}` : "—"}</td>
+                  </Show>
+                  <For each={recorded()}>
                     {(scores) => <td>{format(scores[player.id] ?? 0)}</td>}
                   </For>
-                  <td>
-                    <strong>{format(total(player.id))}</strong>
-                  </td>
+                  <Show when={!props.singleGame}>
+                    <td>
+                      <strong>{format(total(player.id))}</strong>
+                    </td>
+                  </Show>
                   <Show when={inProgress()}>
                     <td>{format(player.chips)}</td>
                   </Show>
@@ -1633,23 +1649,24 @@ function TournamentScores(props: { game: PublicGameState }) {
   )
 }
 
-function CycleBars(props: { label: string; current: number; total: number }) {
+function CycleBars(props: { label: string; current: number; total: number; action?: JSX.Element }) {
   return (
-    <div
-      class="cycle-bars"
-      role="progressbar"
-      aria-label={props.label}
-      aria-valuemin={1}
-      aria-valuemax={props.total}
-      aria-valuenow={props.current}
-    >
-      <span>
+    <div class="cycle-bars">
+      <span class="counter-label">
         {props.label}{" "}
         <strong>
           {props.current}/{props.total}
         </strong>
+        {props.action}
       </span>
-      <div class="progress-segments">
+      <div
+        class="progress-segments"
+        role="progressbar"
+        aria-label={props.label}
+        aria-valuemin={0}
+        aria-valuemax={props.total}
+        aria-valuenow={props.current}
+      >
         <For each={Array.from({ length: props.total })}>
           {(_, i) => (
             <i
@@ -1684,6 +1701,7 @@ function Lane(props: {
   concealed?: string[]
   enabled: boolean
   onPick: () => void
+  onSwap?: (index: number) => void
   discarding: boolean
   discardAllowed: boolean
   ready: boolean
@@ -1703,7 +1721,7 @@ function Lane(props: {
               <For each={props.cards}>
                 {(card, index) => (
                   <Show
-                    when={index() === props.cards.length - 1}
+                    when={!!props.onSwap || index() === props.cards.length - 1}
                     fallback={
                       <span
                         style={{
@@ -1721,7 +1739,7 @@ function Lane(props: {
                       }}
                       disabled={!props.enabled}
                       aria-label={`Fish ${cardLabel(card)} from ${props.title}`}
-                      onClick={props.onPick}
+                      onClick={() => (props.onSwap ? props.onSwap(index()) : props.onPick())}
                     >
                       <PlayingCard card={card} compact />
                     </Button>
@@ -1800,6 +1818,9 @@ function PlayerSeat(props: {
         </div>
       </div>
       <div class="opponent-cards">
+        <Show when={props.player.riichi}>
+          <RiichiDeclared />
+        </Show>
         <For each={[...props.player.publicCards].sort(compareCards)}>
           {(c) => <PlayingCard card={c} compact />}
         </For>
@@ -1820,17 +1841,7 @@ function PlayerSeat(props: {
       </div>
       <div class="opponent-known-hand">
         <Show when={props.mode === "riichi"}>
-          <span class="opponent-sticks">
-            <Show when={props.spentStick}>
-              <img
-                class="spent-stick"
-                src="/assets/sticks/riichi-decor.svg"
-                alt="Riichi stick spent"
-              />
-            </Show>
-            <img src="/assets/sticks/riichi-decor.svg" alt="" />
-            {props.player.riichiSticks} Riichi
-          </span>
+          <RiichiSticks count={props.player.riichiSticks} spent={props.spentStick} compact />
         </Show>
         <Show when={!props.player.folded && !props.player.eliminated && known().label}>
           <b>
@@ -1862,6 +1873,38 @@ function PlayerSeat(props: {
         <BetIndicator amount={props.player.roundCommitted} playerId={props.player.id} />
       </div>
     </article>
+  )
+}
+
+function RiichiSticks(props: { count: number; spent?: boolean; compact?: boolean }) {
+  return (
+    <div
+      class="riichi-stick-count"
+      classList={{ "compact-sticks": props.compact }}
+      role="img"
+      aria-label={`${props.count} Riichi sticks`}
+    >
+      <Show when={props.spent}>
+        <img class="spent-stick" src="/assets/sticks/riichi-decor.svg?v=4" alt="" />
+      </Show>
+      <div class="riichi-stick-art" aria-hidden="true">
+        <For each={Array.from({ length: props.count })}>
+          {() => <img src="/assets/sticks/riichi-decor.svg?v=4" alt="" />}
+        </For>
+      </div>
+      <span class="stick-tag">{props.count} Riichi</span>
+    </div>
+  )
+}
+function RiichiDeclared() {
+  return (
+    <div class="riichi-declared">
+      <div>
+        <img src="/assets/sticks/riichi-decor.svg?v=4" alt="" />
+        <img src="/assets/sticks/riichi-decor.svg?v=4" alt="" />
+      </div>
+      <span class="stick-tag">Riichi declared</span>
+    </div>
   )
 }
 
@@ -1909,7 +1952,7 @@ function ChipStack(props: { amount: number; contributions?: number[] }) {
           >
             <div
               class="stack-discs"
-              style={{ height: `${38 + Math.min(stack.count - 1, 7) * 4}px` }}
+              style={{ height: `${44 + Math.min(stack.count - 1, 7) * 4}px` }}
             >
               <For each={Array.from({ length: Math.min(stack.count, 8) })}>
                 {(_, index) => (

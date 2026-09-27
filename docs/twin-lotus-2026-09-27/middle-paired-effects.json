@@ -1,0 +1,90 @@
+{
+  "continuous": {
+    "allInRate": {
+      "rankedMinusControl": -0.009765625,
+      "pairedBootstrap95": [
+        -0.0185546875,
+        -0.001953125
+      ]
+    },
+    "showdownRate": {
+      "rankedMinusControl": -0.015625,
+      "pairedBootstrap95": [
+        -0.033203125,
+        0.0
+      ]
+    },
+    "street4Rate": {
+      "rankedMinusControl": -0.0087890625,
+      "pairedBootstrap95": [
+        -0.025390625,
+        0.0048828125
+      ]
+    },
+    "retainedTwinsPerRun": {
+      "rankedMinusControl": 0.140625,
+      "pairedBootstrap95": [
+        0.03125,
+        0.28125
+      ]
+    },
+    "twinNetPerRun": {
+      "rankedMinusControl": 19.296875,
+      "pairedBootstrap95": [
+        4.140625,
+        38.28125
+      ]
+    },
+    "loansPerRun": {
+      "rankedMinusControl": -0.0625,
+      "pairedBootstrap95": [
+        -0.125,
+        -0.015625
+      ]
+    }
+  },
+  "reset": {
+    "allInRate": {
+      "rankedMinusControl": 0.001953125,
+      "pairedBootstrap95": [
+        -0.0029296875,
+        0.0068359375
+      ]
+    },
+    "showdownRate": {
+      "rankedMinusControl": 0.0068359375,
+      "pairedBootstrap95": [
+        -0.0078125,
+        0.0224609375
+      ]
+    },
+    "street4Rate": {
+      "rankedMinusControl": -0.0009765625,
+      "pairedBootstrap95": [
+        -0.0166015625,
+        0.013671875
+      ]
+    },
+    "retainedTwinsPerRun": {
+      "rankedMinusControl": 0.03125,
+      "pairedBootstrap95": [
+        -0.03125,
+        0.09375
+      ]
+    },
+    "twinNetPerRun": {
+      "rankedMinusControl": 64.296875,
+      "pairedBootstrap95": [
+        21.71875,
+        115.3125
+      ]
+    },
+    "loansPerRun": {
+      "rankedMinusControl": 0,
+      "pairedBootstrap95": [
+        -0.046875,
+        0.046875
+      ]
+    }
+  }
+}

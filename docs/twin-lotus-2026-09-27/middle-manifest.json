@@ -1,0 +1,27 @@
+{
+  "rank": 9.5,
+  "runs": 128,
+  "samplesPerDecision": 24,
+  "workers": 10,
+  "timing": {
+    "seconds": 256.044,
+    "count": 128,
+    "samples": 24,
+    "workers": 10
+  },
+  "sourceHashes": {
+    "ranked/src/game/heuristic.ts": "62dd7081641dc3210941a5699c926abeaf55829cc6f3dfa12fbee886fddc4cbf",
+    "ranked/src/game/engine.ts": "1fba6018894931c070e1ad2ebe8c641c6c0efa35a44aad71a312d0a2bfbbba20",
+    "ranked/src/game/random.ts": "762d9e84062490b79439706cbe7c377d67ccaf8d737efd9146b0bf8b144c85a3",
+    "ranked/src/game/types.ts": "86bf11605952a8c9765b13cc11ca39d758d1cc8fb39fe49c69043b7278e1e195",
+    "ranked/src/game/rules.ts": "52df9c45eaf7055f800752180bab2094dba9539d98e3f765c2a2fff847a6224a",
+    "ranked/src/game/cards.ts": "b1133434d4fc65ed88c806e75f49281d3db9a3b23a981a3dfb8382ea973d5968",
+    "ranked/src/game/scoring.ts": "d13e3dc1b3e784162fb1cfc979be2dc3a271d353ccb04a5b52ba277d967ff297",
+    "ranked/src/game/automation.ts": "6de8d9593ff3af4d94bbd5922acb5d282a22eec310deda34bd72f72af100380d",
+    "ranked/src/game/hand-progress.ts": "bcb3e1bfdeea6a63013178fdcd5dc1a5a429f4b9329e25b7d4b1296e960608ad",
+    "ranked/src/game/information.ts": "daddea5415cf3c7c82249d71f3389659b7d7124fccb0ae00187a0adf09675744",
+    "ranked/src/game/melds.ts": "24f3635cc27991012396b41ecef142d5ddf359501f9e46a5bc4952d5fddc9eb5",
+    "ranked/src/game/hand-ranks.ts": "2c34e9e6876c04f19cc02e70f5078dd539fa6e724efde5e098ab2a9c24fac98f",
+    "ranked/src/game/simulation.ts": "cda9a7b9ae892ac91142490699f880af97f75033c0cca2b2c93502457768c3ce"
+  }
+}

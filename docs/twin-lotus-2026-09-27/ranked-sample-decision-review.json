@@ -1,0 +1,105 @@
+{
+  "files": {
+    "sample-0.json": {
+      "hands": 16,
+      "decisions": 149
+    },
+    "sample-1.json": {
+      "hands": 16,
+      "decisions": 172
+    },
+    "sample-2.json": {
+      "hands": 16,
+      "decisions": 150
+    },
+    "sample-3.json": {
+      "hands": 16,
+      "decisions": 155
+    },
+    "sample-4.json": {
+      "hands": 16,
+      "decisions": 148
+    },
+    "sample-64.json": {
+      "hands": 16,
+      "decisions": 164
+    },
+    "sample-65.json": {
+      "hands": 16,
+      "decisions": 142
+    },
+    "sample-66.json": {
+      "hands": 16,
+      "decisions": 133
+    },
+    "sample-67.json": {
+      "hands": 16,
+      "decisions": 163
+    },
+    "sample-68.json": {
+      "hands": 16,
+      "decisions": 134
+    }
+  },
+  "twinDecisions": [
+    {
+      "sample": "sample-0.json",
+      "player": "p3",
+      "street": 1,
+      "action": {
+        "type": "call",
+        "drawSource": "deck"
+      },
+      "equity": 0.7202490794754626,
+      "rationale": "72% estimated equity after fishing, 22% pot odds, 0% estimated foldout; tournament risk \u00d70.96; next-ante risk cost 14.0"
+    },
+    {
+      "sample": "sample-1.json",
+      "player": "p1",
+      "street": 2,
+      "action": {
+        "type": "bet",
+        "amount": 60,
+        "riichi": true
+      },
+      "equity": 0.6300172949440959,
+      "rationale": "63% estimated equity, 0% pot odds, 41% estimated foldout; tournament risk \u00d71.40"
+    },
+    {
+      "sample": "sample-1.json",
+      "player": "p3",
+      "street": 1,
+      "action": {
+        "type": "bet",
+        "amount": 25,
+        "riichi": true
+      },
+      "equity": 0.6582998631593133,
+      "rationale": "66% estimated equity, 0% pot odds, 5% estimated foldout; tournament risk \u00d72.14"
+    },
+    {
+      "sample": "sample-2.json",
+      "player": "p4",
+      "street": 2,
+      "action": {
+        "type": "bet",
+        "amount": 85,
+        "riichi": true
+      },
+      "equity": 0.8320070317908111,
+      "rationale": "83% estimated equity, 0% pot odds, 45% estimated foldout; tournament risk \u00d71.72"
+    },
+    {
+      "sample": "sample-65.json",
+      "player": "p1",
+      "street": 2,
+      "action": {
+        "type": "bet",
+        "amount": 60,
+        "riichi": true
+      },
+      "equity": 0.6300172949440959,
+      "rationale": "63% estimated equity, 0% pot odds, 41% estimated foldout; tournament risk \u00d71.40"
+    }
+  ]
+}

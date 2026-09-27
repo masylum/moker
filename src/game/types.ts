@@ -28,6 +28,7 @@ export type CombinationKind =
   | "eye"
   | "chow"
   | "long-chow"
+  | "twin-lotus"
   | "two-eyes"
   | "chow-eye"
   | "pung"
