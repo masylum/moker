@@ -121,3 +121,63 @@ describe("independent Riichi stick timing", () => {
     expect(result.players.reduce((sum, player) => sum + player.netChips!, 0)).toBe(0)
   })
 })
+
+for (const chips of [5, 20, 100]) {
+  for (const attached of [false, true]) {
+    it(`allows a stick on an all-in call with ${chips} chips (attached: ${attached})`, () => {
+      const { game, id, player } = fixture()
+      player.chips = 20
+      game.act(id, { type: "bet", amount: 20 }, true)
+      expect(game.state.stickWindow).toBeUndefined()
+      const caller = game.state.actingPlayerId!
+      game.act(caller, { type: "fold" })
+      const last = game.state.actingPlayerId!
+      const callingPlayer = game.state.players.find((p) => p.id === last)!
+      callingPlayer.chips = chips
+      expect(game.legalActions(last).find((a) => a.type === "call")?.canUseRiichiStick).toBe(true)
+      expect(game.legalActions(last).some((a) => a.type === "bet")).toBe(false)
+      game.act(last, { type: "call", drawSource: "deck", useRiichiStick: attached }, true)
+      discard(game, last)
+      expect(game.state.handResults).toHaveLength(0)
+      expect(game.state.stickWindow?.playerId).toBe(attached ? undefined : last)
+      const restored = GameEngine.restore(game.state)
+      if (!attached) {
+        restored.spendRiichiStick(last, "deck")
+        game.spendRiichiStick(last, "deck")
+      }
+      discard(restored, last)
+      expect(restored.state.handResults).toHaveLength(1)
+      expect(game.state.phase).toBe("discarding")
+      discard(game, last)
+      expect(callingPlayer.riichiSticks).toBe(1)
+      expect(game.state.handResults).toHaveLength(1)
+    })
+  }
+}
+
+it("allows declining the stick after spending the last chips on a call", () => {
+  const { game, id, player } = fixture()
+  player.chips = 20
+  game.act(id, { type: "bet", amount: 20 })
+  game.act(game.state.actingPlayerId!, { type: "fold" })
+  const caller = game.state.actingPlayerId!
+  game.state.players.find((p) => p.id === caller)!.chips = 20
+  game.act(caller, { type: "call" }, true)
+  discard(game, caller)
+  game.finishStickDecision(caller)
+  expect(game.state.handResults).toHaveLength(1)
+})
+
+it("keeps declared Riichi locked when calling an all-in", () => {
+  const { game, id, player } = fixture()
+  player.chips = 20
+  game.act(id, { type: "bet", amount: 20 })
+  const caller = game.state.actingPlayerId!
+  game.state.players.find((p) => p.id === caller)!.riichi = true
+  expect(game.canSpendStick(caller)).toBe(false)
+  expect(() => game.act(caller, { type: "call", useRiichiStick: true })).toThrow(/not available/)
+  game.act(caller, { type: "call" }, true)
+  expect(game.state.phase).toBe("betting")
+  expect(game.state.actingPlayerId).not.toBe(caller)
+  expect(game.state.stickWindow).toBeUndefined()
+})

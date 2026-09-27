@@ -106,36 +106,6 @@
   line-height: 1.6;
 }
 
-.bet-preview {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-4);
-  margin-bottom: var(--space-5);
-}
-
-.bet-preview-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border-radius: var(--radius-panel);
-  background: var(--color-seat);
-  text-align: center;
-  min-width: 0;
-}
-
-.bet-preview-stack strong {
-  font-size: var(--font-xl);
-  font-weight: var(--font-weight-emphasis);
-  font-variant-numeric: tabular-nums;
-}
-
-.bet-preview-stack small {
-  font-size: var(--font-sm);
-  color: var(--color-muted);
-}
-
 .game-dialog .bet-chips {
   flex-wrap: wrap;
 }
@@ -353,20 +323,6 @@
   }
 }
 
-@media (max-width: 480px) {
-  .bet-preview-stack {
-    padding: var(--space-3);
-  }
-}
-
-.bet-editor .bet-chips {
-  justify-content: center;
-  margin-top: var(--space-2);
-}
-.bet-editor {
-  gap: var(--space-3);
-}
-
 /* Native modal drawers keep focus and dismissal consistent across help and betting. */
 .game-dialog.drawer {
   position: fixed;
@@ -389,12 +345,56 @@
 .game-dialog.drawer .dialog-actions {
   margin-top: 20px;
 }
-.bet-drawer .bet-preview-stack {
-  padding: 14px;
-  gap: 6px;
+/* Betting stays compact while reference drawers retain the full table width. */
+.game-dialog.bet-drawer {
+  width: min(880px, 100%);
 }
-.bet-drawer .bet-preview-stack strong {
-  font-size: 26px;
+.bet-editor {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 18px 22px;
+  border-radius: var(--radius-panel);
+  background: var(--color-seat);
+}
+.bet-amount {
+  display: grid;
+  gap: 4px;
+  min-width: 100px;
+}
+.bet-amount > span {
+  font-size: var(--font-sm);
+  color: var(--color-muted);
+}
+.bet-amount strong {
+  font-size: 32px;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.bet-editor .bet-chips {
+  justify-content: flex-end;
+  margin: 0;
+}
+.bet-drawer .dialog-actions {
+  justify-content: flex-end;
+}
+.bet-drawer .dialog-actions .primary {
+  order: 1;
+}
+.bet-drawer .dialog-error:empty {
+  display: none;
+}
+@media (max-width: 600px) {
+  .bet-editor {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+  }
+  .bet-editor .bet-chips {
+    justify-content: flex-start;
+  }
 }
 .bet-drawer .bet-chips .chip {
   font-weight: 500;
@@ -593,4 +593,32 @@
 }
 .rules-chapter:first-child > h3 {
   margin-top: 0;
+}
+
+.game-dialog.rules-drawer {
+  width: min(960px, 100%);
+}
+.game-dialog.scores-dialog {
+  width: min(760px, calc(100vw - 32px));
+}
+.scores-scroll {
+  overflow-x: auto;
+}
+.tournament-scores table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+}
+.tournament-scores th,
+.tournament-scores td {
+  padding: 10px 16px;
+  text-align: right;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+.tournament-scores th:first-child {
+  text-align: left;
+}
+.game-completion {
+  margin-bottom: 24px;
 }

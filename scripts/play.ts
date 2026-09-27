@@ -100,8 +100,7 @@ async function playBettingTurn(game: GameEngine): Promise<void> {
   const selected = await choose("Your action", labels)
   const action = legal[selected]!
   if (action.type === "check" || action.type === "call") {
-    const fishing =
-      !player.riichi && !game.state.allInPlayerIds.length && player.chips > (action.callAmount ?? 0)
+    const fishing = !player.riichi && (action.type === "call" || !game.state.allInPlayerIds.length)
     const useRiichiStick =
       action.canUseRiichiStick &&
       (await choose("Spend one Riichi stick for a second fish?", ["No", "Yes"])) === 1
@@ -254,7 +253,7 @@ function playerName(playerId?: string): string {
 
 function actionLabel(action: LegalAction): string {
   if (action.type === "check") return "Check (free fish unless locked)"
-  if (action.type === "call") return `Call ${action.callAmount} (free fish unless locked/all-in)`
+  if (action.type === "call") return `Call ${action.callAmount} (free fish unless in Riichi)`
   if (action.type === "bet")
     return `Bet (${action.minimum}-${action.maximum})${action.canRiichi ? " · Riichi available" : ""}`
   return "Fold"

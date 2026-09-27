@@ -305,7 +305,7 @@ export function chooseHeuristicAction(
       ? sampledEquity * (policy.equityCalibration + (1 - policy.equityCalibration) * sampledEquity)
       : sampledEquity
   const doublePlan =
-    player.riichiSticks > 0 && !player.riichi && player.chips > math.toCall
+    player.riichiSticks > 0 && !player.riichi && !state.stickSpentThisTurn
       ? chooseDoubleDrawPlan(state, player, plan)
       : plan
   const fishingEquity = (drawPlan: DrawPlan) => {
@@ -331,7 +331,7 @@ export function chooseHeuristicAction(
       : adjusted
   }
   const canForecastFishing =
-    !player.riichi && state.allInPlayerIds.length === 0 && player.chips > math.toCall
+    !player.riichi && (state.allInPlayerIds.length === 0 || math.toCall > 0)
   const singleFishingEquity = canForecastFishing && drawGain > 0 ? fishingEquity(plan) : undefined
   const doubleFishingEquity =
     canForecastFishing && doublePlan.second ? fishingEquity(doublePlan) : undefined
@@ -352,8 +352,7 @@ export function chooseHeuristicAction(
     const canFish =
       action.type !== "fold" &&
       !player.riichi &&
-      state.allInPlayerIds.length === 0 &&
-      cost < player.chips &&
+      (action.type === "call" || (state.allInPlayerIds.length === 0 && cost < player.chips)) &&
       !(action.type === "bet" && action.riichi)
     const freeFish = hasFreeFishing(state.config.mode, action.type)
     const usesFish = canFish && (freeFish || action.useRiichiStick)
@@ -384,11 +383,12 @@ export function chooseHeuristicAction(
       freeFish && action.type !== "fold" && action.useRiichiStick
         ? Math.max(0, doublePlan.value - currentPotential)
         : drawGain
-    const drawUtility = usesFish
-      ? (state.config.mode === "riichi" ? 0.25 : 1) *
-        developmentValue(fishingGain) *
-        (visibleEquity === undefined ? 1 : Math.max(0, 4 - state.street) / 3)
-      : 0
+    const drawUtility =
+      usesFish && state.allInPlayerIds.length === 0 && cost < player.chips
+        ? (state.config.mode === "riichi" ? 0.25 : 1) *
+          developmentValue(fishingGain) *
+          (visibleEquity === undefined ? 1 : Math.max(0, 4 - state.street) / 3)
+        : 0
     const stickUtility =
       action.type !== "fold" && action.useRiichiStick ? -stickShadowValue(state, player) : 0
     const riichiUtility =

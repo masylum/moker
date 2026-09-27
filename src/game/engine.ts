@@ -355,7 +355,7 @@ export class GameEngine {
     actions.push({
       type: toCall === 0 ? "check" : "call",
       callAmount: Math.min(toCall, player.chips),
-      canUseRiichiStick: this.canSpendStick(playerId) && player.chips > toCall,
+      canUseRiichiStick: this.canSpendStick(playerId),
     })
     const maximum = player.roundCommitted + player.chips
     const minimum = Math.min(
@@ -478,6 +478,8 @@ export class GameEngine {
 
   canSpendStick(playerId: string): boolean {
     const player = this.getPlayer(playerId)
+    const finishingCall =
+      this.state.stickOfferPlayerId === playerId || this.state.stickWindow?.playerId === playerId
     return (
       this.state.config.mode === "riichi" &&
       !this.state.stickSpentThisTurn &&
@@ -485,8 +487,10 @@ export class GameEngine {
       !player.folded &&
       !player.eliminated &&
       player.riichiSticks > 0 &&
-      player.chips > 0 &&
-      this.state.allInPlayerIds.length === 0
+      (player.chips > 0 || finishingCall) &&
+      (this.state.allInPlayerIds.length === 0 ||
+        player.roundCommitted < this.state.currentWager ||
+        finishingCall)
     )
   }
 
@@ -702,7 +706,8 @@ export class GameEngine {
   }
 
   private drawInstructions(player: PlayerState, action: BettingAction): DrawInstruction[] {
-    if (action.type === "fold" || player.riichi || this.state.allInPlayerIds.length > 0) return []
+    if (action.type === "fold" || player.riichi) return []
+    if (this.state.allInPlayerIds.length > 0 && action.type !== "call") return []
     const instructions: DrawInstruction[] = []
     const free = hasFreeFishing(this.state.config.mode, action.type)
     if (free)
@@ -816,8 +821,10 @@ export class GameEngine {
     pendingBefore = this.state.pendingPlayerIds,
   ): void {
     if (this.state.stickOfferPlayerId === playerId) {
+      const canSpend =
+        this.canSpendStick(playerId) && (this.state.allInPlayerIds.length === 0 || !aggressive)
       delete this.state.stickOfferPlayerId
-      if (this.canSpendStick(playerId)) {
+      if (canSpend) {
         this.state.phase = "betting"
         this.state.actingPlayerId = playerId
         this.state.stickWindow = {

@@ -85,7 +85,7 @@ describe("one loan per game", () => {
 })
 
 describe("Call equity and continuation", () => {
-  it("does not invent equity for a disqualified Single Lotus hand in a multiway locked pot", () => {
+  it("values the chance to discard a Single Lotus when an all-in call includes fishing", () => {
     const { game, player } = fixture()
     const deck = createDeck("riichi")
     player.privateCards = [
@@ -99,8 +99,8 @@ describe("Call equity and continuation", () => {
     game.state.allInPlayerIds = [game.state.players.find((p) => p !== player)!.id]
     expect(analyzePokerMath(game.state, player.id, 24).showdownEquity).toBe(0)
     const d = chooseHeuristicAction(game.state, player.id, 24)
-    expect(d.evaluations.find((e) => e.action.type === "call")!.estimatedWinRate).toBe(0)
-    expect(d.action.type).toBe("fold")
+    expect(d.evaluations.find((e) => e.action.type === "call")!.estimatedWinRate).toBeGreaterThan(0)
+    expect(d.action.type).toBe("call")
   })
   it("conditions on raise size and Riichi signals without reading opposing hidden cards", () => {
     const { game, player } = fixture()
@@ -157,7 +157,7 @@ describe("Call equity and continuation", () => {
   })
 })
 
-it("declines the archived Chow + Eye all-in Call after a large Riichi raise", () => {
+it("includes fishing when evaluating the archived Chow + Eye all-in Call", () => {
   const state = JSON.parse(
     readFileSync(new URL("./fixtures/riichi-large-call.json", import.meta.url), "utf8"),
   ) as GameState
@@ -165,5 +165,6 @@ it("declines the archived Chow + Eye all-in Call after a large Riichi raise", ()
   const call = decision.evaluations.find((e) => e.action.type === "call")!
   expect(call.estimatedWinRate).toBeLessThan(0.5)
   expect(call.rationale).toContain("next-ante risk cost")
-  expect(decision.action.type).toBe("fold")
+  expect(decision.action.type).toBe("call")
+  expect(decision.action.type === "call" && decision.action.drawSource).toBeTruthy()
 })

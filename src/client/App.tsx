@@ -28,6 +28,7 @@ import { createTableMotion } from "./motion"
 import { readSetup, saveSetup } from "./setup-preferences"
 import { RulesContent } from "./RulesContent"
 import { Button } from "./Button"
+import { sortHand } from "./sort-hand"
 import { handExamples } from "./hand-examples"
 
 const BASIC_LADDER = [
@@ -63,6 +64,9 @@ export function App() {
   const [effectsOn, setEffectsOn] = createSignal(audio.effectsEnabled())
   const [session, setSession] = createSignal(localStorage.getItem("moker-v6-session") ?? "")
   const [state, setState] = createSignal<PublicGameState>()
+  const [spentSticks, setSpentSticks] = createSignal<string[]>([])
+  let spentTimer: ReturnType<typeof setTimeout> | undefined
+  onCleanup(() => clearTimeout(spentTimer))
   const [drawNotice, setDrawNotice] = createSignal<DrawNotice>()
   let pendingMoves: DrawNotice[] = []
   const finishOpponentMove = () => setDrawNotice(pendingMoves.shift())
@@ -88,6 +92,19 @@ export function App() {
     }
     const before = motion.capture()
     const deal = !state() || state()?.handNumber !== next.handNumber
+    const spent = previous
+      ? next.players
+          .filter(
+            (p) =>
+              p.riichiSticks < (previous.players.find((old) => old.id === p.id)?.riichiSticks ?? 0),
+          )
+          .map((p) => p.id)
+      : []
+    if (spent.length) {
+      clearTimeout(spentTimer)
+      setSpentSticks(spent)
+      spentTimer = setTimeout(() => setSpentSticks([]), 800)
+    }
     setState(next)
     setDrawNotice(pendingMoves.shift())
     motion.play(before, deal)
@@ -124,8 +141,8 @@ export function App() {
     audio.play(result.winnerIds.includes(viewer() ?? "p1") ? "won" : "lost")
   })
   const [handoff, setHandoff] = createSignal<{ id: string; name: string }>()
-  const [orbits, setOrbits] = createSignal(setup.games)
-  createEffect(() => saveSetup({ mode: mode(), seats: seats(), games: orbits() }))
+  const [tournamentGames, setTournamentGames] = createSignal(setup.games)
+  createEffect(() => saveSetup({ mode: mode(), seats: seats(), games: tournamentGames() }))
   const [seed] = createSignal(crypto.randomUUID().slice(0, 8))
   const [busy, setBusy] = createSignal(false)
   const [error, setError] = createSignal("")
@@ -151,6 +168,7 @@ export function App() {
   const acceptCharleston = () => setAcceptedCharleston((keys) => [...keys, charlestonReceiptKey()])
   const [rules, setRules] = createSignal(false)
   const [closedResult, setClosedResult] = createSignal("")
+  const [scoresOpen, setScoresOpen] = createSignal(false)
   const [ladderOpen, setLadderOpen] = createSignal(false)
   const [pickingFish, setPickingFish] = createSignal(false)
   const [pickingStick, setPickingStick] = createSignal(false)
@@ -168,12 +186,6 @@ export function App() {
     (state()?.phase === "charleston"
       ? !!viewer() && !!state()?.pendingPlayerIds.includes(viewer()!)
       : actor()?.controller === "human" && actor()?.id === viewer())
-  const charlestonRecipient = () => {
-    const participants =
-      state()?.players.filter((player) => !player.folded && !player.eliminated) ?? []
-    const index = participants.findIndex((player) => player.id === viewer())
-    return index < 0 ? undefined : participants[(index + 1) % participants.length]?.name
-  }
   const cards = () => [...privateCards(human())].sort(compareCards)
   const allIn = () => Boolean(state()?.allInPlayerIds.length)
   const callCost = () => Math.max(0, (state()?.currentWager ?? 0) - (human()?.roundCommitted ?? 0))
@@ -187,7 +199,7 @@ export function App() {
   const choosing = () =>
     myTurn() && ["charleston", "exposing", "discarding"].includes(state()?.phase ?? "")
   const canFish = () => !allIn() && !human()?.riichi
-  const canFishOnCall = () => canFish() && callCost() < (human()?.chips ?? 0)
+  const canFishOnCall = () => !human()?.riichi
   const ladder = () =>
     (state()?.config.mode ?? mode()) === "riichi" ? ADVANCED_LADDER : BASIC_LADDER
   const currentHand = () =>
@@ -254,8 +266,8 @@ export function App() {
         seed().trim() || crypto.randomUUID(),
         mode(),
         players(),
+        tournamentGames() as 1 | 2 | 3 | 4,
         1,
-        orbits(),
         humans(),
         seats(),
       )
@@ -298,9 +310,10 @@ export function App() {
   const canSpendStick = () =>
     state()?.config.mode === "riichi" &&
     !state()?.stickSpentThisTurn &&
-    canFish() &&
+    !human()?.riichi &&
+    (!allIn() || callCost() > 0 || state()?.stickWindow?.playerId === viewer()) &&
     (human()?.riichiSticks ?? 0) > 0 &&
-    (human()?.chips ?? 0) > 0 &&
+    ((human()?.chips ?? 0) > 0 || state()?.stickWindow?.playerId === viewer()) &&
     !human()?.folded
   const cancelFishing = () => {
     setPickingFish(false)
@@ -550,9 +563,9 @@ export function App() {
                   {(n) => (
                     <Button
                       aria-label={`${n} ${n === 1 ? "game" : "games"}`}
-                      aria-pressed={orbits() === n}
-                      classList={{ selected: orbits() === n }}
-                      onClick={() => setOrbits(n)}
+                      aria-pressed={tournamentGames() === n}
+                      classList={{ selected: tournamentGames() === n }}
+                      onClick={() => setTournamentGames(n)}
                     >
                       {n}
                     </Button>
@@ -573,7 +586,18 @@ export function App() {
           <>
             <section class="game-topline">
               <div class="game-stats">
-                <CycleBars label="Game" current={game().orbit} total={game().config.orbits ?? 1} />
+                <div class="game-counter">
+                  <CycleBars
+                    label="Game"
+                    current={game().gameNumber}
+                    total={game().config.tournamentGames}
+                  />
+                  <Show when={game().config.tournamentGames > 1}>
+                    <Button class="text-button scores-link" onClick={() => setScoresOpen(true)}>
+                      Scores
+                    </Button>
+                  </Show>
+                </div>
                 <CycleBars
                   label="Round"
                   current={Math.min(
@@ -589,6 +613,30 @@ export function App() {
                 </div>
               </div>
             </section>
+            <Show when={scoresOpen()}>
+              <Modal
+                title="Tournament scores"
+                class="scores-dialog"
+                onClose={() => setScoresOpen(false)}
+              >
+                <TournamentScores game={game()} />
+              </Modal>
+            </Show>
+            <Show when={allIn()}>
+              <div class="all-in-notice" role="status">
+                <strong>
+                  All-in:{" "}
+                  {game()
+                    .players.filter((p) => game().allInPlayerIds.includes(p.id))
+                    .map((p) => p.name)
+                    .join(", ")}
+                </strong>
+                <span>
+                  No further bets or raises. Calls include fishing and may use a Riichi stick.
+                  Showdown follows the final fishing decision.
+                </span>
+              </div>
+            </Show>
             <div
               ref={(element) => {
                 tableSurface = element
@@ -618,6 +666,7 @@ export function App() {
                             game().phase !== "charleston" &&
                             (drawNotice()?.playerId ?? actor()?.id) === p.id
                           }
+                          spentStick={spentSticks().includes(p.id)}
                           betting={
                             game().phase === "betting" && actor()?.id === p.id && !drawNotice()
                           }
@@ -632,35 +681,6 @@ export function App() {
                         />
                       )}
                     </For>
-                  </div>
-                  <div
-                    class="fish-controls"
-                    classList={{ "reserved-empty": !pickingFish() }}
-                    aria-hidden={!pickingFish()}
-                    inert={!pickingFish()}
-                    aria-label="Fishing controls"
-                  >
-                    <div class="button-row">
-                      <span>
-                        {pickingStick()
-                          ? "Choose a card to fish with your Riichi stick."
-                          : "Choose a card to fish."}
-                      </span>
-                      <Show when={game().config.mode === "riichi" && !pickingStick()}>
-                        <Button
-                          disabled={busy()}
-                          onClick={() => {
-                            setPickingFish(false)
-                            setActionDialog(callCost() ? "call" : "check")
-                          }}
-                        >
-                          Blank swap
-                        </Button>
-                      </Show>
-                      <Button disabled={busy()} onClick={cancelFishing}>
-                        Cancel
-                      </Button>
-                    </div>
                   </div>
                   <div
                     class="table-center"
@@ -789,6 +809,13 @@ export function App() {
                               role="img"
                               aria-label={`${human()?.riichiSticks ?? 0} Riichi sticks`}
                             >
+                              <Show when={spentSticks().includes(viewer()!)}>
+                                <img
+                                  class="spent-stick"
+                                  src="/assets/sticks/riichi-decor.svg"
+                                  alt="Riichi stick spent"
+                                />
+                              </Show>
                               <div class="riichi-stick-art" aria-hidden="true">
                                 <For
                                   each={Array.from({
@@ -824,75 +851,85 @@ export function App() {
                         </Show>
                       </div>
                     </div>
-                    <aside class="ladder-panel">
-                      <Button
-                        class="ladder-toggle"
-                        aria-expanded={ladderOpen()}
-                        aria-controls="hand-ladder"
-                        onClick={() => setLadderOpen(!ladderOpen())}
-                      >
-                        <span>
-                          <small>Current hand</small>
-                          <b>
-                            {human()?.folded
-                              ? "Folded"
-                              : [...cards(), ...(human()?.publicCards ?? [])].filter(
-                                    (c) => c.kind === "flower",
-                                  ).length === 2
-                                ? "Twin Lotus"
-                                : `${currentHand().total} - ${currentHand().combinations[0]?.label ?? "High Card"}`}
-                          </b>
-                        </span>
-                        <span>{ladderOpen() ? "−" : "+"}</span>
-                      </Button>
-                      <Show when={ladderOpen()}>
-                        <Modal
-                          title="Hand ranks"
-                          class="drawer rank-drawer"
-                          onClose={() => setLadderOpen(false)}
-                        >
-                          <div id="hand-ladder">
-                            <ol style={{ "--ladder-rows": Math.ceil(ladder().length / 2) }}>
-                              <For each={ladder().map((entry, i) => ({ entry, rank: i + 1 }))}>
-                                {(row) => (
-                                  <li
-                                    classList={{ made: currentHand().total === row.rank }}
-                                    aria-current={
-                                      currentHand().total === row.rank ? "true" : undefined
-                                    }
-                                  >
-                                    <div class="rank-details">
-                                      <b>
-                                        {String(row.rank).padStart(2, "0")} {row.entry[0]}
-                                      </b>
-                                      <small>{row.entry[1]}</small>
-                                      <div
-                                        class="rank-examples"
-                                        aria-label={`Example of ${row.entry[0]}`}
+                    <div class="own-hand-status">
+                      <div class="own-wager">
+                        <BetIndicator
+                          amount={human()?.roundCommitted ?? 0}
+                          playerId={human()?.id ?? "you"}
+                        />
+                      </div>
+                      <Show when={!human()?.folded}>
+                        <aside class="ladder-panel">
+                          <Button
+                            class="ladder-toggle"
+                            aria-expanded={ladderOpen()}
+                            aria-controls="hand-ladder"
+                            onClick={() => setLadderOpen(!ladderOpen())}
+                          >
+                            <span>
+                              <small>Current hand</small>
+                              <b>
+                                {human()?.folded
+                                  ? "Folded"
+                                  : [...cards(), ...(human()?.publicCards ?? [])].filter(
+                                        (c) => c.kind === "flower",
+                                      ).length === 2
+                                    ? "Twin Lotus"
+                                    : `${currentHand().total} - ${currentHand().combinations[0]?.label ?? "High Card"}`}
+                              </b>
+                            </span>
+                            <span>{ladderOpen() ? "−" : "+"}</span>
+                          </Button>
+                          <Show when={ladderOpen()}>
+                            <Modal
+                              title="Hand ranks"
+                              class="drawer rank-drawer"
+                              onClose={() => setLadderOpen(false)}
+                            >
+                              <div id="hand-ladder">
+                                <ol style={{ "--ladder-rows": Math.ceil(ladder().length / 2) }}>
+                                  <For each={ladder().map((entry, i) => ({ entry, rank: i + 1 }))}>
+                                    {(row) => (
+                                      <li
+                                        classList={{ made: currentHand().total === row.rank }}
+                                        aria-current={
+                                          currentHand().total === row.rank ? "true" : undefined
+                                        }
                                       >
-                                        <For each={handExamples(row.entry[0]!)}>
-                                          {(group) => (
-                                            <div class="rank-example-group">
-                                              <For each={group}>
-                                                {(card) => <PlayingCard card={card} compact />}
-                                              </For>
-                                            </div>
-                                          )}
-                                        </For>
-                                      </div>
-                                    </div>
-                                  </li>
-                                )}
-                              </For>
-                            </ol>
-                          </div>
-                        </Modal>
+                                        <div class="rank-details">
+                                          <b>
+                                            {String(row.rank).padStart(2, "0")} {row.entry[0]}
+                                          </b>
+                                          <small>{row.entry[1]}</small>
+                                          <div
+                                            class="rank-examples"
+                                            aria-label={`Example of ${row.entry[0]}`}
+                                          >
+                                            <For each={handExamples(row.entry[0]!)}>
+                                              {(group) => (
+                                                <div class="rank-example-group">
+                                                  <For each={group}>
+                                                    {(card) => <PlayingCard card={card} compact />}
+                                                  </For>
+                                                </div>
+                                              )}
+                                            </For>
+                                          </div>
+                                        </div>
+                                      </li>
+                                    )}
+                                  </For>
+                                </ol>
+                              </div>
+                            </Modal>
+                          </Show>
+                        </aside>
                       </Show>
-                    </aside>
+                    </div>
                   </div>
                   <div class="hand-cards">
                     <For
-                      each={sortPublicFirst(
+                      each={sortHand(
                         [...cards(), ...(human()?.publicCards ?? [])],
                         human()?.publicCards ?? [],
                       ).sort(
@@ -957,17 +994,25 @@ export function App() {
                       }}
                     </For>
                   </div>
-                  <div
-                    class="own-wager"
-                    classList={{ "reserved-empty": !(human()?.roundCommitted ?? 0) }}
-                    aria-hidden={!(human()?.roundCommitted ?? 0)}
-                  >
-                    <small>{format(human()?.roundCommitted ?? 0)} committed</small>
-                  </div>
                   <div class="action-area">
                     <Show when={pickingFish()}>
                       <div class="button-row main-actions">
-                        <span>Choose a card from the deck or a discard lane.</span>
+                        <span>
+                          {pickingStick()
+                            ? "Spend a Riichi stick: choose a card from the deck or a discard lane."
+                            : "Choose a card from the deck or a discard lane."}
+                        </span>
+                        <Show when={game().config.mode === "riichi" && !pickingStick()}>
+                          <Button
+                            disabled={busy()}
+                            onClick={() => {
+                              setPickingFish(false)
+                              setActionDialog(callCost() ? "call" : "check")
+                            }}
+                          >
+                            Blank swap
+                          </Button>
+                        </Show>
                         <Button disabled={busy()} onClick={cancelFishing}>
                           {pickingStick() ? "Cancel Riichi stick" : "Cancel fishing"}
                         </Button>
@@ -1006,7 +1051,7 @@ export function App() {
                           {required()} cards
                         </Button>
                         <Show when={game().phase === "charleston"}>
-                          <span>to {charlestonRecipient()}.</span>
+                          <span>to your left.</span>
                         </Show>
                       </div>
                     </Show>
@@ -1097,19 +1142,11 @@ export function App() {
                             </p>
                           </Show>
                           <Show when={actionDialog() === "bet"}>
-                            <div class="bet-preview" aria-live="polite">
-                              <section class="bet-preview-stack">
-                                <span>Your chips</span>
-                                <strong>{format(human()?.chips ?? 0)}</strong>
-                              </section>
-                              <section class="bet-preview-stack">
-                                <span>Pot</span>
-                                <strong>{format(game().pot)}</strong>
-                              </section>
-                            </div>
-                            <section class="bet-editor bet-preview-stack">
-                              <span>Your bet</span>
-                              <strong aria-live="polite">{format(wager())}</strong>
+                            <section class="bet-editor">
+                              <div class="bet-amount">
+                                <span>Your bet</span>
+                                <strong aria-live="polite">{format(wager())}</strong>
+                              </div>
                               <div class="bet-chips">
                                 <For each={[5, 10, 20, 50]}>
                                   {(value) => (
@@ -1144,7 +1181,12 @@ export function App() {
                               </div>
                             </section>
                           </Show>
-                          <Show when={canFish() && actionDialog() !== "bet"}>
+                          <Show
+                            when={
+                              (actionDialog() === "call" ? canFishOnCall() : canFish()) &&
+                              actionDialog() !== "bet"
+                            }
+                          >
                             <div class="fishing-row">
                               <label>
                                 Fishing source
@@ -1342,16 +1384,54 @@ export function App() {
                   when={
                     !drawNotice() &&
                     ["between-hands", "finished"].includes(game().phase) &&
-                    closedResult() !== `${session()}:${game().handResults.at(-1)?.handNumber}` &&
+                    closedResult() !==
+                      `${session()}:${game().gameNumber}:${game().handResults.at(-1)?.handNumber}` &&
                     game().handResults.at(-1)
                   }
                 >
                   {(result) => (
                     <Modal
-                      title={game().phase === "finished" ? "Game complete" : "Round result"}
+                      title={
+                        game().phase === "finished"
+                          ? game().config.tournamentGames > 1
+                            ? "Tournament complete"
+                            : "Game complete"
+                          : game().gameScores.length >= game().gameNumber
+                            ? `Game ${game().gameNumber} complete`
+                            : "Round result"
+                      }
                       class="result-dialog"
-                      onClose={() => setClosedResult(`${session()}:${result().handNumber}`)}
+                      onClose={() =>
+                        setClosedResult(`${session()}:${game().gameNumber}:${result().handNumber}`)
+                      }
                     >
+                      <Show when={game().gameScores.length >= game().gameNumber}>
+                        <section class="game-completion">
+                          <p>
+                            This game’s scores are recorded from each player’s remaining chips
+                            {game().config.mode === "riichi" ? ", minus 250 for each loan" : ""}.
+                          </p>
+                          <TournamentScores game={game()} />
+                          <Show
+                            when={game().phase !== "finished"}
+                            fallback={<p>The highest total wins. Equal totals share the win.</p>}
+                          >
+                            <p>
+                              Next is game {game().gameNumber + 1} of{" "}
+                              {game().config.tournamentGames}. Everyone returns with{" "}
+                              {format(100 + (game().gameNumber + 1) * 100)} chips, including
+                              eliminated players. The ante is {(game().gameNumber + 1) * 5}.
+                            </p>
+                            <Show when={game().config.mode === "riichi"}>
+                              <p>
+                                Loans are cleared. Keep your unused Riichi sticks and receive 2
+                                more.
+                              </p>
+                            </Show>
+                            <p>Start the next game when you’re ready using the button below.</p>
+                          </Show>
+                        </section>
+                      </Show>
                       <section class="round-result">
                         <p class="eyebrow">
                           {result().reason === "showdown" ? "SHOWDOWN" : "EVERYONE ELSE FOLDED"}
@@ -1399,7 +1479,7 @@ export function App() {
                                   </small>
                                 </div>
                                 <div class="mini-hand">
-                                  <For each={sortPublicFirst(p.cards, p.publicCards)}>
+                                  <For each={sortHand(p.cards, p.publicCards)}>
                                     {(c) => <PlayingCard card={c} compact />}
                                   </For>
                                 </div>
@@ -1503,6 +1583,56 @@ export function App() {
   )
 }
 
+function TournamentScores(props: { game: PublicGameState }) {
+  const total = (id: string) =>
+    props.game.gameScores.reduce((sum, scores) => sum + (scores[id] ?? 0), 0)
+  const inProgress = () => props.game.gameScores.length < props.game.gameNumber
+  return (
+    <div class="tournament-scores">
+      <p>
+        Totals include completed games only.{" "}
+        <Show when={inProgress()}>
+          Current chips are still in play and exclude chips committed to the pot.
+        </Show>
+      </p>
+      <div class="scores-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Player</th>
+              <For each={props.game.gameScores}>
+                {(_, index) => <th scope="col">Game {index() + 1}</th>}
+              </For>
+              <th scope="col">Total</th>
+              <Show when={inProgress()}>
+                <th scope="col">Current chips</th>
+              </Show>
+            </tr>
+          </thead>
+          <tbody>
+            <For each={[...props.game.players].sort((a, b) => total(b.id) - total(a.id))}>
+              {(player) => (
+                <tr>
+                  <th scope="row">{player.name}</th>
+                  <For each={props.game.gameScores}>
+                    {(scores) => <td>{format(scores[player.id] ?? 0)}</td>}
+                  </For>
+                  <td>
+                    <strong>{format(total(player.id))}</strong>
+                  </td>
+                  <Show when={inProgress()}>
+                    <td>{format(player.chips)}</td>
+                  </Show>
+                </tr>
+              )}
+            </For>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 function CycleBars(props: { label: string; current: number; total: number }) {
   return (
     <div
@@ -1529,12 +1659,6 @@ function CycleBars(props: { label: string; current: number; total: number }) {
         </For>
       </div>
     </div>
-  )
-}
-function sortPublicFirst(cards: Card[], publicCards: Card[]): Card[] {
-  const publicIds = new Set(publicCards.map((card) => card.id))
-  return [...cards].sort(
-    (a, b) => Number(publicIds.has(b.id)) - Number(publicIds.has(a.id)) || compareCards(a, b),
   )
 }
 function privateCards(player?: PublicPlayerState): Card[] {
@@ -1631,6 +1755,7 @@ function Lane(props: {
 }
 function PlayerSeat(props: {
   charlestonStatus?: string
+  spentStick: boolean
   betting: boolean
   drawNotice?: DrawNotice
   mode: "basic" | "riichi"
@@ -1694,6 +1819,19 @@ function PlayerSeat(props: {
         </Show>
       </div>
       <div class="opponent-known-hand">
+        <Show when={props.mode === "riichi"}>
+          <span class="opponent-sticks">
+            <Show when={props.spentStick}>
+              <img
+                class="spent-stick"
+                src="/assets/sticks/riichi-decor.svg"
+                alt="Riichi stick spent"
+              />
+            </Show>
+            <img src="/assets/sticks/riichi-decor.svg" alt="" />
+            {props.player.riichiSticks} Riichi
+          </span>
+        </Show>
         <Show when={!props.player.folded && !props.player.eliminated && known().label}>
           <b>
             <Show when={known().rank}>{known().rank} - </Show>
@@ -1721,20 +1859,26 @@ function PlayerSeat(props: {
                       ? ""
                       : "In the round"}
         </span>
-        <Show when={props.player.roundCommitted > 0}>
-          <div
-            class="seat-bet"
-            data-motion-key={`wager-${props.player.id}`}
-            data-motion-value={props.player.roundCommitted}
-          >
-            <span>Bet {format(props.player.roundCommitted)}</span>
-            <span class="seat-bet-chips" aria-hidden="true">
-              <ChipStack amount={props.player.roundCommitted} />
-            </span>
-          </div>
-        </Show>
+        <BetIndicator amount={props.player.roundCommitted} playerId={props.player.id} />
       </div>
     </article>
+  )
+}
+
+function BetIndicator(props: { amount: number; playerId: string }) {
+  return (
+    <Show when={props.amount > 0}>
+      <div
+        class="seat-bet"
+        data-motion-key={`wager-${props.playerId}`}
+        data-motion-value={props.amount}
+      >
+        <span>Bet {format(props.amount)}</span>
+        <span class="seat-bet-chips" aria-hidden="true">
+          <ChipStack amount={props.amount} />
+        </span>
+      </div>
+    </Show>
   )
 }
 

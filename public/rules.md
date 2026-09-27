@@ -72,7 +72,7 @@ Revealed cards still belong to their owner but cannot be exchanged or discarded.
 | Bet    | Set the first bet or increase the current bet.           | None                     |
 | Fold   | Leave the round and forfeit chips already paid.          | None                     |
 
-**Check and Call each give one free fish in both modes. Bet/Raise gives no free fish.** All-in and declared-Riichi locks still stop fishing. Expansion Riichi sticks can buy additional fishing as described below.
+**Check and Call each give one free fish in both modes. Bet/Raise gives no free fish.** Declared Riichi stops fishing. All-in Calls retain their fishing allowance; an all-in Bet gives no fishing. Expansion Riichi sticks can buy additional fishing as described below.
 
 A folded player can participate in the next round if they can pay its ante, subject to the expansion's loan rule.
 
@@ -109,10 +109,10 @@ Whenever a player pays their last chips, they announce **All-in**.
 
 1. That player's total payment for the current street becomes the maximum street payment.
 2. Anyone who paid more takes back the excess. Payments from earlier streets stay in the pot.
-3. No further increases or fishing are allowed.
-4. Continue in turn order. Anyone below the maximum must Call or Fold.
+3. No further bets or raises are allowed.
+4. Continue in turn order. Anyone below the maximum must Call or Fold. Each Call includes one normal fish and may use one Riichi stick under the usual per-turn limit, unless the caller has declared Riichi. This applies even when the Call uses the caller’s last chips.
 5. If a player calls with their last chips but still cannot match the maximum, lower the maximum to their total and return excess payments again.
-6. Once payments are settled, all remaining players reveal their cards and compare hands immediately. Skip the remaining streets.
+6. Once payments, all fishing, and any optional Riichi stick decisions are settled, all remaining players reveal their cards and compare hands immediately. Skip the remaining streets.
 
 If the ante itself uses someone's last chips, finish round setup and go directly to comparing hands, without betting or fishing.
 
@@ -249,7 +249,7 @@ Once per turn, after acting, a player may return **one Riichi stick** to the sup
 
 Finish each fishing action before starting another. A second fishing action may take a card uncovered by the first.
 
-Sticks cannot be spent after folding, while in Riichi, or after an all-in.
+Sticks cannot be spent after folding or while in Riichi. Calling an all-in still allows a stick, even if the Call uses your last chips. An all-in Bet gives no fishing.
 
 ### Declaring Riichi
 

@@ -3,13 +3,13 @@
   --layout-max-width: 1440px;
   --color-rules-example: rgb(219 227 178 / 0.2);
   --color-drawer-overlay: rgb(24 59 37 / 0.16);
-  --color-betting-seat: rgb(200 221 193 / 75%);
-  --color-player-surface: rgb(220 233 216 / 65%);
+  --color-betting-seat: rgb(202 235 217 / 68%);
+  --color-player-surface: var(--color-seat);
   --color-canvas: #ffffff;
   --color-text: #183b25;
   --color-muted: #526c56;
   --color-surface: #eff7ed;
-  --color-seat: rgb(222 241 222 / 38%);
+  --color-seat: rgb(218 245 230 / 52%);
   --color-surface-raised: #f5faf3;
   --color-control: #e0eddd;
   --color-control-hover: #d3e7d0;

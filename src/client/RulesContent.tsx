@@ -181,14 +181,17 @@ export function RulesContent() {
             </em>
           </p>
           <p>
-            From now on, nobody may bet or fish. Continue clockwise: players who have paid less must
-            call or fold. If someone calls with their last chips and pays less again, lower
-            everyone’s payment to that amount and return the difference.
+            From now on, nobody may bet or raise. Continue clockwise: players who have paid less
+            must call or fold. Each call includes one fishing action unless the caller has declared
+            Riichi. Callers may also spend one Riichi stick under the usual per-turn limit, even if
+            the call uses their last chips. If someone calls with their last chips and pays less
+            again, lower everyone’s payment to that amount and return the difference.
           </p>
           <p>
-            Once payments are settled, everyone still in reveals all seven cards. Compare hands and
-            award the pot. Skip the remaining streets, even if a refund gave someone chips back. If
-            everyone but one player folds, that player wins immediately.
+            Once payments and the final fishing action are settled, everyone still in reveals all
+            seven cards. Compare hands and award the pot. Skip the remaining streets, even if a
+            refund gave someone chips back. If everyone but one player folds, that player wins
+            immediately.
           </p>
           <h5>Running out of chips</h5>
           <p>
@@ -425,7 +428,8 @@ export function RulesContent() {
             take a card uncovered by the first.
           </p>
           <p>
-            You cannot spend sticks after folding, while in Riichi, or once anyone has gone all-in.
+            You cannot spend sticks after folding or while in Riichi. Calling an all-in still allows
+            a stick, even if the call uses your last chips. An all-in Bet gives no fishing.
           </p>
           <p>
             In a tournament, keep your remaining Riichi sticks between games. Before the next game,
