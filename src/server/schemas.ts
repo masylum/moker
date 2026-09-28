@@ -13,14 +13,25 @@ const PlayerSchema = z.object({
   controller: z.enum(["human", "heuristic"]),
 })
 export const CreateGameSchema = z.object({
+  name: z.string().trim().min(1).max(40).optional(),
   sessionId: z.string().min(1).max(120).optional(),
   seed: z.string().min(1).max(200),
-  players: z.array(PlayerSchema).min(2).max(6),
+  players: z
+    .array(PlayerSchema)
+    .min(2)
+    .max(6)
+    .refine(
+      (players) =>
+        new Set(players.map((player, index) => player.id ?? `p${index + 1}`)).size ===
+        players.length,
+      "Player IDs must be unique",
+    ),
   mode: z.enum(["basic", "riichi"]).default("basic"),
   orbits: z.number().int().min(1).max(4).default(1),
   tournamentGames: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]).default(1),
   heuristicSamples: z.int().min(1).max(256).optional(),
 })
+export const RoomProfileSchema = z.object({ name: z.string().trim().min(1).max(40) })
 export const ActionSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("riichi-stick"),

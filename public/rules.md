@@ -181,7 +181,7 @@ Use the Basic Game rules with the following additions and changes.
 
 ### Loans
 
-Each player may receive **one loan per game**. If they cannot pay the full ante and have not used their loan, they automatically take one loan stick and **200 chips**, then pay the ante.
+Each player may receive **one loan per game**. During Charleston, a player with **fewer than 100 chips** may choose to take that loan: receive **200 chips**, with a **250-point deduction** at the end of the game. This is optional and does not consume their Charleston pass. If they cannot pay the full ante and have not used their loan, they automatically take one loan stick and **200 chips**, then pay the ante.
 
 If they cannot pay a later ante after using that loan, they are **eliminated for the rest of that game**. They keep any remaining chips and their loan penalty for scoring. The allowance does not reset between orbits; it resets when the next tournament game begins.
 

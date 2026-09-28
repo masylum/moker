@@ -12,8 +12,9 @@ import { OpponentMove, type DrawNotice, sourcePosition } from "./OpponentMove"
 import { createGameAudio } from "./audio"
 import { knownHand } from "./known-hand"
 import { SpiritAvatar } from "./SpiritAvatar"
+import { RiichiSticks, RiichiDeclared } from "./RiichiSticks"
 import { cardLabel, compareCards } from "../game/cards"
-import { CHIP_UNIT, LOAN_VALUE, LOAN_PENALTY } from "../game/rules"
+import { canTakeLoan, CHIP_UNIT, LOAN_VALUE, LOAN_PENALTY } from "../game/rules"
 import { scoreHand } from "../game/scoring"
 import type {
   BettingAction,
@@ -22,7 +23,15 @@ import type {
   PublicGameState,
   PublicPlayerState,
 } from "../game/types"
-import { bettingAction, botStep, createGame, gameAction, loadGame, type SeatKind } from "./api"
+import {
+  bettingAction,
+  botStep,
+  createGame,
+  gameAction as sendGameAction,
+  loadRoom,
+  joinRoom,
+  type SeatKind,
+} from "./api"
 import { cardAsset } from "./assets"
 import { createTableMotion } from "./motion"
 import { readSetup, saveSetup } from "./setup-preferences"
@@ -65,6 +74,46 @@ export function App() {
   const [effectsOn, setEffectsOn] = createSignal(audio.effectsEnabled())
   const [session, setSession] = createSignal(localStorage.getItem("moker-v6-session") ?? "")
   const [state, setState] = createSignal<PublicGameState>()
+  const savedName = localStorage.getItem("moker-name")?.trim()
+  const [name, setName] = createSignal(
+    savedName && !/^Player(?: \d+)?$/.test(savedName) ? savedName : "Aki",
+  )
+  const [invite, setInvite] = createSignal(
+    window.location.pathname.match(/^\/rooms\/([0-7][0-9A-HJKMNP-TV-Z]{25})$/)?.[1] ?? "",
+  )
+  const [roomPreview, setRoomPreview] = createSignal<PublicGameState>()
+  const [loadingRoom, setLoadingRoom] = createSignal(Boolean(invite()))
+  const [copied, setCopied] = createSignal(false)
+  const room = () => state()?.room
+  const waiting = () => (room()?.waitingPlayerIds.length ?? 0) > 0
+  const showInvite = () => waiting() && !!viewer() && viewer() === room()?.hostId
+  const canDeal = () => !room() || (!!viewer() && viewer() === room()?.hostId)
+  const roomUrl = () => `${window.location.origin}/rooms/${session()}`
+  function saveName() {
+    const value = name().trim() || "Aki"
+    setName(value)
+    localStorage.setItem("moker-name", value)
+    return value
+  }
+  function leaveTable() {
+    setState(undefined)
+    setViewer(undefined)
+    setAuto(false)
+    setInvite("")
+    setRoomPreview(undefined)
+    window.history.pushState(null, "", "/")
+  }
+  async function copyRoom() {
+    try {
+      await navigator.clipboard.writeText(roomUrl())
+      setCopied(true)
+    } catch {
+      setError("Copy the room link shown above to invite your friends.")
+    }
+  }
+  function gameAction(id: string, action: Record<string, unknown>) {
+    return sendGameAction(id, action, room() ? state()!.version : undefined)
+  }
   const [loanNotice, setLoanNotice] = createSignal<string[]>([])
   const [spentSticks, setSpentSticks] = createSignal<string[]>([])
   let spentTimer: ReturnType<typeof setTimeout> | undefined
@@ -77,6 +126,7 @@ export function App() {
   onCleanup(() => motion.dispose())
   function updateState(next: PublicGameState) {
     const previous = state()
+    if (previous?.room && next.room && next.version < previous.version) return
     if (
       !previous ||
       previous.gameNumber !== next.gameNumber ||
@@ -88,10 +138,7 @@ export function App() {
     if (previous && previous.handNumber === next.handNumber) {
       pendingMoves = (next.publicDrawDiscards ?? [])
         .slice(previous.publicDrawDiscards?.length ?? 0)
-        .filter(
-          (record) =>
-            previous.players.find((p) => p.id === record.playerId)?.controller !== "human",
-        )
+        .filter((record) => record.playerId !== viewer())
         .map((record) => ({
           ...record,
           origin: sourcePosition(record.source),
@@ -141,7 +188,7 @@ export function App() {
   const humans = () => seats().filter((seat) => seat === "human").length
   const validSeats = () => players() >= 2 && humans() >= 1
   function cycleSeat(index: number) {
-    const next: Record<SeatKind, SeatKind> = { human: "robot", robot: "none", none: "human" }
+    const next: Record<SeatKind, SeatKind> = { human: "none", robot: "human", none: "robot" }
     setSeats((current) => current.map((seat, i) => (i === index ? next[seat] : seat)))
   }
   const [viewer, setViewer] = createSignal<string>()
@@ -156,7 +203,6 @@ export function App() {
     soundedResult = key
     audio.play(result.winnerIds.includes(viewer() ?? "p1") ? "won" : "lost")
   })
-  const [handoff, setHandoff] = createSignal<{ id: string; name: string }>()
   const [tournamentGames, setTournamentGames] = createSignal(setup.games)
   createEffect(() => saveSetup({ mode: mode(), seats: seats(), games: tournamentGames() }))
   const [seed] = createSignal(crypto.randomUUID().slice(0, 8))
@@ -171,7 +217,6 @@ export function App() {
     const game = state()
     if (
       !viewer() ||
-      handoff() ||
       !game ||
       game.phase !== "betting" ||
       game.street !== 1 ||
@@ -191,7 +236,7 @@ export function App() {
   const [pickingStick, setPickingStick] = createSignal(false)
   let fishingTable: HTMLDivElement | undefined
   const [actionDialog, setActionDialog] = createSignal<"check" | "call" | "bet">()
-  const human = createMemo(() => state()?.players.find((p) => p.id === (viewer() ?? "p1")))
+  const human = createMemo(() => state()?.players.find((p) => p.id === viewer()))
   const actor = createMemo(() =>
     state()?.players.find(
       (p) => p.id === (state()?.pendingDiscard?.playerId ?? state()?.actingPlayerId),
@@ -199,7 +244,7 @@ export function App() {
   )
   const myTurn = () =>
     !drawNotice() &&
-    !handoff() &&
+    !waiting() &&
     (state()?.phase === "charleston"
       ? !!viewer() && !!state()?.pendingPlayerIds.includes(viewer()!)
       : actor()?.controller === "human" && actor()?.id === viewer())
@@ -229,22 +274,12 @@ export function App() {
     setError("")
     try {
       const result = await work()
-      const humanPlayers = result.state.players.filter((p) => p.controller === "human")
-      if (humanPlayers.length > 1) {
-        const nextId = result.state.pendingDiscard?.playerId ?? result.state.actingPlayerId
-        const nextHuman = humanPlayers.find((p) => p.id === nextId)
-        const continuing = Boolean(nextHuman && nextHuman.id === viewer())
-        const nextView = await loadGame(session(), continuing ? viewer()! : "")
-        if (!continuing) setViewer(undefined)
-        updateState(nextView.state)
-        setHandoff(
-          nextHuman && !continuing ? { id: nextHuman.id, name: nextHuman.name } : undefined,
-        )
-      } else {
-        setViewer(humanPlayers[0]?.id ?? "p1")
-        setHandoff(undefined)
-        updateState(result.state)
-      }
+      setViewer(
+        result.state.room
+          ? (result.state.room.viewerId ?? undefined)
+          : result.state.players.find((p) => p.controller === "human")?.id,
+      )
+      updateState(result.state)
       setBlankPick(undefined)
       setPickingFish(false)
       const awaitingExchangeOrReveal =
@@ -261,22 +296,70 @@ export function App() {
       setBusy(false)
     }
   }
-  async function revealHumanHand() {
-    const next = handoff()
-    if (!next || busy()) return
-    setBusy(true)
-    setError("")
-    try {
-      const result = await loadGame(session(), next.id)
-      setViewer(next.id)
-      updateState(result.state)
-      setHandoff(undefined)
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not load this hand")
-    } finally {
-      setBusy(false)
-    }
+  async function enterRoom() {
+    if (!invite()) return
+    await perform(async () => {
+      const id = invite()
+      const result = await joinRoom(id, saveName())
+      setSession(id)
+      setInvite("")
+      return result
+    })
   }
+  onMount(() => {
+    const inviteId = invite()
+    if (inviteId) {
+      void loadRoom(inviteId)
+        .then((result) => {
+          if (invite() !== inviteId) return
+          if (result.state.room?.viewerId) {
+            setSession(inviteId)
+            setViewer(result.state.room.viewerId)
+            setName(
+              result.state.players.find((p) => p.id === result.state.room?.viewerId)?.name ??
+                name(),
+            )
+            updateState(result.state)
+            setInvite("")
+          } else setRoomPreview(result.state)
+        })
+        .catch((caught: unknown) => {
+          setError(caught instanceof Error ? caught.message : "Could not open room")
+        })
+        .finally(() => setLoadingRoom(false))
+    }
+    let polling = false
+    const timer = window.setInterval(() => {
+      if (!room() || busy() || polling) return
+      polling = true
+      const id = session()
+      const version = state()!.version
+      void loadRoom(id)
+        .then((result) => {
+          if (
+            session() === id &&
+            room() &&
+            !busy() &&
+            result.state.version > (state()?.version ?? version)
+          ) {
+            updateState(result.state)
+          }
+          if (error() === "Connection interrupted. Reconnecting…") setError("")
+        })
+        .catch(() => {
+          if (session() === id && room()) setError("Connection interrupted. Reconnecting…")
+        })
+        .finally(() => {
+          polling = false
+        })
+    }, 1000)
+    const navigate = () => window.location.reload()
+    window.addEventListener("popstate", navigate)
+    onCleanup(() => {
+      window.clearInterval(timer)
+      window.removeEventListener("popstate", navigate)
+    })
+  })
   async function start() {
     if (!validSeats()) return
     await perform(async () => {
@@ -288,11 +371,14 @@ export function App() {
         1,
         humans(),
         seats(),
+        saveName(),
       )
       setViewer(undefined)
       setSession(result.sessionId)
       localStorage.setItem("moker-v6-session", result.sessionId)
       setAuto(true)
+      setCopied(false)
+      if (result.state.room) window.history.pushState(null, "", `/rooms/${result.sessionId}`)
       window.scrollTo({ top: 0 })
       return result
     })
@@ -302,6 +388,7 @@ export function App() {
     const game = state()
     if (
       !game ||
+      !!game.room ||
       busy() ||
       !auto() ||
       !!drawNotice() ||
@@ -323,7 +410,9 @@ export function App() {
     if (state()) setWager(Math.min(maximum(), Math.max(10, minimum())))
   })
   const act = async (action: BettingAction) => {
-    await perform(() => bettingAction(session(), viewer()!, action))
+    await perform(() =>
+      bettingAction(session(), viewer()!, action, room() ? state()!.version : undefined),
+    )
     if (!error()) setActionDialog(undefined)
   }
   const canSpendStick = () =>
@@ -414,7 +503,7 @@ export function App() {
           audio.play("click2")
       }}
     >
-      <header class="masthead">
+      <header class="masthead" classList={{ "has-room": showInvite() }}>
         <a
           class="brand"
           href="#"
@@ -422,14 +511,57 @@ export function App() {
           onClick={(e) => {
             e.preventDefault()
             if (!busy()) {
-              setState(undefined)
-              setViewer(undefined)
-              setAuto(false)
+              leaveTable()
             }
           }}
         >
           <img src="/assets/logo-dark.svg" alt="Moker" />
         </a>
+
+        <Show when={showInvite()}>
+          <section class="room-bar" aria-label="Online room">
+            <div role="status">
+              Invite {room()!.waitingPlayerIds.length}{" "}
+              {room()!.waitingPlayerIds.length === 1 ? "friend" : "friends"}
+            </div>
+            <div class="room-link">
+              <input
+                aria-label="Room link"
+                readOnly
+                value={roomUrl()}
+                onFocus={(event) => event.currentTarget.select()}
+              />
+              <Button
+                class="room-copy"
+                onClick={copyRoom}
+                aria-label={copied() ? "Invite link copied" : "Copy invite link"}
+                title={copied() ? "Copied!" : "Copy invite link"}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <Show
+                    when={copied()}
+                    fallback={
+                      <>
+                        <rect x="8" y="3" width="8" height="4" rx="1" />
+                        <path d="M8 5H5v16h14V5h-3" />
+                      </>
+                    }
+                  >
+                    <path d="m5 12 4 4L19 6" />
+                  </Show>
+                </svg>
+              </Button>
+            </div>
+          </section>
+        </Show>
 
         <nav aria-label="Main">
           <div class="audio-controls" aria-label="Audio controls">
@@ -496,7 +628,51 @@ export function App() {
           </Button>
         </nav>
       </header>
-      <Show when={!state()}>
+      <Show when={invite() && !state()}>
+        <section class="room-entry launch-card" aria-label="Join room">
+          <div class="room-entry-heading">
+            <Show when={roomPreview()}>
+              <p class="room-inviter">
+                {roomPreview()?.players.find((player) => player.id === roomPreview()?.room?.hostId)
+                  ?.name ?? "Your friend"}{" "}
+                invited you
+              </p>
+            </Show>
+            <h1>Join the table</h1>
+            <p>
+              {loadingRoom()
+                ? "Opening room…"
+                : roomPreview()?.room?.waitingPlayerIds.length
+                  ? "Take an open human seat and play with your friends."
+                  : roomPreview()
+                    ? "The table is full. Join as an observer."
+                    : "This room could not be opened."}
+            </p>
+          </div>
+          <label class="setup-field">
+            <span class="setup-label">Your name</span>
+            <input
+              value={name()}
+              maxLength={40}
+              placeholder="Aki"
+              autocomplete="nickname"
+              onInput={(event) => setName(event.currentTarget.value)}
+            />
+          </label>
+          <Button
+            class="primary"
+            disabled={busy() || loadingRoom() || !roomPreview()}
+            onClick={enterRoom}
+          >
+            {busy()
+              ? "Joining…"
+              : roomPreview()?.room?.waitingPlayerIds.length
+                ? "Join game"
+                : "Watch game"}
+          </Button>
+        </section>
+      </Show>
+      <Show when={!state() && !invite()}>
         <section class="welcome">
           <div class="welcome-copy">
             <h1>
@@ -508,6 +684,16 @@ export function App() {
             </h1>
           </div>
           <section class="launch-card" aria-label="Set up your game">
+            <label class="setup-field">
+              <span class="setup-label">Your name</span>
+              <input
+                value={name()}
+                maxLength={40}
+                placeholder="Aki"
+                autocomplete="nickname"
+                onInput={(event) => setName(event.currentTarget.value)}
+              />
+            </label>
             <div class="setup-mode">
               <div class="setup-label" id="game-mode-label">
                 Game mode
@@ -547,7 +733,7 @@ export function App() {
                     <Button
                       class={`setup-seat ${seats()[index]}`}
                       onClick={() => cycleSeat(index)}
-                      aria-label={`Seat ${index + 1}: ${seats()[index]}. Change to ${{ human: "robot", robot: "none", none: "human" }[seats()[index]!]}`}
+                      aria-label={`Seat ${index + 1}: ${seats()[index]}. Change to ${{ human: "none", robot: "human", none: "robot" }[seats()[index]!]}`}
                     >
                       <SeatIcon kind={seats()[index]!} />
                       <span>
@@ -582,8 +768,14 @@ export function App() {
                 </For>
               </div>
             </div>
+            <Show when={humans() > 1}>
+              <p class="mode-description">
+                Create a room and share its link. Once every human seat is filled, other visitors
+                can watch.
+              </p>
+            </Show>
             <Button class="primary start-button" disabled={busy() || !validSeats()} onClick={start}>
-              {busy() ? "Starting…" : "Start game"}
+              {busy() ? "Starting…" : humans() > 1 ? "Create room" : "Start game"}
             </Button>
           </section>
           <FrontpageDecor />
@@ -663,7 +855,7 @@ export function App() {
               <div class="play-main">
                 <section class="table" aria-label="Game table">
                   <div class="opponents">
-                    <For each={game().players.filter((p) => p.id !== (viewer() ?? "p1"))}>
+                    <For each={game().players.filter((p) => p.id !== viewer())}>
                       {(p) => (
                         <PlayerSeat
                           player={p}
@@ -671,19 +863,28 @@ export function App() {
                           drawNotice={drawNotice()?.playerId === p.id ? drawNotice() : undefined}
                           colorIndex={game().players.findIndex((player) => player.id === p.id)}
                           active={
+                            !waiting() &&
                             game().phase !== "charleston" &&
                             (drawNotice()?.playerId ?? actor()?.id) === p.id
                           }
                           spentStick={spentSticks().includes(p.id)}
                           betting={
-                            game().phase === "betting" && actor()?.id === p.id && !drawNotice()
+                            !waiting() &&
+                            game().phase === "betting" &&
+                            actor()?.id === p.id &&
+                            !drawNotice()
+                          }
+                          readyToPass={
+                            game().phase === "charleston" && !game().pendingPlayerIds.includes(p.id)
                           }
                           charlestonStatus={
-                            game().phase === "charleston"
-                              ? game().pendingPlayerIds.includes(p.id)
-                                ? "Choosing cards…"
-                                : "Ready to pass"
-                              : undefined
+                            room()?.waitingPlayerIds.includes(p.id)
+                              ? "Waiting to join…"
+                              : game().phase === "charleston"
+                                ? game().pendingPlayerIds.includes(p.id)
+                                  ? "Choosing cards…"
+                                  : "Ready to pass"
+                                : undefined
                           }
                           dealer={game().players[game().dealerIndex]?.id === p.id}
                         />
@@ -800,44 +1001,69 @@ export function App() {
                     />
                   </div>
                 </section>
-                <section
-                  class="hand-panel"
-                  classList={{
-                    folded: Boolean(human()?.folded),
-                    betting: myTurn() && game().phase === "betting" && !drawNotice(),
-                  }}
-                  aria-label="Your hand"
-                >
-                  <div class="hand-heading">
-                    <div class="opponent-heading own-seat">
-                      <SpiritAvatar
-                        name={human()?.name ?? "You"}
-                        colorIndex={Math.max(
-                          0,
-                          game().players.findIndex((p) => p.id === human()?.id),
-                        )}
-                      />
-                      <div>
-                        <b>
-                          {human()?.name ?? "You"}{" "}
-                          <Show when={game().players[game().dealerIndex]?.id === human()?.id}>
-                            <span class="dealer-label" title="Dealer">
-                              <span class="stick-tag">Dealer</span>
-                            </span>
-                          </Show>
-                        </b>
-                        <small>
-                          <strong data-motion-key="own-chips">{format(human()?.chips ?? 0)}</strong>{" "}
-                          chips
-                        </small>
+                <Show when={human()}>
+                  <section
+                    class="hand-panel"
+                    classList={{
+                      folded: Boolean(human()?.folded),
+                      betting: myTurn() && game().phase === "betting" && !drawNotice(),
+                    }}
+                    aria-label="Your hand"
+                  >
+                    <div class="hand-heading">
+                      <div class="opponent-heading own-seat">
+                        <SpiritAvatar
+                          controller="human"
+                          name={human()?.name ?? "You"}
+                          colorIndex={Math.max(
+                            0,
+                            game().players.findIndex((p) => p.id === human()?.id),
+                          )}
+                        />
+                        <div>
+                          <b>
+                            {human()?.name ?? "You"}{" "}
+                            <Show when={game().players[game().dealerIndex]?.id === human()?.id}>
+                              <span class="dealer-label" title="Dealer">
+                                <span class="stick-tag">Dealer</span>
+                              </span>
+                            </Show>
+                          </b>
+                          <div class="own-chip-balance">
+                            <small>
+                              <strong data-motion-key="own-chips">
+                                {format(human()?.chips ?? 0)}
+                              </strong>{" "}
+                              chips
+                            </small>
+                            <Show when={!waiting() && human() && canTakeLoan(game(), human()!)}>
+                              <Button
+                                class="take-loan"
+                                title={`Borrow ${LOAN_VALUE} chips; −${LOAN_PENALTY} points at the end of this game`}
+                                disabled={busy()}
+                                onClick={() =>
+                                  perform(() =>
+                                    gameAction(session(), {
+                                      kind: "take-loan",
+                                      playerId: viewer()!,
+                                    }),
+                                  )
+                                }
+                              >
+                                Take loan
+                              </Button>
+                            </Show>
+                          </div>
+                        </div>
                         <Show when={game().config.mode === "riichi"}>
                           <div class="player-sticks">
                             <RiichiSticks
+                              compact
                               count={human()?.riichiSticks ?? 0}
                               spent={spentSticks().includes(viewer()!)}
                             />
                             <Show when={human()?.loans}>
-                              <div class="loan-stick-count">
+                              <div class="loan-stick-count compact-sticks">
                                 <span class="loan-stick-art">
                                   <img src="/assets/sticks/loan-decor.svg" alt="" />
                                 </span>
@@ -847,446 +1073,464 @@ export function App() {
                           </div>
                         </Show>
                       </div>
-                    </div>
-                    <div class="own-hand-status">
-                      <div class="own-wager">
-                        <BetIndicator
-                          amount={human()?.roundCommitted ?? 0}
-                          playerId={human()?.id ?? "you"}
-                        />
-                      </div>
-                      <Show when={!human()?.folded}>
-                        <aside class="ladder-panel">
-                          <Button
-                            class="ladder-toggle"
-                            aria-expanded={ladderOpen()}
-                            aria-controls="hand-ladder"
-                            onClick={() => setLadderOpen(!ladderOpen())}
-                          >
-                            <span>
-                              <small>Current hand</small>
-                              <b>
-                                {`${currentHand().total} - ${currentHand().combinations[0]?.label ?? "High Card"}`}
-                              </b>
-                            </span>
-                            <span>{ladderOpen() ? "−" : "+"}</span>
-                          </Button>
-                          <Show when={ladderOpen()}>
-                            <Modal
-                              title="Hand ranks"
-                              class="drawer rank-drawer"
-                              onClose={() => setLadderOpen(false)}
+                      <div class="own-hand-status">
+                        <div class="own-wager">
+                          <BetIndicator
+                            amount={human()?.roundCommitted ?? 0}
+                            playerId={human()?.id ?? "you"}
+                          />
+                        </div>
+                        <Show when={!human()?.folded}>
+                          <aside class="ladder-panel">
+                            <Button
+                              class="ladder-toggle"
+                              aria-expanded={ladderOpen()}
+                              aria-controls="hand-ladder"
+                              onClick={() => setLadderOpen(!ladderOpen())}
                             >
-                              <div id="hand-ladder">
-                                <ol style={{ "--ladder-rows": Math.ceil(ladder().length / 2) }}>
-                                  <For each={ladder().map((entry, i) => ({ entry, rank: i + 1 }))}>
-                                    {(row) => (
-                                      <li
-                                        classList={{ made: currentHand().total === row.rank }}
-                                        aria-current={
-                                          currentHand().total === row.rank ? "true" : undefined
-                                        }
-                                      >
-                                        <div class="rank-details">
-                                          <b>
-                                            {String(row.rank).padStart(2, "0")} {row.entry[0]}
-                                          </b>
-                                          <small>{row.entry[1]}</small>
-                                          <div
-                                            class="rank-examples"
-                                            aria-label={`Example of ${row.entry[0]}`}
-                                          >
-                                            <For each={handExamples(row.entry[0]!)}>
-                                              {(group) => (
-                                                <div class="rank-example-group">
-                                                  <For each={group}>
-                                                    {(card) => <PlayingCard card={card} compact />}
-                                                  </For>
-                                                </div>
-                                              )}
-                                            </For>
-                                          </div>
-                                        </div>
-                                      </li>
-                                    )}
-                                  </For>
-                                </ol>
-                              </div>
-                            </Modal>
-                          </Show>
-                        </aside>
-                      </Show>
-                    </div>
-                  </div>
-                  <div class="hand-cards">
-                    <Show when={human()?.riichi}>
-                      <RiichiDeclared />
-                    </Show>
-                    <For
-                      each={sortHand(
-                        [...cards(), ...(human()?.publicCards ?? [])],
-                        human()?.publicCards ?? [],
-                      ).sort(
-                        (a, b) =>
-                          Number(receivedCharleston().some((c) => c.id === b.id)) -
-                          Number(receivedCharleston().some((c) => c.id === a.id)),
-                      )}
-                    >
-                      {(card) => {
-                        const drawn = () =>
-                          game().phase === "discarding" &&
-                          game().pendingDiscard?.playerId === human()?.id &&
-                          game().pendingDiscard?.drawnCardId === card.id
-                        const received = () => receivedCharleston().some((c) => c.id === card.id)
-                        const revealed = () =>
-                          Boolean(human()?.publicCards.some((c) => c.id === card.id))
-                        return (
-                          <Button
-                            class="card-choice"
-                            classList={{
-                              picked: selection().includes(card.id) || blankPick() === card.id,
-                              "is-public": revealed(),
-                              "is-highlighted":
-                                drawn() ||
-                                received() ||
-                                (pickingFish() &&
-                                  !pickingStick() &&
-                                  card.kind === "blank" &&
-                                  !revealed()),
-                            }}
-                            aria-label={`${cardLabel(card)}${received() ? ", received from Charleston" : ""}${drawn() ? ", just drawn" : ""}${revealed() ? ", revealed" : ""}${selection().includes(card.id) ? ", selected" : ""}`}
-                            aria-describedby={
-                              game().phase === "discarding" && myTurn()
-                                ? "discard-instruction"
-                                : undefined
-                            }
-                            aria-pressed={selection().includes(card.id) || blankPick() === card.id}
-                            disabled={
-                              revealed() ||
-                              (!choosing() &&
-                                !(pickingFish() && !pickingStick() && card.kind === "blank")) ||
-                              busy()
-                            }
-                            onClick={() =>
-                              pickingFish() && card.kind === "blank"
-                                ? setBlankPick(blankPick() === card.id ? undefined : card.id)
-                                : toggleCard(card.id)
-                            }
-                          >
-                            <span class="hand-card-surface">
-                              <PlayingCard card={card} />
-                              <Show
-                                when={
-                                  drawn() ||
-                                  revealed() ||
-                                  selection().includes(card.id) ||
-                                  received()
-                                }
+                              <span>
+                                <small>Current hand</small>
+                                <b>
+                                  {`${currentHand().total} - ${currentHand().combinations[0]?.label ?? "High Card"}`}
+                                </b>
+                              </span>
+                              <span>{ladderOpen() ? "−" : "+"}</span>
+                            </Button>
+                            <Show when={ladderOpen()}>
+                              <Modal
+                                title="Hand ranks"
+                                class="drawer rank-drawer"
+                                onClose={() => setLadderOpen(false)}
                               >
-                                <span class="card-caption">
-                                  {received()
-                                    ? "Received"
-                                    : drawn()
-                                      ? selection().includes(card.id)
-                                        ? "New · Selected ✓"
-                                        : "Just drawn"
-                                      : revealed()
-                                        ? "Public"
-                                        : game().phase === "charleston" && !myTurn()
-                                          ? "Passing…"
-                                          : "Selected ✓"}
-                                </span>
-                              </Show>
-                            </span>
-                          </Button>
-                        )
-                      }}
-                    </For>
-                  </div>
-                  <div class="action-area">
-                    <Show when={pickingFish()}>
-                      <div class="button-row main-actions">
-                        <span>
-                          {pickingStick()
-                            ? "Spend a Riichi stick: choose a card from the deck or a discard lane."
-                            : blankPick()
-                              ? "Choose any card in either discard lane to swap with your Blank."
-                              : cards().some((card) => card.kind === "blank")
-                                ? "Choose a card from the deck or a discard lane, or select a Blank to swap."
-                                : "Choose a card from the deck or a discard lane."}
-                        </span>
-                        <Button disabled={busy()} onClick={cancelFishing}>
-                          {pickingStick() ? "Cancel Riichi stick" : "Cancel fishing"}
-                        </Button>
-                      </div>
-                    </Show>
-                    <Show when={receivedCharleston().length > 0}>
-                      <div class="button-row main-actions">
-                        <span>Your two Charleston cards are highlighted on the left.</span>
-                        <Button class="primary" onClick={acceptCharleston}>
-                          Accept cards
-                        </Button>
-                      </div>
-                    </Show>
-                    <Show when={myTurn() && game().phase === "discarding"}>
-                      <p id="discard-instruction" role="status">
-                        {selection().length
-                          ? "Choose a discard lane above to place your selected card."
-                          : "Discard a card: select one from your hand, then choose a lane above."}
-                      </p>
-                    </Show>
-                    <Show when={myTurn() && ["charleston", "exposing"].includes(game().phase)}>
-                      <p class="sr-only" id="selection-instruction">
-                        Select {required()} hidden cards. Everyone’s choices are revealed together.
-                      </p>
-                      <div class="button-row main-actions">
-                        <Show when={game().phase === "charleston"}>
-                          <span>Charleston: select and</span>
-                        </Show>
-                        <Button
-                          class="primary"
-                          disabled={busy() || selection().length !== required()}
-                          onClick={confirmSelection}
-                          aria-describedby="selection-instruction"
-                        >
-                          {game().phase === "charleston" ? "Pass" : "Reveal"} {selection().length}/
-                          {required()} cards
-                        </Button>
-                        <Show when={game().phase === "charleston"}>
-                          <span>to your left.</span>
+                                <div id="hand-ladder">
+                                  <ol style={{ "--ladder-rows": Math.ceil(ladder().length / 2) }}>
+                                    <For
+                                      each={ladder().map((entry, i) => ({ entry, rank: i + 1 }))}
+                                    >
+                                      {(row) => (
+                                        <li
+                                          classList={{ made: currentHand().total === row.rank }}
+                                          aria-current={
+                                            currentHand().total === row.rank ? "true" : undefined
+                                          }
+                                        >
+                                          <div class="rank-details">
+                                            <b>
+                                              {String(row.rank).padStart(2, "0")} {row.entry[0]}
+                                            </b>
+                                            <small>{row.entry[1]}</small>
+                                            <div
+                                              class="rank-examples"
+                                              aria-label={`Example of ${row.entry[0]}`}
+                                            >
+                                              <For each={handExamples(row.entry[0]!)}>
+                                                {(group, index) => (
+                                                  <>
+                                                    <Show when={index() > 0}>
+                                                      <span
+                                                        class="rank-example-plus"
+                                                        aria-hidden="true"
+                                                      >
+                                                        +
+                                                      </span>
+                                                    </Show>
+                                                    <div class="rank-example-group">
+                                                      <For each={group}>
+                                                        {(card) => (
+                                                          <PlayingCard card={card} compact />
+                                                        )}
+                                                      </For>
+                                                    </div>
+                                                  </>
+                                                )}
+                                              </For>
+                                            </div>
+                                          </div>
+                                        </li>
+                                      )}
+                                    </For>
+                                  </ol>
+                                </div>
+                              </Modal>
+                            </Show>
+                          </aside>
                         </Show>
                       </div>
-                    </Show>
-                    <Show
-                      when={
-                        myTurn() &&
-                        game().stickWindow &&
-                        !receivedCharleston().length &&
-                        !pickingFish()
-                      }
-                    >
-                      <div class="button-row main-actions">
-                        <Button disabled={busy() || pickingFish()} onClick={chooseStick}>
-                          Spend Riichi stick
-                        </Button>
-                        <Button class="primary" disabled={busy()} onClick={() => resolveStick()}>
-                          End turn
-                        </Button>
-                      </div>
-                    </Show>
-                    <Show
-                      when={
-                        myTurn() &&
-                        game().phase === "betting" &&
-                        !game().stickWindow &&
-                        !receivedCharleston().length
-                      }
-                    >
-                      <div
-                        class="button-row main-actions"
-                        classList={{ "fishing-active": pickingFish() }}
+                    </div>
+                    <div class="hand-cards">
+                      <Show when={human()?.riichi}>
+                        <RiichiDeclared />
+                      </Show>
+                      <For
+                        each={sortHand(
+                          [...cards(), ...(human()?.publicCards ?? [])],
+                          human()?.publicCards ?? [],
+                        ).sort(
+                          (a, b) =>
+                            Number(receivedCharleston().some((c) => c.id === b.id)) -
+                            Number(receivedCharleston().some((c) => c.id === a.id)),
+                        )}
                       >
-                        <Button
-                          class="primary"
-                          disabled={busy()}
-                          onClick={() => openAction(callCost() ? "call" : "check")}
-                        >
-                          {callCost()
-                            ? `Call ${format(Math.min(callCost(), human()?.chips ?? 0))}${canFishOnCall() ? " + Fish" : ""}`
-                            : canFish()
-                              ? "Check + Fish"
-                              : "Check"}
-                        </Button>
-                        <Show when={canSpendStick()}>
+                        {(card) => {
+                          const drawn = () =>
+                            game().phase === "discarding" &&
+                            game().pendingDiscard?.playerId === human()?.id &&
+                            game().pendingDiscard?.drawnCardId === card.id
+                          const received = () => receivedCharleston().some((c) => c.id === card.id)
+                          const revealed = () =>
+                            Boolean(human()?.publicCards.some((c) => c.id === card.id))
+                          return (
+                            <Button
+                              class="card-choice"
+                              classList={{
+                                picked: selection().includes(card.id) || blankPick() === card.id,
+                                "is-public": revealed(),
+                                "is-highlighted":
+                                  drawn() ||
+                                  received() ||
+                                  (pickingFish() &&
+                                    !pickingStick() &&
+                                    card.kind === "blank" &&
+                                    !revealed()),
+                              }}
+                              aria-label={`${cardLabel(card)}${received() ? ", received from Charleston" : ""}${drawn() ? ", just drawn" : ""}${revealed() ? ", revealed" : ""}${selection().includes(card.id) ? ", selected" : ""}`}
+                              aria-describedby={
+                                game().phase === "discarding" && myTurn()
+                                  ? "discard-instruction"
+                                  : undefined
+                              }
+                              aria-pressed={
+                                selection().includes(card.id) || blankPick() === card.id
+                              }
+                              disabled={
+                                revealed() ||
+                                (!choosing() &&
+                                  !(pickingFish() && !pickingStick() && card.kind === "blank")) ||
+                                busy()
+                              }
+                              onClick={() =>
+                                pickingFish() && card.kind === "blank"
+                                  ? setBlankPick(blankPick() === card.id ? undefined : card.id)
+                                  : toggleCard(card.id)
+                              }
+                            >
+                              <span class="hand-card-surface">
+                                <PlayingCard card={card} />
+                                <Show
+                                  when={
+                                    drawn() ||
+                                    revealed() ||
+                                    selection().includes(card.id) ||
+                                    received()
+                                  }
+                                >
+                                  <span class="card-caption">
+                                    {received()
+                                      ? "Received"
+                                      : drawn()
+                                        ? selection().includes(card.id)
+                                          ? "New · Selected ✓"
+                                          : "Just drawn"
+                                        : revealed()
+                                          ? "Public"
+                                          : game().phase === "charleston" && !myTurn()
+                                            ? "Passing…"
+                                            : "Selected ✓"}
+                                  </span>
+                                </Show>
+                              </span>
+                            </Button>
+                          )
+                        }}
+                      </For>
+                    </div>
+                    <div class="action-area">
+                      <Show when={pickingFish()}>
+                        <div class="button-row main-actions">
+                          <span>
+                            {pickingStick()
+                              ? "Spend a Riichi stick: choose a card from the deck or a discard lane."
+                              : blankPick()
+                                ? "Choose any card in either discard lane to swap with your Blank."
+                                : cards().some((card) => card.kind === "blank")
+                                  ? "Choose a card from the deck or a discard lane, or select a Blank to swap."
+                                  : "Choose a card from the deck or a discard lane."}
+                          </span>
+                          <Button disabled={busy()} onClick={cancelFishing}>
+                            {pickingStick() ? "Cancel Riichi stick" : "Cancel fishing"}
+                          </Button>
+                        </div>
+                      </Show>
+                      <Show when={receivedCharleston().length > 0}>
+                        <div class="button-row main-actions">
+                          <Button class="primary" onClick={acceptCharleston}>
+                            Accept cards
+                          </Button>
+                        </div>
+                      </Show>
+                      <Show when={myTurn() && game().phase === "discarding"}>
+                        <p id="discard-instruction" role="status">
+                          {selection().length
+                            ? "Choose a discard lane above to place your selected card."
+                            : "Discard a card: select one from your hand, then choose a lane above."}
+                        </p>
+                      </Show>
+                      <Show when={myTurn() && ["charleston", "exposing"].includes(game().phase)}>
+                        <p class="sr-only" id="selection-instruction">
+                          Select {required()} hidden cards. Everyone’s choices are revealed
+                          together.
+                        </p>
+                        <div class="button-row main-actions">
+                          <Show when={game().phase === "charleston"}>
+                            <span>Charleston: select and</span>
+                          </Show>
+                          <Button
+                            class="primary"
+                            disabled={busy() || selection().length !== required()}
+                            onClick={confirmSelection}
+                            aria-describedby="selection-instruction"
+                          >
+                            {game().phase === "charleston" ? "Pass" : "Reveal"} {selection().length}
+                            /{required()} cards
+                          </Button>
+                          <Show when={game().phase === "charleston"}>
+                            <span>to your left.</span>
+                          </Show>
+                        </div>
+                      </Show>
+                      <Show
+                        when={
+                          myTurn() &&
+                          game().stickWindow &&
+                          !receivedCharleston().length &&
+                          !pickingFish()
+                        }
+                      >
+                        <div class="button-row main-actions">
                           <Button disabled={busy() || pickingFish()} onClick={chooseStick}>
                             Spend Riichi stick
                           </Button>
-                        </Show>
-                        <Show when={!allIn() && maximum() > game().currentWager}>
-                          <Button
-                            class="bet-button"
-                            disabled={busy()}
-                            onClick={() => openAction("bet")}
-                          >
-                            Bet
+                          <Button class="primary" disabled={busy()} onClick={() => resolveStick()}>
+                            End turn
                           </Button>
-                        </Show>
-                        <Button
-                          class="fold-button"
-                          disabled={busy()}
-                          onClick={() => act({ type: "fold" })}
-                        >
-                          Fold
-                        </Button>
-                      </div>
-                      <Show when={actionDialog()}>
-                        <Modal
-                          class="drawer bet-drawer"
-                          title="Place your bet"
-                          onClose={() => setActionDialog(undefined)}
-                        >
-                          <Show when={actionDialog() === "bet"}>
-                            <section class="bet-editor">
-                              <div class="bet-amount">
-                                <span>Your bet</span>
-                                <strong aria-live="polite">{format(wager())}</strong>
-                              </div>
-                              <div class="bet-chips">
-                                <For each={[5, 10, 20, 50]}>
-                                  {(value) => (
-                                    <Button
-                                      class={`chip chip-${value}`}
-                                      aria-label={`Add ${value} to bet`}
-                                      disabled={busy() || wager() + value > maximum()}
-                                      onClick={() => setWager(wager() + value)}
-                                    >
-                                      +{value}
-                                    </Button>
-                                  )}
-                                </For>
-                                <Button
-                                  disabled={busy() || wager() === maximum()}
-                                  onClick={() => setWager(maximum())}
-                                >
-                                  All-in
-                                </Button>
-                                <Button
-                                  class="bet-reset"
-                                  disabled={
-                                    busy() ||
-                                    wager() === Math.min(maximum(), Math.max(10, minimum()))
-                                  }
-                                  onClick={() =>
-                                    setWager(Math.min(maximum(), Math.max(10, minimum())))
-                                  }
-                                >
-                                  Reset
-                                </Button>
-                              </div>
-                            </section>
-                          </Show>
-                          <p role="alert" class="dialog-error">
-                            {error()}
-                          </p>
-                          <div class="button-row dialog-actions">
-                            <Show when={actionDialog() === "bet"}>
-                              <Button
-                                class="primary"
-                                disabled={
-                                  busy() ||
-                                  (wager() % CHIP_UNIT !== 0 && wager() !== maximum()) ||
-                                  wager() < minimum() ||
-                                  wager() > maximum()
-                                }
-                                onClick={() =>
-                                  act({
-                                    type: "bet",
-                                    amount: wager(),
-                                  })
-                                }
-                              >
-                                Bet {format(wager())}
-                              </Button>
-                              <Show
-                                when={
-                                  game().config.mode === "riichi" &&
-                                  !human()?.riichi &&
-                                  game().street <= 3 &&
-                                  !game().players.some((p) => p.riichi && !p.folded)
-                                }
-                              >
-                                <Button
-                                  disabled={
-                                    busy() ||
-                                    wager() < minimum() ||
-                                    wager() > maximum() ||
-                                    (wager() % CHIP_UNIT !== 0 && wager() !== maximum())
-                                  }
-                                  onClick={() =>
-                                    act({ type: "bet", amount: wager(), riichi: true })
-                                  }
-                                >
-                                  Bet {format(wager())} + Declare Riichi
-                                </Button>
-                              </Show>
-                            </Show>
-                          </div>
-                        </Modal>
+                        </div>
                       </Show>
-                    </Show>
-                    <Show
-                      when={
-                        game().phase !== "charleston" &&
-                        actor() &&
-                        actor()?.controller !== "human" &&
-                        !receivedCharleston().length
-                      }
-                    >
-                      <p>
-                        {human()?.folded
-                          ? "Watch the rest of the round."
-                          : "Watch the table. Your next move is coming."}
-                      </p>
-                      <Show when={!auto()}>
-                        <Button class="primary" disabled={busy()} onClick={bot}>
-                          Play {actor()?.name}’s turn →
-                        </Button>
-                      </Show>
-                    </Show>
-                    <Show when={["between-hands", "finished"].includes(game().phase)}>
-                      <Button
-                        onClick={() => {
-                          setResultStage("round")
-                          setClosedResult("")
-                        }}
-                      >
-                        View round result
-                      </Button>
-                    </Show>
-                    <Show when={game().phase === "between-hands"}>
-                      <Button
-                        class="primary"
-                        disabled={busy()}
-                        onClick={() =>
-                          perform(() =>
-                            gameAction(session(), { kind: "next-hand", viewerId: viewer() ?? "" }),
-                          )
+                      <Show
+                        when={
+                          myTurn() &&
+                          game().phase === "betting" &&
+                          !game().stickWindow &&
+                          !receivedCharleston().length
                         }
                       >
-                        {game().dealerSteps >= game().players.length * (game().config.orbits ?? 1)
-                          ? "Start next tournament game"
-                          : "Deal next round"}{" "}
-                        →
-                      </Button>
-                    </Show>
-                    <Show when={game().phase === "finished"}>
-                      <div class="standings">
-                        <For
-                          each={[...game().players].sort(
-                            (a, b) =>
-                              (game().finalScores?.[b.id] ?? 0) - (game().finalScores?.[a.id] ?? 0),
-                          )}
+                        <div
+                          class="button-row main-actions"
+                          classList={{ "fishing-active": pickingFish() }}
                         >
-                          {(p) => (
-                            <span>
-                              <b>{p.name}</b> {format(game().finalScores?.[p.id] ?? 0)} points
-                            </span>
-                          )}
-                        </For>
-                      </div>
-                      <Button
-                        class="primary"
-                        onClick={() => {
-                          setState(undefined)
-                          setViewer(undefined)
-                          setAuto(false)
-                        }}
+                          <Button
+                            class="primary"
+                            disabled={busy()}
+                            onClick={() => openAction(callCost() ? "call" : "check")}
+                          >
+                            {callCost()
+                              ? `Call ${format(Math.min(callCost(), human()?.chips ?? 0))}${canFishOnCall() ? " + Fish" : ""}`
+                              : canFish()
+                                ? "Check + Fish"
+                                : "Check"}
+                          </Button>
+                          <Show when={canSpendStick()}>
+                            <Button disabled={busy() || pickingFish()} onClick={chooseStick}>
+                              Spend Riichi stick
+                            </Button>
+                          </Show>
+                          <Show when={!allIn() && maximum() > game().currentWager}>
+                            <Button
+                              class="bet-button"
+                              disabled={busy()}
+                              onClick={() => openAction("bet")}
+                            >
+                              Bet
+                            </Button>
+                          </Show>
+                          <Button
+                            class="fold-button"
+                            disabled={busy()}
+                            onClick={() => act({ type: "fold" })}
+                          >
+                            Fold
+                          </Button>
+                        </div>
+                        <Show when={actionDialog()}>
+                          <Modal
+                            class="drawer bet-drawer"
+                            title="Place your bet"
+                            onClose={() => setActionDialog(undefined)}
+                          >
+                            <Show when={actionDialog() === "bet"}>
+                              <section class="bet-editor">
+                                <div class="bet-amount">
+                                  <span>Your bet</span>
+                                  <strong aria-live="polite">{format(wager())}</strong>
+                                </div>
+                                <div class="bet-chips">
+                                  <For each={[5, 10, 20, 50]}>
+                                    {(value) => (
+                                      <Button
+                                        class={`chip chip-${value}`}
+                                        aria-label={`Add ${value} to bet`}
+                                        disabled={busy() || wager() + value > maximum()}
+                                        onClick={() => setWager(wager() + value)}
+                                      >
+                                        +{value}
+                                      </Button>
+                                    )}
+                                  </For>
+                                  <Button
+                                    disabled={busy() || wager() === maximum()}
+                                    onClick={() => setWager(maximum())}
+                                  >
+                                    All-in
+                                  </Button>
+                                  <Button
+                                    class="bet-reset"
+                                    disabled={
+                                      busy() ||
+                                      wager() === Math.min(maximum(), Math.max(10, minimum()))
+                                    }
+                                    onClick={() =>
+                                      setWager(Math.min(maximum(), Math.max(10, minimum())))
+                                    }
+                                  >
+                                    Reset
+                                  </Button>
+                                </div>
+                              </section>
+                            </Show>
+                            <p role="alert" class="dialog-error">
+                              {error()}
+                            </p>
+                            <div class="button-row dialog-actions">
+                              <Show when={actionDialog() === "bet"}>
+                                <Button
+                                  class="primary"
+                                  disabled={
+                                    busy() ||
+                                    (wager() % CHIP_UNIT !== 0 && wager() !== maximum()) ||
+                                    wager() < minimum() ||
+                                    wager() > maximum()
+                                  }
+                                  onClick={() =>
+                                    act({
+                                      type: "bet",
+                                      amount: wager(),
+                                    })
+                                  }
+                                >
+                                  Bet {format(wager())}
+                                </Button>
+                                <Show
+                                  when={
+                                    game().config.mode === "riichi" &&
+                                    !human()?.riichi &&
+                                    game().street <= 3 &&
+                                    !game().players.some((p) => p.riichi && !p.folded)
+                                  }
+                                >
+                                  <Button
+                                    disabled={
+                                      busy() ||
+                                      wager() < minimum() ||
+                                      wager() > maximum() ||
+                                      (wager() % CHIP_UNIT !== 0 && wager() !== maximum())
+                                    }
+                                    onClick={() =>
+                                      act({ type: "bet", amount: wager(), riichi: true })
+                                    }
+                                  >
+                                    Bet {format(wager())} + Declare Riichi
+                                  </Button>
+                                </Show>
+                              </Show>
+                            </div>
+                          </Modal>
+                        </Show>
+                      </Show>
+                      <Show
+                        when={
+                          game().phase !== "charleston" &&
+                          actor() &&
+                          actor()?.controller !== "human" &&
+                          !receivedCharleston().length
+                        }
                       >
-                        Set up another game →
-                      </Button>
-                    </Show>
-                  </div>
-                </section>
+                        <p>
+                          {human()?.folded
+                            ? "Watch the rest of the round."
+                            : "Watch the table. Your next move is coming."}
+                        </p>
+                        <Show when={!room() && !auto()}>
+                          <Button class="primary" disabled={busy()} onClick={bot}>
+                            Play {actor()?.name}’s turn →
+                          </Button>
+                        </Show>
+                      </Show>
+                      <Show when={["between-hands", "finished"].includes(game().phase)}>
+                        <Button
+                          onClick={() => {
+                            setResultStage("round")
+                            setClosedResult("")
+                          }}
+                        >
+                          View round result
+                        </Button>
+                      </Show>
+                      <Show when={game().phase === "between-hands" && canDeal()}>
+                        <Button
+                          class="primary"
+                          disabled={busy()}
+                          onClick={() =>
+                            perform(() =>
+                              gameAction(session(), {
+                                kind: "next-hand",
+                                viewerId: viewer() ?? "",
+                              }),
+                            )
+                          }
+                        >
+                          {game().dealerSteps >= game().players.length * (game().config.orbits ?? 1)
+                            ? "Start next tournament game"
+                            : "Deal next round"}{" "}
+                          →
+                        </Button>
+                      </Show>
+                      <Show when={game().phase === "finished"}>
+                        <div class="standings">
+                          <For
+                            each={[...game().players].sort(
+                              (a, b) =>
+                                (game().finalScores?.[b.id] ?? 0) -
+                                (game().finalScores?.[a.id] ?? 0),
+                            )}
+                          >
+                            {(p) => (
+                              <span>
+                                <b>{p.name}</b> {format(game().finalScores?.[p.id] ?? 0)} points
+                              </span>
+                            )}
+                          </For>
+                        </div>
+                        <Button
+                          class="primary"
+                          onClick={() => {
+                            leaveTable()
+                          }}
+                        >
+                          Set up another game →
+                        </Button>
+                      </Show>
+                    </div>
+                  </section>
+                </Show>
                 <Show
                   when={
                     !drawNotice() &&
@@ -1339,9 +1583,7 @@ export function App() {
                                     <Button
                                       class="primary"
                                       onClick={() => {
-                                        setState(undefined)
-                                        setViewer(undefined)
-                                        setAuto(false)
+                                        leaveTable()
                                       }}
                                     >
                                       Set up another game
@@ -1359,7 +1601,7 @@ export function App() {
                             >
                               <Button
                                 class="primary"
-                                disabled={busy()}
+                                disabled={busy() || !canDeal()}
                                 onClick={() =>
                                   perform(() =>
                                     gameAction(session(), {
@@ -1381,9 +1623,7 @@ export function App() {
                         <Button
                           class="primary"
                           onClick={() => {
-                            setState(undefined)
-                            setViewer(undefined)
-                            setAuto(false)
+                            leaveTable()
                           }}
                         >
                           Set up another game
@@ -1398,13 +1638,7 @@ export function App() {
                             {result()
                               .winnerIds.map((id) => game().players.find((p) => p.id === id)?.name)
                               .join(" & ")}{" "}
-                            {result().winnerIds.length === 1
-                              ? game().players.find((p) => p.id === result().winnerIds[0])?.name ===
-                                "You"
-                                ? "take the pot of"
-                                : "takes the pot of"
-                              : "share the pot of"}{" "}
-                            {format(result().pot)} chips.
+                            {result().winnerIds.length === 1 ? "wins." : "win."}
                           </h2>
                           <Show when={result().lotusBluff}>
                             <p>Lotus bonus: +{result().lotusBluff?.total} chips.</p>
@@ -1412,9 +1646,18 @@ export function App() {
                           <div class="result-hands">
                             <For each={result().players.filter((p) => !p.eliminated)}>
                               {(p) => (
-                                <article>
+                                <article
+                                  classList={{ winner: result().winnerIds.includes(p.playerId) }}
+                                >
                                   <div class="result-player-summary">
-                                    <b>{p.name}</b>
+                                    <b>
+                                      {p.name}
+                                      <Show when={result().winnerIds.includes(p.playerId)}>
+                                        <span class="winner-trophy" role="img" aria-label="Winner">
+                                          🏆
+                                        </span>
+                                      </Show>
+                                    </b>
                                     <span>
                                       {p.folded
                                         ? "Folded"
@@ -1435,9 +1678,6 @@ export function App() {
                                         : (p.netChips ?? p.payout - p.committed) < 0
                                           ? "lost"
                                           : "net"}
-                                      <ChipStack
-                                        amount={Math.abs(p.netChips ?? p.payout - p.committed)}
-                                      />
                                     </small>
                                   </div>
                                   <div class="mini-hand">
@@ -1458,7 +1698,7 @@ export function App() {
                               fallback={
                                 <Button
                                   class="primary"
-                                  disabled={busy()}
+                                  disabled={busy() || !canDeal()}
                                   onClick={() =>
                                     perform(() =>
                                       gameAction(session(), {
@@ -1495,8 +1735,8 @@ export function App() {
             alt="Loan stick"
           />
           <p>
-            {loanNotice().join(" & ")} could not cover the ante and automatically received{" "}
-            <strong>{LOAN_VALUE}</strong> chips to stay in the game.
+            {loanNotice().join(" & ")} received a loan of <strong>{LOAN_VALUE}</strong> chips to
+            stay in the game.
           </p>
           <p>
             The ante is paid from those chips. At the end of this game,{" "}
@@ -1511,19 +1751,6 @@ export function App() {
             Got it
           </Button>
         </Modal>
-      </Show>
-      <Show when={handoff()}>
-        {(next) => (
-          <Modal title={`Pass to ${next().name}`} dismissible={false} onClose={() => {}}>
-            <p>Hand the device to {next().name}. The previous hand is hidden.</p>
-            <p role="alert" class="dialog-error">
-              {error()}
-            </p>
-            <Button class="primary" disabled={busy()} onClick={revealHumanHand}>
-              {busy() ? "Loading…" : `I'm ${next().name} — show my hand`}
-            </Button>
-          </Modal>
-        )}
       </Show>
       <Show when={rules()}>
         <Modal
@@ -1609,6 +1836,7 @@ function TournamentScores(props: { game: PublicGameState; singleGame?: boolean }
                     <span class="score-player">
                       <SpiritAvatar
                         name={player.name}
+                        controller={player.controller}
                         colorIndex={props.game.players.findIndex((p) => p.id === player.id)}
                       />
                       {player.name}
@@ -1772,6 +2000,7 @@ function Lane(props: {
   )
 }
 function PlayerSeat(props: {
+  readyToPass: boolean
   charlestonStatus?: string
   spentStick: boolean
   betting: boolean
@@ -1792,6 +2021,7 @@ function PlayerSeat(props: {
       class="opponent"
       data-player-id={props.player.id}
       classList={{
+        robot: props.player.controller === "heuristic",
         active: props.active,
         betting: props.betting,
         folded: props.player.folded || props.player.eliminated,
@@ -1802,7 +2032,11 @@ function PlayerSeat(props: {
         data-motion-key={`seat-${props.player.id}`}
         data-motion-value={`${props.active}-${props.player.chips}-${props.player.folded}`}
       >
-        <SpiritAvatar name={props.player.name} colorIndex={props.colorIndex} />
+        <SpiritAvatar
+          controller={props.player.controller}
+          name={props.player.name}
+          colorIndex={props.colorIndex}
+        />
         <div>
           <b>
             {props.player.name}{" "}
@@ -1830,6 +2064,7 @@ function PlayerSeat(props: {
               {(_, index) => (
                 <img
                   class="card-back"
+                  classList={{ "ready-to-pass": props.readyToPass && index() >= hidden() - 2 }}
                   data-motion-key={`back-${props.player.id}-${index()}`}
                   src="/assets/cards/back.png"
                   alt="Hidden card"
@@ -1873,38 +2108,6 @@ function PlayerSeat(props: {
         <BetIndicator amount={props.player.roundCommitted} playerId={props.player.id} />
       </div>
     </article>
-  )
-}
-
-function RiichiSticks(props: { count: number; spent?: boolean; compact?: boolean }) {
-  return (
-    <div
-      class="riichi-stick-count"
-      classList={{ "compact-sticks": props.compact }}
-      role="img"
-      aria-label={`${props.count} Riichi sticks`}
-    >
-      <Show when={props.spent}>
-        <img class="spent-stick" src="/assets/sticks/riichi-decor.svg?v=4" alt="" />
-      </Show>
-      <div class="riichi-stick-art" aria-hidden="true">
-        <For each={Array.from({ length: props.count })}>
-          {() => <img src="/assets/sticks/riichi-decor.svg?v=4" alt="" />}
-        </For>
-      </div>
-      <span class="stick-tag">{props.count} Riichi</span>
-    </div>
-  )
-}
-function RiichiDeclared() {
-  return (
-    <div class="riichi-declared">
-      <div>
-        <img src="/assets/sticks/riichi-decor.svg?v=4" alt="" />
-        <img src="/assets/sticks/riichi-decor.svg?v=4" alt="" />
-      </div>
-      <span class="stick-tag">Riichi declared</span>
-    </div>
   )
 }
 

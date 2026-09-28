@@ -1,4 +1,4 @@
-import { hasFreeFishing } from "./rules"
+import { canTakeLoan, hasFreeFishing } from "./rules"
 import { createDeck } from "./cards"
 import { publicKnownPrivateCards } from "./information"
 import { SeededRandom } from "./random"
@@ -102,6 +102,7 @@ export class GameEngine {
       foldedPrivateCards: {},
       openingPrivateCards: {},
       openingChips: {},
+      openingLoans: {},
       charlestonSelections: {},
       charlestonHistory: [],
       exposureSelections: {},
@@ -183,6 +184,7 @@ export class GameEngine {
       foldedPrivateCards: {},
       openingPrivateCards: {},
       openingChips: {},
+      openingLoans: {},
       charlestonSelections: {},
       charlestonHistory: [],
       exposureSelections: {},
@@ -214,6 +216,7 @@ export class GameEngine {
       player.handCommitted = 0
       player.potCommitted = 0
       player.score = undefined
+      this.state.openingLoans![player.id] = player.loans
       this.state.openingChips[player.id] = player.chips
       if (player.eliminated) {
         player.folded = true
@@ -584,8 +587,21 @@ export class GameEngine {
     this.continueDrawSequence(player)
   }
 
-  takeLoan(_playerId: string): void {
-    throw new Error("Loans are issued automatically only when the round ante cannot be paid")
+  takeLoan(playerId: string): void {
+    const player = this.getPlayer(playerId)
+    if (!canTakeLoan(this.state, player))
+      throw new Error("A loan is available during Charleston below 100 chips, once per game")
+    // Older saved hands did not record their starting loan count.
+    this.state.openingLoans ??= Object.fromEntries(
+      this.state.players.map((seat) => [
+        seat.id,
+        seat.loans -
+          (!seat.eliminated && (this.state.openingChips[seat.id] ?? 0) < this.state.orbitValue
+            ? 1
+            : 0),
+      ]),
+    )
+    this.issueLoan(player)
   }
   repayLoan(_playerId: string): void {
     throw new Error("Loan sticks remain until final scoring")
@@ -1056,11 +1072,13 @@ export class GameEngine {
           netChips:
             player.chips -
             (this.state.openingChips[player.id] ?? player.chips) -
-            (this.state.config.mode === "riichi" &&
-            !player.eliminated &&
-            (this.state.openingChips[player.id] ?? 0) < this.state.orbitValue
-              ? LOAN_VALUE
-              : 0),
+            (this.state.openingLoans?.[player.id] !== undefined
+              ? (player.loans - this.state.openingLoans[player.id]!) * LOAN_VALUE
+              : this.state.config.mode === "riichi" &&
+                  !player.eliminated &&
+                  (this.state.openingChips[player.id] ?? 0) < this.state.orbitValue
+                ? LOAN_VALUE
+                : 0),
           committed: player.handCommitted,
           potCommitted: player.potCommitted,
           payout: payouts[player.id] ?? 0,

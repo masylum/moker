@@ -190,3 +190,52 @@ it("includes fishing when evaluating the archived Chow + Eye all-in Call", () =>
   expect(decision.action.type).toBe("call")
   expect(decision.action.type === "call" && decision.action.drawSource).toBeTruthy()
 })
+
+describe("optional Charleston loans", () => {
+  function lowStack() {
+    return GameEngine.create(
+      [1, 2].map((n) => ({ id: `p${n}`, name: `Player ${n}`, controller: "human" as const })),
+      { seed: "charleston-loan", mode: "riichi", startingChips: 100 },
+    )
+  }
+  it("offers a loan below 100 without consuming a pass, and excludes it from winnings", () => {
+    const game = lowStack()
+    const player = game.state.players[0]!
+    const pending = [...game.state.pendingPlayerIds]
+    expect(player.chips).toBe(95)
+    game.takeLoan(player.id)
+    expect(player.chips).toBe(295)
+    expect(player.loans).toBe(1)
+    expect(game.state.pendingPlayerIds).toEqual(pending)
+    expect(game.events.at(-1)?.type).toBe("loan-taken")
+    while (game.state.phase === "charleston") stepHeuristic(game)
+    finishHand(game)
+    expect(game.state.handResults[0]!.players.reduce((sum, p) => sum + p.netChips!, 0)).toBe(0)
+    expect(
+      game.state.handResults[0]!.players.find((p) => p.playerId === player.id)!.openingChips,
+    ).toBe(100)
+  })
+  it("rejects 100 chips and a second loan without changing the balance", () => {
+    const game = lowStack()
+    const player = game.state.players[0]!
+    player.chips = 100
+    expect(() => game.takeLoan(player.id)).toThrow("below 100")
+    player.chips = 99
+    game.takeLoan(player.id)
+    player.chips = 20
+    expect(() => game.takeLoan(player.id)).toThrow("once per game")
+    expect(player.chips).toBe(20)
+    expect(player.loans).toBe(1)
+  })
+  it("rejects loans outside Charleston and for eliminated players", () => {
+    const game = lowStack()
+    const player = game.state.players[0]!
+    player.eliminated = true
+    expect(() => game.takeLoan(player.id)).toThrow("A loan is available")
+    player.eliminated = false
+    while (game.state.phase === "charleston") stepHeuristic(game)
+    expect(() => game.takeLoan(player.id)).toThrow("during Charleston")
+    expect(player.loans).toBe(0)
+    expect(player.chips).toBe(95)
+  })
+})

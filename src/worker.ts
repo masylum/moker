@@ -1,7 +1,13 @@
 import { z } from "zod"
-import { ActionSchema, CreateGameSchema, SimulationSchema } from "./server/schemas"
+import {
+  ActionSchema,
+  CreateGameSchema,
+  RoomProfileSchema,
+  SimulationSchema,
+} from "./server/schemas"
 import { simulateGame } from "./game/simulation"
 import { GameSession } from "./server/game-session"
+import { roomId } from "./server/ulid"
 
 export { GameSession }
 
@@ -11,7 +17,16 @@ export default {
     const requestId = crypto.randomUUID()
     try {
       if (url.pathname.startsWith("/api/")) {
-        return await handleApi(request, env, url)
+        if (
+          request.method !== "GET" &&
+          request.headers.get("Origin") &&
+          request.headers.get("Origin") !== url.origin
+        ) {
+          return Response.json({ error: "Cross-origin request rejected" }, { status: 403 })
+        }
+        const response = await handleApi(request, env, url)
+        response.headers.set("Cache-Control", "no-store")
+        return response
       }
 
       return env.ASSETS.fetch(request)
@@ -26,9 +41,10 @@ export default {
           error: message,
         }),
       )
+      const status = message.match(/^\[(400|403|404|409)\] /)
       return Response.json(
-        { error: message, requestId },
-        { status: error instanceof z.ZodError ? 400 : 500 },
+        { error: message.replace(/^\[\d+\] /, ""), requestId },
+        { status: error instanceof z.ZodError ? 400 : status ? Number(status[1]) : 500 },
       )
     }
   },
@@ -40,15 +56,27 @@ async function handleApi(request: Request, env: Env, url: URL): Promise<Response
   }
   if (request.method === "POST" && url.pathname === "/api/games") {
     const input = CreateGameSchema.parse(await request.json())
-    const sessionId = input.sessionId ?? crypto.randomUUID()
-    const game = env.GAME_SESSION.getByName(sessionId)
-    const state = await game.newGame(input.players, {
+    const config = {
       seed: input.seed,
       mode: input.mode,
       tournamentGames: input.tournamentGames,
       orbits: input.orbits,
       heuristicSamples: input.heuristicSamples,
-    })
+    }
+    if (input.players.filter((player) => player.controller === "human").length > 1) {
+      const sessionId = roomId()
+      const identity = await roomIdentity(request)
+      const state = await env.GAME_SESSION.getByName(sessionId).newRoom(
+        input.players,
+        config,
+        identity.hash,
+        input.name ?? "Player 1",
+      )
+      return roomResponse(request, { sessionId, state }, identity.token, 201)
+    }
+    const sessionId = input.sessionId ?? crypto.randomUUID()
+    const game = env.GAME_SESSION.getByName(sessionId)
+    const state = await game.newGame(input.players, config)
     return Response.json({ sessionId, state }, { status: 201 })
   }
   if (request.method === "POST" && url.pathname === "/api/simulations") {
@@ -73,6 +101,33 @@ async function handleApi(request: Request, env: Env, url: URL): Promise<Response
     return Response.json({ results, heuristicSamples: input.heuristicSamples })
   }
 
+  const roomMatch = url.pathname.match(
+    /^\/api\/rooms\/([0-7][0-9A-HJKMNP-TV-Z]{25})(?:\/(join|profile|actions))?$/,
+  )
+  if (roomMatch) {
+    const game = env.GAME_SESSION.getByName(roomMatch[1]!)
+    const identity = await roomIdentity(request)
+    if (request.method === "GET" && !roomMatch[2]) {
+      return Response.json({ state: await game.getRoom(identity.hash) })
+    }
+    if (request.method === "POST" && roomMatch[2] === "join") {
+      const input = RoomProfileSchema.parse(await request.json())
+      const state = await game.joinRoom(identity.hash, input.name)
+      return roomResponse(request, { state }, identity.token)
+    }
+    if (request.method === "POST" && roomMatch[2] === "profile") {
+      const input = RoomProfileSchema.parse(await request.json())
+      return Response.json({ state: await game.renameRoomPlayer(identity.hash, input.name) })
+    }
+    if (request.method === "POST" && roomMatch[2] === "actions") {
+      const body = await request.json()
+      const input = ActionSchema.parse(body)
+      const { expectedVersion } = z.object({ expectedVersion: z.int().nonnegative() }).parse(body)
+      return Response.json({ state: await game.roomAction(identity.hash, input, expectedVersion) })
+    }
+    return Response.json({ error: "Not found" }, { status: 404 })
+  }
+
   const match = url.pathname.match(/^\/api\/games\/([^/]+)(?:\/(.+))?$/)
   if (!match) {
     return Response.json({ error: "Not found" }, { status: 404 })
@@ -81,6 +136,7 @@ async function handleApi(request: Request, env: Env, url: URL): Promise<Response
   const sessionId = decodeURIComponent(match[1]!)
   const operation = match[2] ?? ""
   const game = env.GAME_SESSION.getByName(sessionId)
+  if (await game.isRoom()) return Response.json({ error: "Use the room URL" }, { status: 403 })
 
   if (request.method === "GET" && operation === "") {
     return Response.json({
@@ -131,4 +187,25 @@ async function applyAction(
   }
 
   throw new Error("Unknown game action")
+}
+
+async function roomIdentity(request: Request) {
+  const saved = request.headers
+    .get("Cookie")
+    ?.match(/(?:^|;\s*)moker-player=([a-f0-9-]{36})(?:;|$)/)?.[1]
+  const token = saved ?? crypto.randomUUID()
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token))
+  const hash = Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("")
+  return { token, hash }
+}
+
+function roomResponse(request: Request, body: unknown, token: string, status = 200) {
+  return Response.json(body, {
+    status,
+    headers: {
+      "Set-Cookie": `moker-player=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=31536000${new URL(request.url).protocol === "https:" ? "; Secure" : ""}`,
+    },
+  })
 }

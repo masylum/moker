@@ -204,6 +204,10 @@
   display: grid;
 }
 
+.result-dialog .result-hands article.winner {
+  background: var(--color-winner-surface);
+}
+
 .result-dialog .result-hands article > span {
   color: var(--color-muted);
   margin: var(--space-1) 0 var(--space-2-half);
@@ -252,7 +256,8 @@
 
 .result-committed strong {
   color: var(--color-text);
-  font-size: var(--font-md);
+  font-family: var(--font-display);
+  font-size: var(--font-lg);
 }
 
 .game-dialog > p[role="alert"] {
@@ -645,6 +650,9 @@
   margin: 0 0 16px 20px;
 }
 .result-player-summary > b {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   font-family: var(--font-display);
   font-size: var(--font-lg);
 }
@@ -658,9 +666,12 @@
   flex-wrap: wrap;
   font-size: var(--font-md);
 }
-.result-committed .chip-stacks {
-  zoom: 0.65;
-}
 .result-dialog .dialog-heading:not(:has(h2)) {
-  margin-bottom: 0;
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  margin: 0;
+}
+.result-dialog .round-result > .eyebrow {
+  padding-right: var(--space-10);
 }

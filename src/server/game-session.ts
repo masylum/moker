@@ -1,3 +1,5 @@
+import type { z } from "zod"
+import type { ActionSchema } from "./schemas"
 import { DurableObject } from "cloudflare:workers"
 import { prepareCharleston, stepHeuristic } from "../game/automation"
 import { GameEngine, type PlayerSetup } from "../game/engine"
@@ -28,6 +30,8 @@ export class GameSession extends DurableObject<Env> {
     super(ctx, env)
     this.ensureSchema()
     this.ctx.storage.sql.exec(`
+      CREATE TABLE IF NOT EXISTS room_members (identity TEXT PRIMARY KEY, player_id TEXT UNIQUE);
+      CREATE TABLE IF NOT EXISTS room_host (id INTEGER PRIMARY KEY CHECK (id = 1), player_id TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS game_state (id INTEGER PRIMARY KEY CHECK (id = 1), snapshot TEXT NOT NULL);
       INSERT OR IGNORE INTO game_state (id, snapshot)
       SELECT 1, state_json FROM game_events ORDER BY id DESC LIMIT 1;
@@ -38,10 +42,188 @@ export class GameSession extends DurableObject<Env> {
     players: PlayerSetup[],
     config: Partial<GameConfig> & Pick<GameConfig, "seed">,
   ): Promise<PublicGameState> {
+    if (this.isRoom()) throw new Error("[409] This room already exists")
     const engine = GameEngine.create(players, config)
     prepareCharleston(engine)
     this.persist(engine.state, engine.events, true)
     return engine.publicView(players.find((player) => player.controller === "human")?.id)
+  }
+
+  isRoom(): boolean {
+    return this.ctx.storage.sql.exec("SELECT id FROM room_host").toArray().length > 0
+  }
+
+  async newRoom(
+    players: PlayerSetup[],
+    config: Partial<GameConfig> & Pick<GameConfig, "seed">,
+    identity: string,
+    name: string,
+  ): Promise<PublicGameState> {
+    if (this.isRoom()) throw new Error("[409] This room already exists")
+    const engine = GameEngine.create(players, { ...config, seed: crypto.randomUUID() })
+    const host = engine.state.players.find((player) => player.controller === "human")!
+    host.name = name
+    prepareCharleston(engine)
+    this.ctx.storage.transactionSync(() => {
+      this.persist(engine.state, engine.events, true)
+      this.ctx.storage.sql.exec("INSERT INTO room_host VALUES (1, ?)", host.id)
+      this.ctx.storage.sql.exec("INSERT INTO room_members VALUES (?, ?)", identity, host.id)
+    })
+    return this.roomView(engine, identity)
+  }
+
+  async joinRoom(identity: string, name: string): Promise<PublicGameState> {
+    const engine = this.roomEngine()
+    const existing = this.member(identity)
+    if (!existing) {
+      const open = this.waitingPlayers(engine)[0]
+      this.ctx.storage.transactionSync(() => {
+        this.ctx.storage.sql.exec("INSERT INTO room_members VALUES (?, ?)", identity, open ?? null)
+        if (open) {
+          engine.state.players.find((player) => player.id === open)!.name = name
+          engine.state.version += 1
+          this.commit(engine)
+        }
+      })
+      await this.scheduleRoomBot(engine)
+    }
+    return this.roomView(engine, identity)
+  }
+
+  async getRoom(identity: string): Promise<PublicGameState> {
+    return this.roomView(this.roomEngine(), identity)
+  }
+
+  async renameRoomPlayer(identity: string, name: string): Promise<PublicGameState> {
+    const engine = this.roomEngine()
+    const id = this.member(identity)?.player_id
+    if (!id) throw new Error("[403] Observers cannot rename players")
+    engine.state.players.find((player) => player.id === id)!.name = name
+    engine.state.version += 1
+    this.commit(engine)
+    return this.roomView(engine, identity)
+  }
+
+  async roomAction(
+    identity: string,
+    input: z.infer<typeof ActionSchema>,
+    expectedVersion: number,
+  ): Promise<PublicGameState> {
+    const engine = this.roomEngine()
+    const id = this.member(identity)?.player_id
+    if (!id) throw new Error("[403] Observers cannot play")
+    if (this.waitingPlayers(engine).length) throw new Error("[409] Waiting for human players")
+    if (input.kind === "next-hand" ? id !== this.hostId() : input.playerId !== id) {
+      throw new Error("[403] You can only control your own seat; the host deals each round")
+    }
+    if (engine.state.version !== expectedVersion)
+      throw new Error("[409] The table changed. Try again")
+    try {
+      switch (input.kind) {
+        case "riichi-stick":
+          if (input.source) engine.spendRiichiStick(id, input.source)
+          else engine.finishStickDecision(id)
+          break
+        case "betting":
+          engine.act(id, input.action, input.offerStick)
+          break
+        case "charleston":
+          engine.passCharleston(id, input.cardIds)
+          prepareCharleston(engine)
+          break
+        case "expose":
+          engine.exposeCards(id, input.cardIds)
+          break
+        case "discard":
+          engine.discard(id, { discardCardId: input.discardCardId, discardPile: input.discardPile })
+          break
+        case "take-loan":
+          engine.takeLoan(id)
+          break
+        case "repay-loan":
+          engine.repayLoan(id)
+          break
+        case "next-hand":
+          engine.startNextHand()
+          prepareCharleston(engine)
+          break
+      }
+    } catch (error) {
+      throw new Error(`[409] ${error instanceof Error ? error.message : "Invalid move"}`, {
+        cause: error,
+      })
+    }
+    // Some transitions (such as declining a stick) do not emit an engine event.
+    // Room revisions must still advance so every connected player receives them.
+    engine.state.version = Math.max(engine.state.version, expectedVersion + 1)
+    this.commit(engine)
+    await this.scheduleRoomBot(engine)
+    return this.roomView(engine, identity)
+  }
+
+  override async alarm(): Promise<void> {
+    if (!this.isRoom()) return
+    const engine = this.roomEngine()
+    if (!this.roomBotCanAct(engine)) return
+    stepHeuristic(engine)
+    this.commit(engine)
+    await this.scheduleRoomBot(engine)
+  }
+
+  private roomEngine(): GameEngine {
+    if (!this.isRoom()) throw new Error("[404] Room not found")
+    return this.engine()
+  }
+
+  private member(identity: string) {
+    return this.ctx.storage.sql
+      .exec<{ player_id: string | null }>(
+        "SELECT player_id FROM room_members WHERE identity = ?",
+        identity,
+      )
+      .toArray()[0]
+  }
+
+  private hostId(): string {
+    return this.ctx.storage.sql.exec<{ player_id: string }>("SELECT player_id FROM room_host").one()
+      .player_id
+  }
+
+  private waitingPlayers(engine: GameEngine): string[] {
+    const occupied = new Set(
+      this.ctx.storage.sql
+        .exec<{ player_id: string | null }>("SELECT player_id FROM room_members")
+        .toArray()
+        .map((member) => member.player_id),
+    )
+    return engine.state.players
+      .filter((player) => player.controller === "human" && !occupied.has(player.id))
+      .map((player) => player.id)
+  }
+
+  private roomView(engine: GameEngine, identity: string): PublicGameState {
+    const viewerId = this.member(identity)?.player_id ?? null
+    const state = engine.publicView(viewerId ?? undefined)
+    // A reproducible shuffle is useful for local games, but would expose online hands.
+    state.config.seed = "private"
+    state.id = "room"
+    state.rngState = 0
+    state.room = { viewerId, hostId: this.hostId(), waitingPlayerIds: this.waitingPlayers(engine) }
+    return state
+  }
+
+  private roomBotCanAct(engine: GameEngine): boolean {
+    const state = engine.state
+    const actorId = state.pendingDiscard?.playerId ?? state.actingPlayerId
+    return (
+      !this.waitingPlayers(engine).length &&
+      ["charleston", "exposing", "betting", "discarding"].includes(state.phase) &&
+      state.players.some((player) => player.id === actorId && player.controller !== "human")
+    )
+  }
+
+  private async scheduleRoomBot(engine: GameEngine): Promise<void> {
+    if (this.roomBotCanAct(engine)) await this.ctx.storage.setAlarm(Date.now() + 1300)
   }
 
   async getGame(viewerId?: string): Promise<PublicGameState> {

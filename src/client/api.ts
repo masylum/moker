@@ -10,12 +10,14 @@ export async function createGame(
   orbits = 1,
   humanCount = 1,
   seats?: SeatKind[],
+  name = "Aki",
 ) {
-  const names = ["You", "Mori", "Kiko", "Ren", "Hana", "Sora"]
+  const names = ["Aki", "Mori", "Kiko", "Ren", "Hana", "Sora"]
   return request<{ sessionId: string; state: PublicGameState }>("/api/games", {
     method: "POST",
     body: JSON.stringify({
       seed,
+      name,
       mode,
       tournamentGames,
       orbits,
@@ -26,14 +28,7 @@ export async function createGame(
       )
         .map((seat, index) => ({
           id: `p${index + 1}`,
-          name:
-            seat === "human"
-              ? humanCount === 1
-                ? "You"
-                : `Player ${index + 1}`
-              : names[index] === "You"
-                ? "Aki"
-                : names[index],
+          name: seat === "human" ? (humanCount === 1 ? name : names[index]) : names[index],
           controller: seat === "human" ? "human" : "heuristic",
           seat,
         }))
@@ -43,24 +38,42 @@ export async function createGame(
   })
 }
 
-export async function loadGame(sessionId: string, viewer = "p1") {
-  return request<{ sessionId: string; state: PublicGameState }>(
-    `/api/games/${encodeURIComponent(sessionId)}?viewer=${viewer}`,
-  )
+export async function loadRoom(sessionId: string) {
+  return request<{ state: PublicGameState }>(`/api/rooms/${encodeURIComponent(sessionId)}`)
 }
 
-export async function gameAction(sessionId: string, action: Record<string, unknown>) {
+export async function joinRoom(sessionId: string, name: string) {
+  return request<{ state: PublicGameState }>(`/api/rooms/${encodeURIComponent(sessionId)}/join`, {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  })
+}
+
+export async function gameAction(
+  sessionId: string,
+  action: Record<string, unknown>,
+  expectedVersion?: number,
+) {
   return request<{ state: PublicGameState }>(
-    `/api/games/${encodeURIComponent(sessionId)}/actions`,
+    `/api/${expectedVersion === undefined ? "games" : "rooms"}/${encodeURIComponent(sessionId)}/actions`,
     {
       method: "POST",
-      body: JSON.stringify(action),
+      body: JSON.stringify({ ...action, expectedVersion }),
     },
   )
 }
 
-export async function bettingAction(sessionId: string, playerId: string, action: BettingAction) {
-  return gameAction(sessionId, { kind: "betting", playerId, action, offerStick: true })
+export async function bettingAction(
+  sessionId: string,
+  playerId: string,
+  action: BettingAction,
+  expectedVersion?: number,
+) {
+  return gameAction(
+    sessionId,
+    { kind: "betting", playerId, action, offerStick: true },
+    expectedVersion,
+  )
 }
 
 export async function botStep(sessionId: string) {

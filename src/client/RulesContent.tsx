@@ -303,9 +303,9 @@ export function RulesContent() {
           <RuleIllustration name="loan-sticks" description="Loan sticks" />
           <p>
             If you cannot afford the full ante, take one loan stick and <strong>200</strong> chips,
-            then pay the ante. You may take one loan per game, only when you cannot afford the ante.
-            If you cannot afford a later ante after taking your loan, you are eliminated for the
-            rest of that game.
+            then pay the ante. During Charleston, you may also choose a loan if you have fewer than
+            100 chips. Both use the same one-loan allowance per game. If you cannot afford a later
+            ante after taking your loan, you are eliminated for the rest of that game.
           </p>
           <p>
             If you took a loan, subtract <strong>250</strong> chips from your remaining chips at the

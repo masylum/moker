@@ -1,0 +1,114 @@
+.room-entry.launch-card {
+  width: min(480px, calc(100% - 32px));
+  margin: var(--space-10) auto;
+  padding: var(--space-8);
+  gap: var(--space-6);
+}
+.room-entry-heading h1 {
+  margin: var(--space-2) 0;
+  font-size: clamp(26px, 5vw, 36px);
+  line-height: 1.2;
+}
+.room-entry-heading p {
+  margin: 0;
+  line-height: 1.5;
+}
+.room-entry-heading .room-inviter {
+  color: var(--color-muted);
+  font-size: var(--font-sm);
+}
+.setup-field input,
+.room-bar input {
+  min-width: 0;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+.game-page .masthead.has-room {
+  height: auto;
+  min-height: 72px;
+  padding-block: var(--space-2);
+  gap: var(--space-4);
+}
+.masthead.has-room nav {
+  flex-shrink: 0;
+}
+.room-bar {
+  display: flex;
+  flex: 0 1 440px;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  align-self: flex-start;
+  margin-top: calc(-1 * var(--space-2));
+  border: 0;
+  border-radius: 0 0 var(--radius-control) var(--radius-control);
+  background: var(--color-room-banner);
+  font-size: var(--font-sm);
+  animation: room-arrive 240ms ease-out;
+}
+.room-bar > [role="status"] {
+  flex-shrink: 0;
+}
+.room-bar p {
+  margin: var(--space-1) 0 0;
+  color: var(--color-muted);
+  font-size: var(--font-xs);
+}
+.room-link {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  gap: var(--space-2);
+}
+.room-link button {
+  flex-shrink: 0;
+}
+@media (width <= 1050px) {
+  .game-page .masthead.has-room {
+    flex-wrap: wrap;
+  }
+  .room-bar {
+    order: 3;
+    flex: 0 1 440px;
+    margin-inline: auto;
+  }
+}
+
+.room-bar input {
+  border: 0;
+  background: var(--color-room-link);
+}
+.room-bar .room-copy {
+  width: 36px;
+  min-width: 36px;
+  padding: var(--space-2);
+  border: 0;
+  box-shadow: none;
+  background: none;
+}
+.room-copy svg {
+  width: 20px;
+  height: 20px;
+}
+.room-bar .room-copy:hover {
+  background: var(--color-room-link);
+}
+@keyframes room-arrive {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .room-bar {
+    animation: none;
+  }
+}

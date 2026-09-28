@@ -76,12 +76,3 @@ body::after {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
-
-.opponent,
-.hand-panel {
-  background: var(--color-player-surface);
-}
-.opponent.betting,
-.hand-panel.betting {
-  background: var(--color-seat);
-}

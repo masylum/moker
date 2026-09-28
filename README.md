@@ -13,7 +13,11 @@ npm install
 npm run dev
 ```
 
-Browser play uses heuristic opponents and needs no API keys. Choose multiple human players for pass-and-play on one device; a handoff screen conceals cards between players. Old rules-v5 and earlier sessions cannot be resumed under the new engine.
+Browser play uses heuristic opponents and needs no API keys. Choose more than one human seat to create an online room at `/rooms/<ULID>`. Enter your name, copy the invite link, and share it with friends. Each visitor claims the next human seat; once all seats are occupied, new visitors can observe. Play begins when all human seats are filled. Human players have forest-spirit avatars and robots have mechanical faces.
+
+Rooms retain seat ownership in a browser cookie, so refreshing or reopening the same link in the same browser restores your seat. Use separate browsers/devices (or a private browser window) to test multiple people. Seats stay reserved when someone disconnects; clearing cookies loses access to that seat. The host deals subsequent rounds. The table refreshes once per second, and Durable Object alarms run robot turns independently of connected browsers. Choose your name during setup or when joining a room.
+
+The server authorizes each room action and filters private cards for the current player or observer. Room seeds and RNG state stay private, and legacy debug/event endpoints are blocked for rooms. Single-human games and CLI simulations retain their existing behavior. Old rules-v5 and earlier sessions cannot be resumed under the new engine.
 
 ## Commands
 

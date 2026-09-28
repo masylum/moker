@@ -1,4 +1,4 @@
-import type { GameConfig } from "./types"
+import type { GameConfig, GameState, PlayerState } from "./types"
 
 export const STREET_COUNT = 4
 const STARTING_CHIPS = 200
@@ -7,6 +7,21 @@ export const RIICHI_WIN_STICKS = 2
 export const LOAN_VALUE = 200
 export const LOAN_PENALTY = 250
 export const MAX_LOANS = 1
+const LOAN_OFFER_THRESHOLD = 100
+
+export function canTakeLoan(
+  state: Pick<GameState, "phase" | "config">,
+  player: Pick<PlayerState, "chips" | "loans" | "eliminated" | "folded">,
+): boolean {
+  return (
+    state.config.mode === "riichi" &&
+    state.phase === "charleston" &&
+    !player.eliminated &&
+    !player.folded &&
+    player.chips < LOAN_OFFER_THRESHOLD &&
+    player.loans < MAX_LOANS
+  )
+}
 export const OPENING_PRIVATE_CARD_COUNT = 7
 export const CHARLESTON_PASS_COUNT = 2
 export const STREET_REVEAL_COUNTS = [3, 1, 1, 0] as const

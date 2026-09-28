@@ -219,6 +219,7 @@ export interface GameState {
   removedCards: Card[]
   foldedPrivateCards: Record<string, Card[]>
   openingPrivateCards: Record<string, Card[]>
+  openingLoans?: Record<string, number>
   openingChips: Record<string, number>
   charlestonSelections: Record<string, string[]>
   charlestonHistory: CharlestonRecord[]
@@ -417,6 +418,11 @@ export interface PublicGameState extends Omit<
   | "charlestonHistory"
   | "exposureSelections"
 > {
+  room?: {
+    viewerId: string | null
+    hostId: string
+    waitingPlayerIds: string[]
+  }
   players: PublicPlayerState[]
   /** Charleston cards received by this viewer only; never another player’s hand. */
   charlestonReceivedCards?: Card[]
