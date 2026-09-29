@@ -1,0 +1,38 @@
+{
+  "4": {
+    "kongChangePoints": -2.5,
+    "kongInterval": [
+      -4.688,
+      -0.312
+    ],
+    "probeChangePoints": -0.05,
+    "probeInterval": [
+      -0.263,
+      0.138
+    ]
+  },
+  "5": {
+    "kongChangePoints": -1.0,
+    "kongInterval": [
+      -4.75,
+      2.5
+    ],
+    "probeChangePoints": 0.53,
+    "probeInterval": [
+      0.24,
+      0.82
+    ]
+  },
+  "6": {
+    "kongChangePoints": -1.25,
+    "kongInterval": [
+      -3.75,
+      1.458
+    ],
+    "probeChangePoints": 0.65,
+    "probeInterval": [
+      0.375,
+      0.975
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "fileKey": "mYJZqQ29YKtPn49xtNVLkt",
+  "pageId": "318:479",
+  "boardId": "318:480",
+  "cards": [
+    {
+      "name": "treasure-1",
+      "nodeId": "318:603",
+      "path": "/assets/cards/treasure-1.svg"
+    },
+    {
+      "name": "treasure-2",
+      "nodeId": "318:614",
+      "path": "/assets/cards/treasure-2.svg"
+    },
+    {
+      "name": "treasure-3",
+      "nodeId": "318:623",
+      "path": "/assets/cards/treasure-3.svg"
+    },
+    {
+      "name": "treasure-4",
+      "nodeId": "318:632",
+      "path": "/assets/cards/treasure-4.svg"
+    },
+    {
+      "name": "treasure-5",
+      "nodeId": "318:603",
+      "path": "/assets/cards/treasure-5.svg"
+    }
+  ]
+}

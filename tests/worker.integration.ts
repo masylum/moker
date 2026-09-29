@@ -512,3 +512,110 @@ describe("online rooms", () => {
     expect(unchanged.version).toBe(after.version)
   })
 })
+
+describe("Legacy room persistence and private offers", () => {
+  it("keeps a Treasure search private across eviction and rejects another seat's choice", async () => {
+    const stub = env.GAME_SESSION.getByName("legacy-private-room")
+    let state = await stub.newRoom(
+      [
+        { id: "p1", name: "legacy", controller: "human" },
+        { id: "p2", name: "Bob", controller: "human" },
+      ],
+      { mode: "legacy", seed: "legacy-room" },
+      "alice",
+      "legacy",
+    )
+    state = await stub.joinRoom("bob", "Bob")
+    expect(state.phase).toBe("charleston")
+    for (const [identity, id] of [
+      ["alice", "p1"],
+      ["bob", "p2"],
+    ]) {
+      const view = await stub.getRoom(identity!)
+      const cards = view.players.find((p) => p.id === id)!.privateCards
+      if (!Array.isArray(cards)) throw new Error("Missing private hand")
+      state = await stub.roomAction(
+        identity!,
+        { kind: "charleston", playerId: id!, cardIds: cards.slice(0, 2).map((c) => c.id) },
+        state.version,
+      )
+    }
+    // Put a real Treasure into the acting seat, preserving every physical card.
+    const fixture = await runInDurableObject(stub, (_instance, ctx) => {
+      const row = ctx.storage.sql
+        .exec<{ snapshot: string }>("SELECT snapshot FROM game_state WHERE id=1")
+        .one()
+      const saved = JSON.parse(row.snapshot) as import("../src/game/types").GameState
+      const player = saved.players.find((p) => p.id === saved.actingPlayerId)!
+      let treasure = player.privateCards.find((c) => c.kind === "treasure")
+      if (!treasure) {
+        const pools = [
+          ...saved.legacy!.decks,
+          saved.deck,
+          saved.discardA,
+          saved.discardB,
+          ...saved.players.filter((p) => p.id !== player.id).map((p) => p.privateCards),
+        ]
+        for (const pool of pools) {
+          const index = pool.findIndex((c) => c.kind === "treasure")
+          if (index >= 0) {
+            treasure = pool[index]!
+            pool[index] = player.privateCards[0]!
+            player.privateCards[0] = treasure
+            break
+          }
+        }
+      }
+      ctx.storage.sql.exec("UPDATE game_state SET snapshot=? WHERE id=1", JSON.stringify(saved))
+      return { id: player.id, treasureId: treasure!.id, version: saved.version }
+    })
+    const identity = fixture.id === "p1" ? "alice" : "bob",
+      other = fixture.id === "p1" ? "bob" : "alice",
+      otherId = fixture.id === "p1" ? "p2" : "p1"
+    state = await stub.roomAction(
+      identity,
+      {
+        kind: "betting",
+        playerId: fixture.id,
+        action: {
+          type: "check",
+          treasureSearch: {
+            treasureCardId: fixture.treasureId,
+            targetPlayerId: otherId,
+          },
+        },
+      },
+      fixture.version,
+    )
+    expect(state.phase).toBe("treasure")
+    const offer = state.legacy!.treasureOffer!.cards
+    expect(offer).toHaveLength(3)
+    expect((await stub.getRoom(other)).legacy!.treasureOffer).toBeUndefined()
+    expect((await stub.getRoom("observer")).legacy!.treasureOffer).toBeUndefined()
+    await evictDurableObject(stub)
+    const restored = await stub.getRoom(identity)
+    expect(restored.legacy!.treasureOffer!.cards).toEqual(offer)
+    await runInDurableObject(stub, async (instance) => {
+      await expect(
+        instance.roomAction(
+          other,
+          { kind: "treasure-choice", playerId: fixture.id, cardIds: [offer[0]!.id] },
+          restored.version,
+        ),
+      ).rejects.toThrow("own seat")
+    })
+    const chosen = await stub.roomAction(
+      identity,
+      { kind: "treasure-choice", playerId: fixture.id, cardIds: [offer[1]!.id] },
+      restored.version,
+    )
+    expect(chosen.legacy!.treasureOffer).toBeUndefined()
+    const hand = chosen.players.find((p) => p.id === fixture.id)!.privateCards
+    expect(Array.isArray(hand) && hand.some((c) => c.id === offer[1]!.id)).toBe(true)
+    expect(
+      (await stub.getRoom(other)).players.find((p) => p.id === fixture.id)!.privateCards,
+    ).toEqual({ count: 7 })
+    const publicHistory = (await stub.getRoom(other)).publicDrawDiscards!
+    expect(publicHistory.at(-1)?.drawnCard).toBeUndefined()
+  })
+})

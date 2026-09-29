@@ -1,0 +1,108 @@
+{
+  "control": {
+    "three-dragons": {
+      "hands": 2091465200,
+      "totalHands": 323295330680,
+      "percent": 0.6469209424092014
+    },
+    "three-winds": {
+      "hands": 5495262800,
+      "totalHands": 323295330680,
+      "percent": 1.6997655946473442
+    },
+    "four-winds": {
+      "hands": 233103200,
+      "totalHands": 323295330680,
+      "percent": 0.0721022476599661
+    },
+    "kong": {
+      "hands": 88535648,
+      "totalHands": 323295330680,
+      "percent": 0.027385377887697737
+    },
+    "quint": {
+      "hands": 364854,
+      "totalHands": 323295330680,
+      "percent": 0.00011285470756184074
+    },
+    "twin-lotus": {
+      "hands": 591600030,
+      "totalHands": 323295330680,
+      "percent": 0.18299058905542
+    }
+  },
+  "shadow": {
+    "three-dragons": {
+      "hands": 20837575800,
+      "totalHands": 1708566412608,
+      "percent": 1.219594137297419
+    },
+    "four-dragons": {
+      "hands": 597860000,
+      "totalHands": 1708566412608,
+      "percent": 0.03499190874807208
+    },
+    "three-winds": {
+      "hands": 15094028400,
+      "totalHands": 1708566412608,
+      "percent": 0.8834323494022152
+    },
+    "four-winds": {
+      "hands": 495851360,
+      "totalHands": 1708566412608,
+      "percent": 0.029021485869145682
+    },
+    "kong": {
+      "hands": 236699488,
+      "totalHands": 1708566412608,
+      "percent": 0.013853689634381596
+    },
+    "quint": {
+      "hands": 765204,
+      "totalHands": 1708566412608,
+      "percent": 4.478631877305681e-05
+    },
+    "twin-lotus": {
+      "hands": 1956800538,
+      "totalHands": 1708566412608,
+      "percent": 0.11452879581151831
+    }
+  },
+  "shadow-restricted": {
+    "three-dragons": {
+      "hands": 17937974445,
+      "totalHands": 1708566412608,
+      "percent": 1.049884529663615
+    },
+    "four-dragons": {
+      "hands": 482271625,
+      "totalHands": 1708566412608,
+      "percent": 0.028226682992313314
+    },
+    "three-winds": {
+      "hands": 15094028400,
+      "totalHands": 1708566412608,
+      "percent": 0.8834323494022152
+    },
+    "four-winds": {
+      "hands": 495851360,
+      "totalHands": 1708566412608,
+      "percent": 0.029021485869145682
+    },
+    "kong": {
+      "hands": 193803048,
+      "totalHands": 1708566412608,
+      "percent": 0.011343021059636424
+    },
+    "quint": {
+      "hands": 591294,
+      "totalHands": 1708566412608,
+      "percent": 3.460760996099845e-05
+    },
+    "twin-lotus": {
+      "hands": 1956800538,
+      "totalHands": 1708566412608,
+      "percent": 0.11452879581151831
+    }
+  }
+}

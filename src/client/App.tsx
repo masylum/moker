@@ -1,3 +1,4 @@
+import { LEGACY_HAND_ORDER, HAND_LABELS } from "../game/hand-ranks"
 import {
   For,
   Show,
@@ -135,13 +136,17 @@ export function App() {
       setResultStage("round")
     pendingMoves = []
     setDrawNotice(undefined)
-    if (previous && previous.handNumber === next.handNumber) {
+    if (
+      previous &&
+      previous.gameNumber === next.gameNumber &&
+      previous.handNumber === next.handNumber
+    ) {
       pendingMoves = (next.publicDrawDiscards ?? [])
         .slice(previous.publicDrawDiscards?.length ?? 0)
         .filter((record) => record.playerId !== viewer())
         .map((record) => ({
           ...record,
-          origin: sourcePosition(record.source),
+          origin: sourcePosition(record.source, record.sourceDeckId),
           name: next.players.find((p) => p.id === record.playerId)?.name ?? "Opponent",
         }))
     }
@@ -182,7 +187,7 @@ export function App() {
     else if (previous?.phase === "betting" && next.phase === "discarding") audio.play("shake")
   }
   const setup = readSetup()
-  const [mode, setMode] = createSignal<"basic" | "riichi">(setup.mode)
+  const [mode, setMode] = createSignal<"basic" | "riichi" | "legacy">(setup.mode)
   const [seats, setSeats] = createSignal<SeatKind[]>(setup.seats)
   const players = () => seats().filter((seat) => seat !== "none").length
   const humans = () => seats().filter((seat) => seat === "human").length
@@ -232,6 +237,9 @@ export function App() {
   const [scoresOpen, setScoresOpen] = createSignal(false)
   const [ladderOpen, setLadderOpen] = createSignal(false)
   const [blankPick, setBlankPick] = createSignal<string>()
+  const [treasurePick, setTreasurePick] = createSignal<string>()
+  const [treasureCards, setTreasureCards] = createSignal<string[]>([])
+  const [treasureReturn, setTreasureReturn] = createSignal<string>()
   const [pickingFish, setPickingFish] = createSignal(false)
   const [pickingStick, setPickingStick] = createSignal(false)
   let fishingTable: HTMLDivElement | undefined
@@ -245,7 +253,7 @@ export function App() {
   const myTurn = () =>
     !drawNotice() &&
     !waiting() &&
-    (state()?.phase === "charleston"
+    (["charleston"].includes(state()?.phase ?? "")
       ? !!viewer() && !!state()?.pendingPlayerIds.includes(viewer()!)
       : actor()?.controller === "human" && actor()?.id === viewer())
   const cards = () => [...privateCards(human())].sort(compareCards)
@@ -263,7 +271,22 @@ export function App() {
   const canFish = () => !allIn() && !human()?.riichi
   const canFishOnCall = () => !human()?.riichi
   const ladder = () =>
-    (state()?.config.mode ?? mode()) === "riichi" ? ADVANCED_LADDER : BASIC_LADDER
+    (state()?.config.mode ?? mode()) === "legacy"
+      ? LEGACY_HAND_ORDER.map((kind) => [
+          HAND_LABELS[kind],
+          kind === "four-dragons"
+            ? "All four distinct Dragons"
+            : kind === "three-dragons"
+              ? "Any three distinct Dragons"
+              : kind === "three-dragons-eye"
+                ? "Any three distinct Dragons and a pair"
+                : kind === "quint"
+                  ? "Five identical cards"
+                  : (ADVANCED_LADDER.find((e) => e[0] === HAND_LABELS[kind])?.[1] ?? ""),
+        ])
+      : (state()?.config.mode ?? mode()) === "riichi"
+        ? ADVANCED_LADDER
+        : BASIC_LADDER
   const currentHand = () =>
     scoreHand([...cards(), ...(human()?.publicCards ?? [])], state()?.config.mode ?? "basic")
   async function perform(work: () => Promise<{ state: PublicGameState }>) {
@@ -281,6 +304,9 @@ export function App() {
       )
       updateState(result.state)
       setBlankPick(undefined)
+      setTreasurePick(undefined)
+      setTreasureCards([])
+      setTreasureReturn(undefined)
       setPickingFish(false)
       const awaitingExchangeOrReveal =
         (previous?.phase === "exposing" || previous?.phase === "charleston") &&
@@ -394,7 +420,7 @@ export function App() {
       !!drawNotice() ||
       loanNotice().length > 0 ||
       receivedCharleston().length > 0 ||
-      (game.phase === "charleston" &&
+      (["charleston"].includes(game.phase) &&
         game.players.some(
           (player) => player.controller === "human" && game.pendingPlayerIds.includes(player.id),
         )) ||
@@ -416,7 +442,7 @@ export function App() {
     if (!error()) setActionDialog(undefined)
   }
   const canSpendStick = () =>
-    state()?.config.mode === "riichi" &&
+    state()?.config.mode !== "basic" &&
     !state()?.stickSpentThisTurn &&
     !human()?.riichi &&
     (!allIn() || callCost() > 0 || state()?.stickWindow?.playerId === viewer()) &&
@@ -425,11 +451,17 @@ export function App() {
     !human()?.folded
   const cancelFishing = () => {
     setBlankPick(undefined)
+    setTreasurePick(undefined)
+    setTreasureCards([])
+    setTreasureReturn(undefined)
     setPickingFish(false)
     setPickingStick(false)
   }
   const chooseStick = () => {
     setBlankPick(undefined)
+    setTreasurePick(undefined)
+    setTreasureCards([])
+    setTreasureReturn(undefined)
     setPickingStick(true)
     setPickingFish(true)
   }
@@ -445,10 +477,60 @@ export function App() {
     pickingStick()
       ? resolveStick(drawSource)
       : act({ type: callCost() ? "call" : "check", drawSource })
+  const fishSpecial = (fishing: {
+    blankExchange?: import("../game/types").BlankExchange
+    treasureSearch?: import("../game/types").TreasureSearch
+  }) =>
+    pickingStick()
+      ? perform(() =>
+          gameAction(session(), {
+            kind: "riichi-stick",
+            playerId: viewer()!,
+            source: "deck",
+            ...fishing,
+          }),
+        )
+      : act({ type: callCost() ? "call" : "check", ...fishing })
+  const huntDeck = (targetPlayerId: string) =>
+    fishSpecial({ treasureSearch: { treasureCardId: treasurePick()!, targetPlayerId } })
+  const personalDeck = (playerId: string) => {
+    const count = () => state()?.legacy?.decks.find((d) => d.playerId === playerId)?.count ?? 0
+    const hunting = () => pickingFish() && !!treasurePick() && playerId !== viewer() && count() > 0
+    const drawing = () =>
+      pickingFish() && playerId === viewer() && count() > 0 && !treasurePick() && !blankPick()
+    return (
+      <Show when={state()?.legacy}>
+        <Button
+          class="personal-deck"
+          title={
+            playerId === viewer() && count() === 0
+              ? "Your deck is empty. Choose a discard pile, Blank, or Treasure."
+              : undefined
+          }
+          data-personal-deck={playerId}
+          classList={{ "deck-available": (hunting() || drawing()) && !busy() }}
+          disabled={busy() || !(hunting() || drawing())}
+          aria-label={`${hunting() ? "Hunt" : "Draw from"} ${playerId === viewer() ? "your" : state()?.players.find((p) => p.id === playerId)?.name + "’s"} deck, ${count()} cards`}
+          onClick={() => (hunting() ? huntDeck(playerId) : fishFrom("deck"))}
+        >
+          <img
+            src="/assets/cards/back.png"
+            alt=""
+            data-motion-key={`deck-${playerId}`}
+            data-motion-value={count()}
+          />
+          <small>{count()} cards</small>
+        </Button>
+      </Show>
+    )
+  }
   const openAction = (kind: "check" | "call" | "bet") => {
     setPickingStick(false)
     setError("")
     setBlankPick(undefined)
+    setTreasurePick(undefined)
+    setTreasureCards([])
+    setTreasureReturn(undefined)
     setPickingFish(false)
     if ((kind === "check" && canFish()) || (kind === "call" && canFishOnCall())) {
       setPickingFish(true)
@@ -698,9 +780,17 @@ export function App() {
               <div class="setup-label" id="game-mode-label">
                 Game mode
               </div>
+              <img
+                class="legacy-testing-pointer"
+                src="/assets/legacy-testing.svg"
+                alt="unfinished, testing — Legacy expansion"
+              />
               <div
                 class="mode-picker"
-                classList={{ "riichi-selected": mode() === "riichi" }}
+                classList={{
+                  "riichi-selected": mode() === "riichi",
+                  "legacy-selected": mode() === "legacy",
+                }}
                 role="group"
                 aria-labelledby="game-mode-label"
               >
@@ -709,20 +799,29 @@ export function App() {
                   aria-pressed={mode() === "basic"}
                   onClick={() => setMode("basic")}
                 >
-                  Basic game
+                  Basic
                 </Button>
                 <Button
                   classList={{ selected: mode() === "riichi" }}
                   aria-pressed={mode() === "riichi"}
                   onClick={() => setMode("riichi")}
                 >
-                  Riichi expansion
+                  Riichi
+                </Button>
+                <Button
+                  classList={{ selected: mode() === "legacy" }}
+                  aria-pressed={mode() === "legacy"}
+                  onClick={() => setMode("legacy")}
+                >
+                  Legacy
                 </Button>
               </div>
               <p class="mode-description">
                 {mode() === "basic"
                   ? "102 cards. Nine hand ranks."
-                  : "Special cards and Riichi sticks."}
+                  : mode() === "legacy"
+                    ? "192 cards. Four suits. Personal decks carry across games."
+                    : "Special cards and Riichi sticks."}
               </p>
             </div>
             <div class="setup-field seat-setup">
@@ -779,7 +878,7 @@ export function App() {
             </Button>
           </section>
           <FrontpageDecor />
-          <FrontpageDecor special visible={mode() === "riichi"} />
+          <FrontpageDecor special visible={mode() !== "basic"} />
         </section>
       </Show>
       <Show when={state()}>
@@ -859,6 +958,7 @@ export function App() {
                       {(p) => (
                         <PlayerSeat
                           player={p}
+                          deck={personalDeck(p.id)}
                           mode={game().config.mode}
                           drawNotice={drawNotice()?.playerId === p.id ? drawNotice() : undefined}
                           colorIndex={game().players.findIndex((player) => player.id === p.id)}
@@ -896,9 +996,11 @@ export function App() {
                     ref={(element) => {
                       fishingTable = element
                     }}
-                    classList={{ "choosing-fish": pickingFish() }}
+                    classList={{
+                      "choosing-fish": pickingFish(),
+                    }}
                   >
-                    <div class="deck-pile">
+                    <div class="deck-pile" classList={{ "legacy-deck-pile": !!game().legacy }}>
                       <div class="pot-summary">
                         <span>
                           <b class="pot-label">Pot</b>
@@ -929,25 +1031,32 @@ export function App() {
                         />
                       </div>
 
-                      <Button
-                        class="deck"
-                        aria-label={`Draw from deck, ${game().deck.count} cards`}
-                        disabled={
-                          !pickingFish() || !!blankPick() || busy() || game().deck.count === 0
-                        }
-                        onClick={() => fishFrom("deck")}
-                      >
-                        <img
-                          data-motion-key="deck"
-                          data-motion-value={game().deck.count}
-                          src="/assets/cards/back.png"
-                          alt="Moker card back"
-                        />
-                      </Button>
+                      <Show when={!game().legacy}>
+                        <div class="central-deck-stack">
+                          <Button
+                            class="deck"
+                            aria-label={`Deck, ${game().deck.count} cards`}
+                            disabled={
+                              busy() || !pickingFish() || !!blankPick() || game().deck.count === 0
+                            }
+                            onClick={() => fishFrom("deck")}
+                          >
+                            <img
+                              data-motion-key="deck"
+                              data-motion-value={game().deck.count}
+                              src="/assets/cards/back.png"
+                              alt="Moker card back"
+                            />
+                          </Button>
+                        </div>
+                      </Show>
                     </div>
                     <Lane
                       discarding={myTurn() && game().phase === "discarding"}
-                      discardAllowed={!game().discardB.length ? !game().discardA.length : true}
+                      discardAllowed={
+                        !!game().legacy ||
+                        (!game().discardB.length ? !game().discardA.length : true)
+                      }
                       ready={selection().length === 1 && !busy()}
                       onDiscard={() => discard("a")}
                       title="Lane A"
@@ -960,21 +1069,27 @@ export function App() {
                             ]
                           : []
                       }
-                      enabled={pickingFish() && !busy()}
+                      enabled={pickingFish() && !treasurePick() && !busy()}
                       onPick={() => fishFrom("discard-a")}
                       onSwap={
                         blankPick()
                           ? (cardIndex) =>
-                              act({
-                                type: callCost() ? "call" : "check",
-                                blankExchange: { blankCardId: blankPick()!, pile: "a", cardIndex },
+                              fishSpecial({
+                                blankExchange: {
+                                  blankCardId: blankPick()!,
+                                  pile: "a",
+                                  cardIndex,
+                                },
                               })
                           : undefined
                       }
                     />
                     <Lane
                       discarding={myTurn() && game().phase === "discarding"}
-                      discardAllowed={!game().discardA.length ? !game().discardB.length : true}
+                      discardAllowed={
+                        !!game().legacy ||
+                        (!game().discardA.length ? !game().discardB.length : true)
+                      }
                       ready={selection().length === 1 && !busy()}
                       onDiscard={() => discard("b")}
                       title="Lane B"
@@ -987,14 +1102,17 @@ export function App() {
                             ]
                           : []
                       }
-                      enabled={pickingFish() && !busy()}
+                      enabled={pickingFish() && !treasurePick() && !busy()}
                       onPick={() => fishFrom("discard-b")}
                       onSwap={
                         blankPick()
                           ? (cardIndex) =>
-                              act({
-                                type: callCost() ? "call" : "check",
-                                blankExchange: { blankCardId: blankPick()!, pile: "b", cardIndex },
+                              fishSpecial({
+                                blankExchange: {
+                                  blankCardId: blankPick()!,
+                                  pile: "b",
+                                  cardIndex,
+                                },
                               })
                           : undefined
                       }
@@ -1012,6 +1130,7 @@ export function App() {
                   >
                     <div class="hand-heading">
                       <div class="opponent-heading own-seat">
+                        {personalDeck(viewer()!)}
                         <SpiritAvatar
                           controller="human"
                           name={human()?.name ?? "You"}
@@ -1055,7 +1174,7 @@ export function App() {
                             </Show>
                           </div>
                         </div>
-                        <Show when={game().config.mode === "riichi"}>
+                        <Show when={game().config.mode !== "basic"}>
                           <div class="player-sticks">
                             <RiichiSticks
                               compact
@@ -1183,14 +1302,17 @@ export function App() {
                             <Button
                               class="card-choice"
                               classList={{
-                                picked: selection().includes(card.id) || blankPick() === card.id,
+                                picked:
+                                  selection().includes(card.id) ||
+                                  blankPick() === card.id ||
+                                  treasurePick() === card.id,
                                 "is-public": revealed(),
                                 "is-highlighted":
                                   drawn() ||
                                   received() ||
                                   (pickingFish() &&
-                                    !pickingStick() &&
-                                    card.kind === "blank" &&
+                                    (!pickingStick() || !!game().legacy) &&
+                                    (card.kind === "blank" || card.kind === "treasure") &&
                                     !revealed()),
                               }}
                               aria-label={`${cardLabel(card)}${received() ? ", received from Charleston" : ""}${drawn() ? ", just drawn" : ""}${revealed() ? ", revealed" : ""}${selection().includes(card.id) ? ", selected" : ""}`}
@@ -1200,21 +1322,38 @@ export function App() {
                                   : undefined
                               }
                               aria-pressed={
-                                selection().includes(card.id) || blankPick() === card.id
+                                selection().includes(card.id) ||
+                                blankPick() === card.id ||
+                                treasurePick() === card.id
                               }
                               disabled={
                                 revealed() ||
                                 (!choosing() &&
-                                  !(pickingFish() && !pickingStick() && card.kind === "blank")) ||
+                                  !(
+                                    pickingFish() &&
+                                    (!pickingStick() || !!game().legacy) &&
+                                    (card.kind === "blank" || card.kind === "treasure")
+                                  )) ||
                                 busy()
                               }
                               onClick={() =>
-                                pickingFish() && card.kind === "blank"
-                                  ? setBlankPick(blankPick() === card.id ? undefined : card.id)
-                                  : toggleCard(card.id)
+                                pickingFish() && card.kind === "treasure"
+                                  ? (setBlankPick(undefined),
+                                    setTreasurePick(
+                                      treasurePick() === card.id ? undefined : card.id,
+                                    ))
+                                  : pickingFish() && card.kind === "blank"
+                                    ? (setTreasurePick(undefined),
+                                      setBlankPick(blankPick() === card.id ? undefined : card.id))
+                                    : toggleCard(card.id)
                               }
                             >
-                              <span class="hand-card-surface">
+                              <span
+                                class="hand-card-surface"
+                                data-draw-deck={
+                                  drawn() ? game().pendingDiscard?.sourceDeckId : undefined
+                                }
+                              >
                                 <PlayingCard card={card} />
                                 <Show
                                   when={
@@ -1245,16 +1384,91 @@ export function App() {
                       </For>
                     </div>
                     <div class="action-area">
+                      <Show when={game().legacy?.treasureOffer && myTurn()}>
+                        <Modal
+                          title="Choose one or two cards"
+                          class="treasure-offer"
+                          dismissible={false}
+                          onClose={() => {}}
+                        >
+                          <div class="button-row">
+                            <For each={game().legacy?.treasureOffer?.cards}>
+                              {(card) => (
+                                <Button
+                                  disabled={busy()}
+                                  aria-pressed={treasureCards().includes(card.id)}
+                                  aria-label={`Select ${cardLabel(card)}`}
+                                  onClick={() =>
+                                    setTreasureCards((ids) =>
+                                      ids.includes(card.id)
+                                        ? ids.filter((id) => id !== card.id)
+                                        : ids.length < 2
+                                          ? [...ids, card.id]
+                                          : ids,
+                                    )
+                                  }
+                                >
+                                  <PlayingCard card={card} />
+                                </Button>
+                              )}
+                            </For>
+                          </div>
+                          <Show when={treasureCards().length === 2}>
+                            <p>Choose a card to return with your Treasure.</p>
+                            <div class="treasure-return-cards">
+                              <For
+                                each={cards().filter(
+                                  (card) =>
+                                    card.id !== game().legacy?.treasureOffer?.treasureCardId,
+                                )}
+                              >
+                                {(card) => (
+                                  <Button
+                                    disabled={busy()}
+                                    aria-label={`Return ${cardLabel(card)}`}
+                                    aria-pressed={treasureReturn() === card.id}
+                                    onClick={() => setTreasureReturn(card.id)}
+                                  >
+                                    <PlayingCard card={card} />
+                                  </Button>
+                                )}
+                              </For>
+                            </div>
+                          </Show>
+                          <Button
+                            disabled={
+                              busy() ||
+                              !treasureCards().length ||
+                              (treasureCards().length === 2 && !treasureReturn())
+                            }
+                            onClick={() =>
+                              perform(() =>
+                                gameAction(session(), {
+                                  kind: "treasure-choice",
+                                  playerId: viewer()!,
+                                  cardIds: treasureCards(),
+                                  ...(treasureCards().length === 2
+                                    ? { returnCardId: treasureReturn() }
+                                    : {}),
+                                }),
+                              )
+                            }
+                          >
+                            Exchange {treasureCards().length || ""}{" "}
+                            {treasureCards().length === 1 ? "card" : "cards"}
+                          </Button>
+                        </Modal>
+                      </Show>
                       <Show when={pickingFish()}>
                         <div class="button-row main-actions">
                           <span>
-                            {pickingStick()
-                              ? "Spend a Riichi stick: choose a card from the deck or a discard lane."
+                            {treasurePick()
+                              ? "Choose a highlighted deck to hunt from."
                               : blankPick()
-                                ? "Choose any card in either discard lane to swap with your Blank."
-                                : cards().some((card) => card.kind === "blank")
-                                  ? "Choose a card from the deck or a discard lane, or select a Blank to swap."
-                                  : "Choose a card from the deck or a discard lane."}
+                                ? "Choose any card in either discard lane."
+                                : game().legacy
+                                  ? "Choose a card from your deck or a discard lane, or select a Blank or Treasure."
+                                  : "Choose a card from the deck or a discard lane, or select a Blank."}
                           </span>
                           <Button disabled={busy()} onClick={cancelFishing}>
                             {pickingStick() ? "Cancel Riichi stick" : "Cancel fishing"}
@@ -1430,7 +1644,7 @@ export function App() {
                                 </Button>
                                 <Show
                                   when={
-                                    game().config.mode === "riichi" &&
+                                    game().config.mode !== "basic" &&
                                     !human()?.riichi &&
                                     game().street <= 3 &&
                                     !game().players.some((p) => p.riichi && !p.folded)
@@ -1503,6 +1717,12 @@ export function App() {
                           →
                         </Button>
                       </Show>
+                      <Show when={game().finishReason === "central-deck-exhausted"}>
+                        <p>
+                          Central deck exhausted. The unfinished hand was cancelled; scores include
+                          completed hands only.
+                        </p>
+                      </Show>
                       <Show when={game().phase === "finished"}>
                         <div class="standings">
                           <For
@@ -1566,7 +1786,7 @@ export function App() {
                               {format(100 + (game().gameNumber + 1) * 100)} chips, including
                               eliminated players. The ante is {(game().gameNumber + 1) * 5}.
                             </p>
-                            <Show when={game().config.mode === "riichi"}>
+                            <Show when={game().config.mode !== "basic"}>
                               <p>
                                 Loans are cleared. Keep your unused Riichi sticks and receive 2
                                 more.
@@ -1679,6 +1899,11 @@ export function App() {
                                           ? "lost"
                                           : "net"}
                                     </small>
+                                    <Show when={p.treasurePayout}>
+                                      <small>
+                                        Treasure bank payout: +{format(p.treasurePayout ?? 0)}
+                                      </small>
+                                    </Show>
                                   </div>
                                   <div class="mini-hand">
                                     <For each={sortHand(p.cards, p.publicCards)}>
@@ -1759,7 +1984,7 @@ export function App() {
           class="drawer rules-drawer"
           onClose={() => setRules(false)}
         >
-          <RulesContent />
+          <RulesContent legacy />
         </Modal>
       </Show>
       <Show when={error()}>
@@ -1812,7 +2037,7 @@ function TournamentScores(props: { game: PublicGameState; singleGame?: boolean }
           <thead>
             <tr>
               <th scope="col">Player</th>
-              <Show when={props.singleGame && props.game.config.mode === "riichi"}>
+              <Show when={props.singleGame && props.game.config.mode !== "basic"}>
                 <th scope="col">Loan deduction</th>
               </Show>
               <For each={recorded()}>
@@ -1853,7 +2078,7 @@ function TournamentScores(props: { game: PublicGameState; singleGame?: boolean }
                       </Show>
                     </span>
                   </th>
-                  <Show when={props.singleGame && props.game.config.mode === "riichi"}>
+                  <Show when={props.singleGame && props.game.config.mode !== "basic"}>
                     <td>{player.loans ? `−${format(player.loans * LOAN_PENALTY)}` : "—"}</td>
                   </Show>
                   <For each={recorded()}>
@@ -2000,12 +2225,13 @@ function Lane(props: {
   )
 }
 function PlayerSeat(props: {
+  deck?: JSX.Element
   readyToPass: boolean
   charlestonStatus?: string
   spentStick: boolean
   betting: boolean
   drawNotice?: DrawNotice
-  mode: "basic" | "riichi"
+  mode: "basic" | "riichi" | "legacy"
   player: PublicPlayerState
   active: boolean
   dealer: boolean
@@ -2051,6 +2277,7 @@ function PlayerSeat(props: {
           </small>
         </div>
       </div>
+      {props.deck}
       <div class="opponent-cards">
         <Show when={props.player.riichi}>
           <RiichiDeclared />
@@ -2075,7 +2302,7 @@ function PlayerSeat(props: {
         </Show>
       </div>
       <div class="opponent-known-hand">
-        <Show when={props.mode === "riichi"}>
+        <Show when={props.mode !== "basic"}>
           <RiichiSticks count={props.player.riichiSticks} spent={props.spentStick} compact />
         </Show>
         <Show when={!props.player.folded && !props.player.eliminated && known().label}>

@@ -1776,3 +1776,168 @@
   font-size: var(--font-xs);
   flex-shrink: 0;
 }
+
+.treasure-search-controls,
+.treasure-offer {
+  padding: 16px;
+  margin: 12px 0;
+  background: var(--color-legacy-surface);
+  border: 1px solid var(--color-legacy-border);
+  border-radius: 12px;
+}
+.treasure-search-controls h3,
+.treasure-offer h3 {
+  margin: 0 0 8px;
+}
+.treasure-offer [aria-pressed="true"] {
+  outline: 2px solid var(--color-legacy-accent);
+}
+.treasure-offer .playing-card {
+  width: clamp(70px, 15vw, 115px);
+}
+
+.legacy-deck-pile {
+  position: relative;
+}
+.legacy-deck-count {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  text-align: center;
+  white-space: nowrap;
+  font-size: var(--font-xs);
+  color: var(--color-muted);
+}
+
+/* Legacy decks stay at their seats; only legal fishing targets light up. */
+.opponent,
+.hand-heading {
+  position: relative;
+}
+.personal-deck {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  flex-shrink: 0;
+}
+.personal-deck img {
+  width: clamp(34px, 4vw, 54px);
+  border-radius: 5px;
+  box-shadow: var(--shadow-personal-deck);
+}
+.personal-deck small {
+  margin-top: 5px;
+  font-size: var(--font-xs);
+  white-space: nowrap;
+}
+.personal-deck:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.opponent > .personal-deck {
+  position: absolute;
+  right: 0;
+  top: -8px;
+}
+.opponent:has(.personal-deck) .opponent-heading {
+  padding-right: 58px;
+}
+.hand-heading > .personal-deck {
+  margin-right: 18px;
+}
+.deck-available img {
+  outline: 3px solid var(--color-legacy-accent);
+  outline-offset: 5px;
+}
+.deck-available:hover img {
+  transform: translateY(-4px);
+}
+.game-dialog.treasure-offer {
+  width: min(720px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 28px;
+  text-align: center;
+  border: 0;
+}
+.treasure-offer .button-row,
+.treasure-return-cards {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 20px 0;
+}
+.treasure-offer .button-row > button,
+.treasure-return-cards > button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 10px;
+}
+.treasure-offer .playing-card {
+  width: clamp(80px, 18vw, 140px);
+}
+.treasure-return-cards .playing-card {
+  width: clamp(48px, 9vw, 76px);
+}
+.treasure-offer button[aria-pressed="true"] {
+  outline: 3px solid var(--color-legacy-accent);
+  outline-offset: 5px;
+  transform: translateY(-5px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .deck-available:hover img {
+    transform: none;
+  }
+}
+
+.central-deck-stack {
+  position: relative;
+}
+.central-deck-stack .legacy-deck-count {
+  top: calc(100% + 14px);
+}
+.own-seat:has(.personal-deck) {
+  grid-template-columns: 36px minmax(0, 1fr) 42px;
+}
+.own-seat > .personal-deck {
+  grid-area: 1 / 3 / 3 / 4;
+}
+.own-seat > .personal-deck img {
+  width: 38px;
+}
+.own-seat:has(.personal-deck) > .player-sticks {
+  grid-column: 1 / 3;
+}
+.opponent:has(.personal-deck) .seat-summary {
+  position: static;
+  min-height: 32px;
+  margin-top: 6px;
+}
+.opponent:has(.personal-deck) .opponent-heading b {
+  white-space: normal;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.opponent:has(.personal-deck) .dealer-label,
+.own-seat:has(.personal-deck) .dealer-label {
+  position: static;
+  transform: none;
+}
+.own-seat:has(.personal-deck) b {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.opponent:has(.personal-deck) .opponent-heading {
+  min-height: 64px;
+}

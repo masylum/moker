@@ -73,10 +73,16 @@ export function createTableMotion(root: () => HTMLElement | undefined) {
           if (previous && !changed && !moved) continue
           if (!card && !changed && !element.classList.contains("seat-wager")) continue
           const clamp = (n: number) => Math.max(-32, Math.min(32, n))
+          const deckId = element.closest<HTMLElement>("[data-draw-deck]")?.dataset.drawDeck
+          const origin = deckId
+            ? before.get(deckId === "central" ? "deck" : `deck-${deckId}`)
+            : undefined
           const transform = card
-            ? previous && moved
-              ? `translate(${clamp(previous.x - next.x)}px, ${clamp(previous.y - next.y)}px)`
-              : "translateY(-10px) scale(0.97)"
+            ? !previous && origin
+              ? `translate(${origin.x - next.x}px, ${origin.y - next.y}px)`
+              : previous && moved
+                ? `translate(${clamp(previous.x - next.x)}px, ${clamp(previous.y - next.y)}px)`
+                : "translateY(-10px) scale(0.97)"
             : "scale(0.97)"
           const opacity = Number(getComputedStyle(element).opacity)
           const animation = element.animate(

@@ -24,8 +24,15 @@ function center(element: Element | null): Point | undefined {
   }
   return node === table ? { x, y } : undefined
 }
-export function sourcePosition(source: CardSource | "blank-exchange") {
-  if (source === "deck") return center(document.querySelector(".deck"))
+export function sourcePosition(source: CardSource | "blank-exchange", deckId?: string) {
+  if (source === "deck")
+    return center(
+      document.querySelector(
+        deckId && deckId !== "central"
+          ? `[data-personal-deck="${CSS.escape(deckId)}"]`
+          : ".deck-pile .deck",
+      ),
+    )
   const cards = document.querySelectorAll(
     `[data-lane="${source === "discard-b" ? "b" : "a"}"] .playing-card`,
   )
@@ -42,7 +49,9 @@ export function OpponentMove(props: {
   let animation: Animation | undefined
   const source = () =>
     props.notice.source === "deck"
-      ? "the deck"
+      ? props.notice.sourceDeckId && props.notice.sourceDeckId !== "central"
+        ? "their deck"
+        : "the central deck"
       : props.notice.source === "discard-b"
         ? "Lane B"
         : props.notice.source === "discard-a"

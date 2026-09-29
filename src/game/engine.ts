@@ -33,6 +33,7 @@ import type {
   PotResult,
   PublicGameState,
   RiichiSettlement,
+  TreasureSearch,
 } from "./types"
 
 export interface PlayerSetup {
@@ -46,9 +47,9 @@ type DrawInstruction = DrawContext["remaining"][number]
 export class GameEngine {
   readonly events: GameEvent[]
   state: GameState
-  private random: SeededRandom
+  protected random: SeededRandom
 
-  private constructor(state: GameState, events: GameEvent[]) {
+  protected constructor(state: GameState, events: GameEvent[]) {
     this.state = state
     this.events = events
     this.random = new SeededRandom(state.config.seed, state.rngState)
@@ -57,6 +58,7 @@ export class GameEngine {
   static create(
     players: PlayerSetup[],
     partial: Partial<GameConfig> & Pick<GameConfig, "seed">,
+    factory?: (state: GameState, events: GameEvent[]) => GameEngine,
   ): GameEngine {
     if (players.length < 2 || players.length > 6)
       throw new RangeError("Moker requires 2 to 6 players")
@@ -84,7 +86,7 @@ export class GameEngine {
         controller: player.controller,
         chips: config.startingChips,
         loans: 0,
-        riichiSticks: config.mode === "riichi" ? STARTING_RIICHI_STICKS : 0,
+        riichiSticks: config.mode !== "basic" ? STARTING_RIICHI_STICKS : 0,
         curses: 0,
         eliminated: false,
         privateCards: [],
@@ -131,7 +133,7 @@ export class GameEngine {
     }
     state.startingDealerIndex = state.dealerIndex
     state.rngState = random.state
-    const engine = new GameEngine(state, [])
+    const engine = factory ? factory(state, []) : new GameEngine(state, [])
     engine.emit("game-created", { config, players: players.map((player) => player.name) })
     engine.startNextHand()
     return engine
@@ -141,6 +143,8 @@ export class GameEngine {
     if (state.rulesVersion !== 6) {
       throw new Error("This saved game uses obsolete rules. Start a new table for Moker rules v6.")
     }
+    if (state.legacy && state.legacy.version !== 3)
+      throw new Error("Legacy rules changed. Start a new table.")
     const restored = structuredClone(state)
     restored.config = createConfig(restored.config)
     return new GameEngine(restored, structuredClone(events))
@@ -163,10 +167,17 @@ export class GameEngine {
         player.loans = 0
         player.eliminated = false
         player.riichiSticks =
-          this.state.config.mode === "riichi" ? player.riichiSticks + STARTING_RIICHI_STICKS : 0
+          this.state.config.mode !== "basic" ? player.riichiSticks + STARTING_RIICHI_STICKS : 0
       }
     }
 
+    this.prepareRound()
+    if (this.state.legacy)
+      this.state.legacy.handStart = this.state.players.map((p) => ({
+        chips: p.chips,
+        loans: p.loans,
+        riichiSticks: p.riichiSticks,
+      }))
     const nextHand = this.state.handNumber + 1
     const nextOrbit = Math.floor(this.state.dealerSteps / this.state.players.length) + 1
     const ante = this.state.gameNumber * 5
@@ -204,7 +215,7 @@ export class GameEngine {
       allInPlayerIds: [],
       currentAllInBettorId: null,
       raiseLockedPlayerIds: [],
-      deck: this.random.shuffle(createDeck(this.state.config.mode)),
+      deck: this.createRoundDeck(),
     })
 
     for (const player of this.state.players) {
@@ -223,7 +234,7 @@ export class GameEngine {
         continue
       }
       if (player.chips < ante) {
-        if (this.state.config.mode === "riichi" && player.loans < MAX_LOANS) this.issueLoan(player)
+        if (this.state.config.mode !== "basic" && player.loans < MAX_LOANS) this.issueLoan(player)
         else {
           player.eliminated = true
           player.folded = true
@@ -246,9 +257,7 @@ export class GameEngine {
     this.state.openingPot = this.state.pot
 
     const dealOrder = this.orderedActiveAfter(this.state.dealerIndex)
-    for (let cardIndex = 0; cardIndex < OPENING_PRIVATE_CARD_COUNT; cardIndex += 1) {
-      for (const player of dealOrder) player.privateCards.push(this.drawDeck())
-    }
+    this.dealOpeningCards(dealOrder)
     this.state.openingPrivateCards = Object.fromEntries(
       dealOrder.map((player) => [player.id, structuredClone(player.privateCards)]),
     )
@@ -262,10 +271,86 @@ export class GameEngine {
         this.state.players.map((player) => [player.id, player.handCommitted]),
       ),
     })
-    this.state.discardA.push(this.drawDeck())
-    this.state.discardB.push(this.drawDeck())
+    this.seedLanes()
     if (this.state.allInPlayerIds.length > 0) this.resolveShowdown()
     else if (this.state.config.mode === "basic") this.openBettingStreet(1)
+  }
+
+  private treasureDeck(targetPlayerId: string): Card[] | undefined {
+    if (targetPlayerId === "central") return undefined
+    const seat = this.state.players.findIndex((p) => p.id === targetPlayerId)
+    return this.state.legacy?.decks[seat]
+  }
+
+  private beginTreasureSearch(player: PlayerState, search: TreasureSearch): void {
+    const legacy = this.state.legacy
+    const deck = this.treasureDeck(search.targetPlayerId)
+    if (
+      !legacy ||
+      player.riichi ||
+      search.targetPlayerId === player.id ||
+      !deck?.length ||
+      !player.privateCards.some((c) => c.id === search.treasureCardId && c.kind === "treasure")
+    )
+      throw new Error("Choose a concealed Treasure and another nonempty deck")
+    // Commit the action, but keep the Treasure in the concealed hand until the swap settles.
+    legacy.pendingTreasure = {
+      playerId: player.id,
+      targetPlayerId: search.targetPlayerId,
+      treasureCardId: search.treasureCardId,
+      offered: deck.slice(-3).reverse(),
+    }
+    this.state.phase = "treasure"
+    this.emit("treasure-search-started", { targetPlayerId: search.targetPlayerId }, player.id)
+  }
+
+  chooseTreasure(playerId: string, cardIds: string[], returnCardId?: string): void {
+    const legacy = this.state.legacy,
+      pending = legacy?.pendingTreasure
+    if (
+      !legacy ||
+      !pending ||
+      pending.playerId !== playerId ||
+      this.state.phase !== "treasure" ||
+      this.state.actingPlayerId !== playerId
+    )
+      throw new Error("Not your Treasure search")
+    if (
+      cardIds.length < 1 ||
+      cardIds.length > 2 ||
+      new Set(cardIds).size !== cardIds.length ||
+      !cardIds.every((id) => pending.offered.some((c) => c.id === id))
+    )
+      throw new Error("Choose one or two distinct offered cards")
+    const player = this.getPlayer(playerId)
+    const returnedIds = [pending.treasureCardId]
+    if (cardIds.length === 2) {
+      if (
+        !returnCardId ||
+        returnCardId === pending.treasureCardId ||
+        !player.privateCards.some((c) => c.id === returnCardId)
+      )
+        throw new Error("Taking two cards requires another concealed card in exchange")
+      returnedIds.push(returnCardId)
+    } else if (returnCardId) throw new Error("Return only the Treasure when taking one card")
+    const deck = this.treasureDeck(pending.targetPlayerId)!
+    const taken = cardIds.map((id) => deck.find((c) => c.id === id))
+    const returned = returnedIds.map((id) => player.privateCards.find((c) => c.id === id))
+    if (taken.some((c) => !c) || returned.some((c) => !c))
+      throw new Error("Search cards are missing")
+    const shuffled = this.random.shuffle([
+      ...deck.filter((c) => !cardIds.includes(c.id)),
+      ...(returned as Card[]),
+    ])
+    deck.splice(0, deck.length, ...shuffled)
+    player.privateCards = [
+      ...player.privateCards.filter((c) => !returnedIds.includes(c.id)),
+      ...(taken as Card[]),
+    ]
+    legacy.searchedPlayerIds = [...new Set([...(legacy.searchedPlayerIds ?? []), playerId])]
+    delete legacy.pendingTreasure
+    this.emit("treasure-chosen", { count: cardIds.length }, playerId)
+    this.continueDrawSequence(player)
   }
 
   passCharleston(playerId: string, cardIds: string[]): void {
@@ -304,7 +389,8 @@ export class GameEngine {
     }
     this.state.charlestonSelections = {}
     this.emit("charleston-completed", { passCount: CHARLESTON_PASS_COUNT })
-    this.openBettingStreet(1)
+    if (this.state.legacy && this.state.allInPlayerIds.length) this.resolveShowdown()
+    else this.openBettingStreet(1)
   }
 
   exposeCards(playerId: string, cardIds: string[]): void {
@@ -484,7 +570,7 @@ export class GameEngine {
     const finishingCall =
       this.state.stickOfferPlayerId === playerId || this.state.stickWindow?.playerId === playerId
     return (
-      this.state.config.mode === "riichi" &&
+      this.state.config.mode !== "basic" &&
       !this.state.stickSpentThisTurn &&
       !player.riichi &&
       !player.folded &&
@@ -497,7 +583,28 @@ export class GameEngine {
     )
   }
 
-  spendRiichiStick(playerId: string, source: CardSource): void {
+  spendRiichiStick(
+    playerId: string,
+    source: CardSource,
+    fishing: { blankExchange?: BlankExchange; treasureSearch?: TreasureSearch } = {},
+  ): void {
+    const snapshot = structuredClone(this.state),
+      eventCount = this.events.length
+    try {
+      this.applyRiichiStick(playerId, source, fishing)
+    } catch (error) {
+      this.state = snapshot
+      this.events.splice(eventCount)
+      this.random = new SeededRandom(snapshot.config.seed, snapshot.rngState)
+      throw error
+    }
+  }
+
+  private applyRiichiStick(
+    playerId: string,
+    source: CardSource,
+    fishing: { blankExchange?: BlankExchange; treasureSearch?: TreasureSearch },
+  ): void {
     if (
       this.state.phase !== "betting" ||
       this.state.actingPlayerId !== playerId ||
@@ -506,13 +613,9 @@ export class GameEngine {
       throw new Error("A Riichi stick is not available now")
     if (this.state.stickWindow && this.state.stickWindow.playerId !== playerId)
       throw new Error("Not your stick decision")
-    const pile =
-      source === "deck"
-        ? this.state.deck
-        : source === "discard-a"
-          ? this.state.discardA
-          : this.state.discardB
-    if (!pile.length) throw new Error(`Cannot draw from empty ${source}`)
+    const pile = this.drawPile(this.getPlayer(playerId), source)
+    if (!fishing.blankExchange && !fishing.treasureSearch && !pile.length)
+      throw new Error(`Cannot draw from empty ${source}`)
     const continuation = this.state.stickWindow?.continuation ?? {
       resumeBetting: true,
       aggressive: false,
@@ -524,7 +627,7 @@ export class GameEngine {
     this.state.stickSpentThisTurn = true
     player.riichiSticks -= 1
     this.emit("riichi-stick-spent", { remaining: player.riichiSticks }, playerId)
-    this.startDrawSequence(player, [{ source, reason: "riichi-stick" }], continuation)
+    this.startDrawSequence(player, [{ source, ...fishing, reason: "riichi-stick" }], continuation)
   }
 
   finishStickDecision(playerId: string): void {
@@ -556,7 +659,7 @@ export class GameEngine {
     if (index < 0) throw new Error("Discard card is not in the concealed hand")
     const target = this.lane(decision.discardPile)
     const other = this.lane(decision.discardPile === "a" ? "b" : "a")
-    if (other.length === 0 && target.length > 0)
+    if (this.requiresEmptyLaneFill() && other.length === 0 && target.length > 0)
       throw new Error("The empty discard lane must be filled")
     const drawn = player.privateCards.find((card) => card.id === pending.drawnCardId)
     if (!drawn) throw new Error("Drawn card is missing")
@@ -567,6 +670,7 @@ export class GameEngine {
     this.state.drawDiscardHistory.push({
       playerId,
       source: pending.source,
+      ...(pending.sourceDeckId ? { sourceDeckId: pending.sourceDeckId } : {}),
       drawnCard: structuredClone(drawn),
       discardedCard: structuredClone(discarded!),
       discardPile: decision.discardPile,
@@ -617,11 +721,34 @@ export class GameEngine {
       charlestonSelections: _charlestonSelections,
       charlestonHistory: _charlestonHistory,
       exposureSelections: _exposureSelections,
+      legacy: _legacy,
       ...publicState
     } = structuredClone(this.state)
     const knownPrivateCards = publicKnownPrivateCards(this.state, viewerId)
+    for (const id of _legacy?.searchedPlayerIds ?? []) knownPrivateCards[id] = []
     return {
       ...publicState,
+      ...(_legacy
+        ? {
+            legacy: {
+              decks: _legacy.decks.map((deck, i) => ({
+                playerId: this.state.players[i]!.id,
+                count: deck.length,
+              })),
+              personalDrawCount:
+                _legacy.decks[this.state.players.findIndex((p) => p.id === viewerId)]?.length ?? 0,
+              ...(_legacy.pendingTreasure && _legacy.pendingTreasure.playerId === viewerId
+                ? {
+                    treasureOffer: {
+                      targetPlayerId: _legacy.pendingTreasure.targetPlayerId,
+                      treasureCardId: _legacy.pendingTreasure.treasureCardId,
+                      cards: _legacy.pendingTreasure.offered,
+                    },
+                  }
+                : {}),
+            },
+          }
+        : {}),
       publicDrawDiscards: _drawDiscardHistory.map(({ drawnCard, ...record }) => ({
         ...record,
         ...(record.source !== "deck" ? { drawnCard } : {}),
@@ -653,7 +780,9 @@ export class GameEngine {
           }
         }),
       })),
-      deck: { count: this.state.deck.length },
+      deck: {
+        count: this.state.deck.length,
+      },
       pendingDiscard:
         this.state.pendingDiscard && (revealAll || this.state.pendingDiscard.playerId === viewerId)
           ? structuredClone(this.state.pendingDiscard)
@@ -730,6 +859,7 @@ export class GameEngine {
       instructions.push({
         source: action.drawSource ?? "deck",
         blankExchange: action.blankExchange,
+        treasureSearch: action.treasureSearch,
         reason: "call",
       })
     if (action.useRiichiStick)
@@ -740,6 +870,8 @@ export class GameEngine {
             : (action.drawSource ?? "deck"),
         blankExchange:
           action.type !== "bet" && free ? action.riichiBlankExchange : action.blankExchange,
+        treasureSearch:
+          action.type !== "bet" && free ? action.riichiTreasureSearch : action.treasureSearch,
         reason: "riichi-stick",
       })
     return instructions
@@ -776,6 +908,10 @@ export class GameEngine {
       )
     }
     context.reason = instruction.reason
+    if (instruction.treasureSearch) {
+      if (instruction.blankExchange) throw new Error("Choose one fishing action")
+      return this.beginTreasureSearch(player, instruction.treasureSearch)
+    }
     if (instruction.blankExchange) {
       this.exchangeBlank(player, instruction.blankExchange, instruction.reason)
       return this.continueDrawSequence(player)
@@ -785,21 +921,17 @@ export class GameEngine {
 
   private beginDraw(player: PlayerState, source: CardSource): void {
     if (player.riichi) throw new Error("Riichi locks Draw & Discard")
-    const drawn =
-      source === "deck"
-        ? this.state.deck.pop()
-        : source === "discard-a"
-          ? this.state.discardA.pop()
-          : this.state.discardB.pop()
+    const sourceDeckId = source === "deck" && this.state.legacy ? player.id : undefined
+    const drawn = this.takeCard(player, source)
     if (!drawn) throw new Error(`Cannot draw from empty ${source}`)
     player.privateCards.push(drawn)
-    this.state.pendingDiscard = { playerId: player.id, drawnCardId: drawn.id, source }
+    this.state.pendingDiscard = { playerId: player.id, drawnCardId: drawn.id, source, sourceDeckId }
     this.state.phase = "discarding"
     this.state.actingPlayerId = player.id
     this.emit("card-drawn", { source, cardId: drawn.id }, player.id)
   }
 
-  private exchangeBlank(
+  protected exchangeBlank(
     player: PlayerState,
     exchange: BlankExchange,
     reason: DrawContext["reason"],
@@ -810,6 +942,7 @@ export class GameEngine {
     if (!blank || blank.kind !== "blank")
       throw new Error("Blank exchange requires a concealed Blank")
     const lane = this.lane(exchange.pile)
+    if (!lane) throw new Error("Unknown discard lane")
     const claimed = lane[exchange.cardIndex]
     if (!claimed) throw new Error("Blank exchange target is not in that discard lane")
     lane[exchange.cardIndex] = blank
@@ -926,7 +1059,21 @@ export class GameEngine {
       .map((player) => player.id)
     const settlement = this.resolveRiichi(this.state.handWinners)
     this.emit("showdown", { winners: this.state.handWinners })
-    this.recordHandResult("showdown", pot, payouts, pots, null, settlement)
+    const treasurePayouts: Record<string, number> = {}
+    if (this.state.legacy)
+      for (const player of contenders) {
+        if (winnerIds.has(player.id)) continue
+        const amount =
+          [...player.privateCards, ...player.publicCards].filter((c) => c.kind === "treasure")
+            .length *
+          4 *
+          this.state.orbitValue
+        if (amount) {
+          player.chips += amount
+          treasurePayouts[player.id] = amount
+        }
+      }
+    this.recordHandResult("showdown", pot, payouts, pots, null, settlement, treasurePayouts)
     this.endHand()
   }
 
@@ -1026,6 +1173,7 @@ export class GameEngine {
     pots: PotResult[],
     lotusBluff: HandResult["lotusBluff"],
     riichiSettlement: RiichiSettlement,
+    treasurePayouts: Record<string, number> = {},
   ): void {
     this.state.handResults.push({
       handNumber: this.state.handNumber,
@@ -1064,7 +1212,7 @@ export class GameEngine {
           ]),
           cards,
           publicCards: structuredClone(player.publicCards),
-          score: player.score ?? scoreHand(cards, this.state.config.mode),
+          score: player.score ?? this.scoreCards(cards),
           chips: player.chips,
           loans: player.loans,
           riichiSticks: player.riichiSticks,
@@ -1074,7 +1222,7 @@ export class GameEngine {
             (this.state.openingChips[player.id] ?? player.chips) -
             (this.state.openingLoans?.[player.id] !== undefined
               ? (player.loans - this.state.openingLoans[player.id]!) * LOAN_VALUE
-              : this.state.config.mode === "riichi" &&
+              : this.state.config.mode !== "basic" &&
                   !player.eliminated &&
                   (this.state.openingChips[player.id] ?? 0) < this.state.orbitValue
                 ? LOAN_VALUE
@@ -1082,6 +1230,7 @@ export class GameEngine {
           committed: player.handCommitted,
           potCommitted: player.potCommitted,
           payout: payouts[player.id] ?? 0,
+          ...(treasurePayouts[player.id] ? { treasurePayout: treasurePayouts[player.id] } : {}),
           openingChips: this.state.openingChips[player.id] ?? player.chips,
         }
       }),
@@ -1089,6 +1238,7 @@ export class GameEngine {
   }
 
   private endHand(): void {
+    this.cleanupLegacyHand()
     this.state.phase = "between-hands"
     this.state.actingPlayerId = null
     this.state.pendingPlayerIds = []
@@ -1097,6 +1247,7 @@ export class GameEngine {
       this.state.dealerSteps += 1
     } while (
       this.state.dealerSteps < this.state.players.length * this.state.config.orbits &&
+      !this.state.legacy &&
       this.playerAt(this.state.dealerIndex).eliminated
     )
     if (
@@ -1131,7 +1282,7 @@ export class GameEngine {
 
   private canDeclareRiichi(player: PlayerState): boolean {
     return (
-      this.state.config.mode === "riichi" &&
+      this.state.config.mode !== "basic" &&
       this.state.street <= 3 &&
       !player.riichi &&
       !this.state.players.some((candidate) => candidate.riichi && !candidate.folded)
@@ -1203,6 +1354,98 @@ export class GameEngine {
 
   private scoreShowdownHand(player: PlayerState) {
     const cards = [...player.publicCards, ...player.privateCards]
+    return this.scoreCards(cards)
+  }
+
+  // Rule hooks also support archived headless experiments without duplicating settlement.
+  // Legacy version 3 uses personal decks with dealer-first discard redistribution.
+  protected prepareRound(): void {
+    if (this.state.config.mode !== "legacy") return
+    if (!this.state.legacy) {
+      const deck = this.random.shuffle(createDeck("legacy"))
+      const decks: Card[][] = this.state.players.map(() => [])
+      this.state.deck = deck.splice(0, 2)
+      deck.forEach((card, i) => decks[(this.state.dealerIndex + i) % decks.length]!.push(card))
+      this.state.legacy = { version: 3, decks: decks.map((cards) => this.random.shuffle(cards)) }
+    }
+  }
+
+  private cleanupLegacyHand(): void {
+    const legacy = this.state.legacy
+    if (!legacy) return
+    this.state.players.forEach((player, i) => {
+      legacy.decks[i] = this.random.shuffle([
+        ...legacy.decks[i]!,
+        ...(this.state.foldedPrivateCards[player.id] ?? player.privateCards),
+        ...player.publicCards,
+      ])
+      player.privateCards = []
+      player.publicCards = []
+    })
+    this.state.deck = this.random.shuffle([
+      ...this.state.deck,
+      ...this.state.discardA,
+      ...this.state.discardB,
+    ])
+    this.state.discardA = []
+    this.state.discardB = []
+    this.state.foldedPrivateCards = {}
+    this.state.removedCards = []
+    legacy.searchedPlayerIds = []
+    const pool = this.random.shuffle(this.state.deck)
+    this.state.deck = pool.splice(0, 2)
+    pool.forEach((card, i) =>
+      legacy.decks[(this.state.dealerIndex + i) % legacy.decks.length]!.push(card),
+    )
+    legacy.decks = legacy.decks.map((cards) => this.random.shuffle(cards))
+  }
+
+  protected createRoundDeck(): Card[] {
+    return this.state.legacy
+      ? this.state.deck
+      : this.random.shuffle(createDeck(this.state.config.mode))
+  }
+
+  protected legacyPersonalOpeningCount(): number {
+    return 7
+  }
+
+  protected dealOpeningCards(players: PlayerState[]): void {
+    const personalCount = this.legacyPersonalOpeningCount()
+    for (let index = 0; index < OPENING_PRIVATE_CARD_COUNT; index++) {
+      for (const player of players) {
+        const card =
+          this.state.legacy && index < personalCount
+            ? this.takeCard(player, "deck")
+            : this.drawDeck()
+        if (!card) throw new Error("Cannot supply the required opening card")
+        player.privateCards.push(card)
+      }
+    }
+  }
+
+  protected seedLanes(): void {
+    this.state.discardA.push(this.drawDeck())
+    this.state.discardB.push(this.drawDeck())
+  }
+
+  protected drawPile(player: PlayerState, source: CardSource): Card[] {
+    if (this.state.legacy && source === "deck") {
+      const personal = this.state.legacy.decks[this.state.players.indexOf(player)]!
+      return personal
+    }
+    return source === "deck" ? this.state.deck : this.lane(source === "discard-a" ? "a" : "b")
+  }
+
+  protected takeCard(player: PlayerState, source: CardSource): Card | undefined {
+    return this.drawPile(player, source).pop()
+  }
+
+  protected requiresEmptyLaneFill(): boolean {
+    return !this.state.legacy
+  }
+
+  protected scoreCards(cards: Card[]) {
     return scoreHand(cards, this.state.config.mode)
   }
 
@@ -1246,7 +1489,7 @@ export class GameEngine {
     return player
   }
 
-  private lane(pile: DiscardPile): Card[] {
+  protected lane(pile: DiscardPile): Card[] {
     return pile === "a" ? this.state.discardA : this.state.discardB
   }
 
@@ -1256,7 +1499,7 @@ export class GameEngine {
     return card
   }
 
-  private emit<T>(type: string, payload: T, actorId?: string): void {
+  protected emit<T>(type: string, payload: T, actorId?: string): void {
     this.state.rngState = this.random.state
     this.state.version += 1
     this.events.push({

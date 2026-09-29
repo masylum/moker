@@ -168,8 +168,10 @@ async function applyAction(
   input: z.infer<typeof ActionSchema>,
 ) {
   switch (input.kind) {
+    case "treasure-choice":
+      return game.legacyChoice(input.playerId, input.cardIds, input.returnCardId)
     case "riichi-stick":
-      return game.resolveStick(input.playerId, input.source)
+      return game.resolveStick(input.playerId, input.source, input)
     case "betting":
       return game.applyBettingAction(input.playerId, input.action, input.offerStick)
     case "charleston":

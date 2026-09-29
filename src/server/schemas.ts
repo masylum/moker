@@ -7,6 +7,11 @@ const BlankExchangeSchema = z.object({
   cardIndex: z.int().nonnegative(),
 })
 
+const TreasureSearchSchema = z.object({
+  treasureCardId: z.string(),
+  targetPlayerId: z.string(),
+})
+
 const PlayerSchema = z.object({
   id: z.string().min(1).max(60).optional(),
   name: z.string().min(1).max(80),
@@ -26,7 +31,7 @@ export const CreateGameSchema = z.object({
         players.length,
       "Player IDs must be unique",
     ),
-  mode: z.enum(["basic", "riichi"]).default("basic"),
+  mode: z.enum(["basic", "riichi", "legacy"]).default("basic"),
   orbits: z.number().int().min(1).max(4).default(1),
   tournamentGames: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]).default(1),
   heuristicSamples: z.int().min(1).max(256).optional(),
@@ -34,9 +39,17 @@ export const CreateGameSchema = z.object({
 export const RoomProfileSchema = z.object({ name: z.string().trim().min(1).max(40) })
 export const ActionSchema = z.discriminatedUnion("kind", [
   z.object({
+    kind: z.literal("treasure-choice"),
+    playerId: z.string(),
+    cardIds: z.array(z.string()).min(1).max(2),
+    returnCardId: z.string().optional(),
+  }),
+  z.object({
     kind: z.literal("riichi-stick"),
     playerId: z.string(),
     source: DrawSourceSchema.optional(),
+    blankExchange: BlankExchangeSchema.optional(),
+    treasureSearch: TreasureSearchSchema.optional(),
   }),
   z.object({
     kind: z.literal("charleston"),
@@ -57,17 +70,21 @@ export const ActionSchema = z.discriminatedUnion("kind", [
         type: z.literal("check"),
         drawSource: DrawSourceSchema.optional(),
         blankExchange: BlankExchangeSchema.optional(),
+        treasureSearch: TreasureSearchSchema.optional(),
         useRiichiStick: z.boolean().optional(),
         riichiDrawSource: DrawSourceSchema.optional(),
         riichiBlankExchange: BlankExchangeSchema.optional(),
+        riichiTreasureSearch: TreasureSearchSchema.optional(),
       }),
       z.object({
         type: z.literal("call"),
         drawSource: DrawSourceSchema.optional(),
         blankExchange: BlankExchangeSchema.optional(),
+        treasureSearch: TreasureSearchSchema.optional(),
         useRiichiStick: z.boolean().optional(),
         riichiDrawSource: DrawSourceSchema.optional(),
         riichiBlankExchange: BlankExchangeSchema.optional(),
+        riichiTreasureSearch: TreasureSearchSchema.optional(),
         curseTargetId: z.string().optional(),
         removeCurse: z.boolean().optional(),
       }),
@@ -78,6 +95,7 @@ export const ActionSchema = z.discriminatedUnion("kind", [
         useRiichiStick: z.boolean().optional(),
         drawSource: DrawSourceSchema.optional(),
         blankExchange: BlankExchangeSchema.optional(),
+        treasureSearch: TreasureSearchSchema.optional(),
         curseTargetId: z.string().optional(),
         removeCurse: z.boolean().optional(),
       }),

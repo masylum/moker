@@ -1,0 +1,50 @@
+{
+  "options": {
+    "seed": "legacy-v2:131",
+    "players": 4,
+    "orbits": 4
+  },
+  "samples": 32,
+  "rounds": [
+    {
+      "hand": 12,
+      "reason": "uncontested",
+      "winners": ["p1"],
+      "quints": [
+        {
+          "id": "p1",
+          "folded": false,
+          "cards": [
+            "wild-1",
+            "wild-9",
+            "dots-5-2",
+            "joker-green",
+            "bamboo-9-1",
+            "bamboo-9-2",
+            "bamboo-9-3"
+          ]
+        }
+      ]
+    },
+    {
+      "hand": 13,
+      "reason": "uncontested",
+      "winners": ["p1"],
+      "quints": [
+        {
+          "id": "p1",
+          "folded": false,
+          "cards": [
+            "wild-9",
+            "wind-north-2",
+            "characters-7-2",
+            "bamboo-9-3",
+            "bamboo-9-2",
+            "bamboo-9-1",
+            "joker-green"
+          ]
+        }
+      ]
+    }
+  ]
+}

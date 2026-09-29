@@ -1,3 +1,5 @@
+import { For, Show } from "solid-js"
+import { LEGACY_HAND_ORDER, HAND_LABELS } from "../game/hand-ranks"
 import illustrationSizes from "./rule-illustration-sizes.json"
 import { FishingIllustration } from "./FishingIllustration"
 
@@ -19,7 +21,7 @@ function RuleIllustration(props: {
   )
 }
 // Copy, paragraph boundaries and lists follow Figma inst1–inst6, including the Riichi continuation.
-export function RulesContent() {
+export function RulesContent(props: { legacy?: boolean }) {
   return (
     <div class="rules-content">
       <div class="rules-chapter" role="region" aria-labelledby="basic-rules">
@@ -469,6 +471,116 @@ export function RulesContent() {
           </p>
         </section>
       </div>
+      <Show when={props.legacy}>
+        <div class="rules-chapter" role="region" aria-labelledby="legacy-rules">
+          <h3 id="legacy-rules">Legacy expansion</h3>
+          <p>
+            <em>Unfinished, testing · 2–6 players</em>
+          </p>
+          <p>
+            Select <strong>Legacy expansion</strong> when setting up a game. Keep Riichi's sticks,
+            loans, colored Jokers, Lotuses, public-card locks, and betting rules.
+          </p>
+          <section>
+            <h4>Tournament games and personal decks</h4>
+            <p>
+              Use all 192 cards: four copies of 1–9 in Bamboo, Dots, Characters and the black Shadow
+              suit; four copies of each of the four Dragons and four Winds; five Blanks, four
+              colored Jokers, two Lotuses, and five yellow/orange Treasures. There are no Wild
+              cards.
+            </p>
+            <p>
+              Shuffle once, reserve two cards to seed the shared discard piles, and distribute all
+              remaining cards among personal decks, starting with the dealer. Choose one to four
+              games. Keep personal decks throughout the tournament, with one dealer turn per seat in
+              each game. Do not cap, trim, or reset decks.
+            </p>
+            <p>
+              Deal seven cards from each player's personal deck and use the usual Charleston. There
+              is no central draw deck. The Black Joker can represent a Shadow number, Black Dragon,
+              or Wind; other colored Jokers retain their restrictions. Jokers cannot form Eyes.
+            </p>
+          </section>
+          <section>
+            <h4>Two shared discard piles</h4>
+            <p>
+              Seed each pile with one of the two reserved cards at the start of each hand. Draw from
+              your personal deck or the top of either pile, then discard a concealed card into
+              either pile. If your personal deck is empty, fish from a discard pile or use a Blank
+              or Treasure. Public cards stay locked.
+            </p>
+            <p>
+              A concealed Blank swaps for any card anywhere in either pile, taking its position.
+              This replaces the whole Draw &amp; Discard.
+            </p>
+          </section>
+          <section>
+            <h4>Treasures</h4>
+            <div class="legacy-rule-cards">
+              <For each={[1, 2, 3, 4, 5]}>
+                {(name) => <img src={`/assets/cards/treasure-${name}.svg`} alt="Treasure" />}
+              </For>
+            </div>
+            <p>
+              During permitted fishing, commit a concealed Treasure and choose another player's
+              nonempty deck. You cannot target your own deck. Privately inspect up to three top
+              cards.
+            </p>
+            <p>
+              Take one or two cards. Put the Treasure into the selected deck. If taking two, also
+              put one other card from your existing concealed hand into that deck. Return the
+              unchosen offers and shuffle the selected deck. Your hand and that deck keep their
+              sizes.
+            </p>
+            <p>
+              This replaces the entire Draw &amp; Discard, including when spending a Riichi stick.
+              Public Treasures cannot be spent; declared Riichi still locks fishing. Treasures have
+              no combination value.
+            </p>
+            <p>
+              At showdown, each losing player receives{" "}
+              <strong>4× the current ante per Treasure</strong> held, concealed or public, from the
+              bank. No payout for folding, winning, tying for the win, or a hand ending before
+              showdown.
+            </p>
+          </section>
+          <section>
+            <h4>Cleanup and redistribution</h4>
+            <p>
+              Return your complete hand, including public cards, to your personal deck. Folded hands
+              wait face-down for this cleanup. Shuffle the shared discards, reserve two cards for
+              the next hand's seeds, then distribute the rest one at a time among all seated
+              players, starting with the current dealer. Shuffle each personal deck. Collections may
+              grow or shrink.
+            </p>
+          </section>
+          <section>
+            <h4>Legacy hand ladder</h4>
+            <p>
+              Three Dragons uses any three distinct Dragons; Four Dragons uses all four. Kong
+              requires four matching cards, Quint five. Weakest to strongest:
+            </p>
+            <ol>
+              <For each={LEGACY_HAND_ORDER}>
+                {(kind) => (
+                  <li>
+                    {HAND_LABELS[kind]}
+                    {kind === "quint"
+                      ? " — five matching cards"
+                      : kind === "kong"
+                        ? " — four matching cards; no Joker required"
+                        : ""}
+                  </li>
+                )}
+              </For>
+            </ol>
+            <p>
+              Basic and Riichi keep their own ladders. Existing tie-breaks and the lone-Lotus rule
+              still apply. This order reflects opening-hand rarity and remains under playtesting.
+            </p>
+          </section>
+        </div>
+      </Show>
     </div>
   )
 }

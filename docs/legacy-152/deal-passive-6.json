@@ -1,0 +1,83 @@
+[
+  {
+    "players": 4,
+    "size": 14,
+    "personalCards": 6,
+    "hands": 16,
+    "expectedHands": 16,
+    "finishReason": "complete",
+    "centralRemaining": 32
+  },
+  {
+    "players": 4,
+    "size": 18,
+    "personalCards": 6,
+    "hands": 16,
+    "expectedHands": 16,
+    "finishReason": "complete",
+    "centralRemaining": 16
+  },
+  {
+    "players": 4,
+    "size": 20,
+    "personalCards": 6,
+    "hands": 16,
+    "expectedHands": 16,
+    "finishReason": "complete",
+    "centralRemaining": 8
+  },
+  {
+    "players": 5,
+    "size": 14,
+    "personalCards": 6,
+    "hands": 16,
+    "expectedHands": 20,
+    "finishReason": "central-deck-exhausted",
+    "centralRemaining": 2
+  },
+  {
+    "players": 5,
+    "size": 18,
+    "personalCards": 6,
+    "hands": 12,
+    "expectedHands": 20,
+    "finishReason": "central-deck-exhausted",
+    "centralRemaining": 2
+  },
+  {
+    "players": 5,
+    "size": 20,
+    "personalCards": 6,
+    "hands": 10,
+    "expectedHands": 20,
+    "finishReason": "central-deck-exhausted",
+    "centralRemaining": 2
+  },
+  {
+    "players": 6,
+    "size": 14,
+    "personalCards": 6,
+    "hands": 11,
+    "expectedHands": 24,
+    "finishReason": "central-deck-exhausted",
+    "centralRemaining": 2
+  },
+  {
+    "players": 6,
+    "size": 18,
+    "personalCards": 6,
+    "hands": 7,
+    "expectedHands": 24,
+    "finishReason": "central-deck-exhausted",
+    "centralRemaining": 2
+  },
+  {
+    "players": 6,
+    "size": 20,
+    "personalCards": 6,
+    "hands": 5,
+    "expectedHands": 24,
+    "finishReason": "central-deck-exhausted",
+    "centralRemaining": 2
+  }
+]

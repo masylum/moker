@@ -291,3 +291,41 @@ Ranks run from weakest to strongest. Twin Lotus is rank 10, above Three Dragons 
 |   12 | Three Dragons and Eyes | One of each Dragon plus a pair      |
 |   13 | Four Winds             | One of each Wind                    |
 |   14 | Kong                   | Four identical cards                |
+
+## Legacy expansion — unfinished, testing
+
+Select Legacy expansion from the game mode selector. It extends Riichi. It supports 2–6 players and keeps Riichi sticks, loans, colored Joker restrictions, public-card locks, and betting rules.
+
+### Cards and tournament setup
+
+Use all 192 cards: four copies of ranks 1–9 in Bamboo, Dots, Characters and Shadow (black); four copies of each of four Dragons (including Black Dragon) and four Winds; five Blanks, four colored Jokers, two Lotuses, and five yellow/orange Treasures. No Wilds.
+
+Shuffle once. Reserve two cards to seed the shared discard piles. Distribute every remaining card one at a time into personal decks, starting with the dealer. Choose one to four games, with one dealer turn per seat per game. Keep personal decks throughout the tournament; do not cap, trim or reset them.
+
+### Starting a hand
+
+Deal seven cards from each player's personal deck. Use the usual Charleston and seed each shared discard pile with one reserved card. There is no central draw deck.
+
+### Drawing, discarding, and Blanks
+
+Draw from your personal deck or the top of either shared pile, then discard one concealed card into either pile. If your personal deck is empty, fish a discard pile or use a Blank or Treasure. Public cards remain locked.
+
+A concealed Blank exchanges for any card anywhere in either shared pile. Leave the Blank in the vacated position. This replaces the entire Draw & Discard.
+
+### Ladder
+
+The Black Joker can represent any Shadow number, Black Dragon or Wind. Other colored Jokers retain their restrictions. Jokers cannot form Eyes. Three Dragons uses any three distinct Dragons; Four Dragons uses all four. Kong means four matching cards, Quint five. Each physical card occupies only one position in a combination. Treasures have no combination value.
+
+Weakest to strongest: High Card, Eyes, Chow, Two Eyes, Pung, Three Dragons, Three Winds, Chow and Eyes, Pung and Eyes, Twin Lotus, Three Dragons and Eyes, Long Chow, Four Dragons, Four Winds, Kong, Quint.
+
+### Treasures
+
+During a permitted Draw & Discard, commit a concealed Treasure and choose another player's nonempty deck. You cannot target your own deck.
+
+Privately inspect its top three cards, or all remaining cards if fewer remain. Take one or two. Put the Treasure into that deck; if taking two, also return one other card from your existing concealed hand. Return unchosen offers and shuffle the selected deck. Both hand size and target-deck size stay unchanged. This replaces the entire Draw & Discard and may be used for Riichi-stick fishing. Public Treasures cannot be spent; declared Riichi locks fishing.
+
+At showdown, a losing player receives four times the current ante from the bank per Treasure held, concealed or public. No payout for folding, winning, tying for the win, or a hand ending without showdown.
+
+### Cleanup and redistribution
+
+Return complete hands, including public cards, to their owners' personal decks. Hold folded hands aside face-down until cleanup. Shuffle both shared discard piles together, reserve two cards for the next hand's seeds, and distribute the rest one at a time among all seated players, starting with the current dealer. Shuffle each personal deck. Decks may grow or shrink naturally; no cards are added or removed.

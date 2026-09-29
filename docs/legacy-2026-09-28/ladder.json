@@ -1,0 +1,131 @@
+{
+  "options": {
+    "games": "0",
+    "ladder": "200000",
+    "sets": true,
+    "output": "docs/legacy-2026-09-28/ladder.json",
+    "players": "4",
+    "orbits": "2",
+    "samples": "12",
+    "treasure-ante": "4",
+    "checkdown": false,
+    "policy": "strategic",
+    "seed": "legacy-v1",
+    "offset": "0",
+    "tournament-games": "1"
+  },
+  "prototype": "headless Legacy atop rules-v6 betting; approximate information-limited bots",
+  "results": [],
+  "ladder": {
+    "samples": 200000,
+    "rows": {
+      "high-card": {
+        "contains": 200000,
+        "best": 98510,
+        "winningEligibleBest": 86176,
+        "naturalContains": 199998
+      },
+      "eye": {
+        "contains": 79360,
+        "best": 56040,
+        "winningEligibleBest": 51020,
+        "naturalContains": 50250
+      },
+      "chow": {
+        "contains": 26467,
+        "best": 20938,
+        "winningEligibleBest": 19459,
+        "naturalContains": 8761
+      },
+      "two-eyes": {
+        "contains": 9685,
+        "best": 8084,
+        "winningEligibleBest": 7650,
+        "naturalContains": 3416
+      },
+      "chow-eye": {
+        "contains": 4021,
+        "best": 3164,
+        "winningEligibleBest": 3055,
+        "naturalContains": 683
+      },
+      "pung": {
+        "contains": 5965,
+        "best": 4824,
+        "winningEligibleBest": 4520,
+        "naturalContains": 846
+      },
+      "three-winds": {
+        "contains": 4963,
+        "best": 4720,
+        "winningEligibleBest": 4400,
+        "naturalContains": 3699
+      },
+      "pung-eye": {
+        "contains": 778,
+        "best": 738,
+        "winningEligibleBest": 714,
+        "naturalContains": 61
+      },
+      "three-dragons": {
+        "contains": 1736,
+        "best": 1484,
+        "winningEligibleBest": 1371,
+        "naturalContains": 452
+      },
+      "twin-lotus": {
+        "contains": 480,
+        "best": 480,
+        "winningEligibleBest": 480,
+        "naturalContains": 480
+      },
+      "long-chow": {
+        "contains": 361,
+        "best": 361,
+        "winningEligibleBest": 345,
+        "naturalContains": 51
+      },
+      "three-treasures": {
+        "contains": 88,
+        "best": 86,
+        "winningEligibleBest": 81,
+        "naturalContains": 88
+      },
+      "three-dragons-eye": {
+        "contains": 252,
+        "best": 251,
+        "winningEligibleBest": 246,
+        "naturalContains": 35
+      },
+      "four-winds": {
+        "contains": 213,
+        "best": 213,
+        "winningEligibleBest": 197,
+        "naturalContains": 125
+      },
+      "kong": {
+        "contains": 105,
+        "best": 103,
+        "winningEligibleBest": 100,
+        "naturalContains": 2
+      },
+      "four-treasures": {
+        "contains": 2,
+        "best": 2,
+        "winningEligibleBest": 2,
+        "naturalContains": 2
+      },
+      "quint": {
+        "contains": 2,
+        "best": 2,
+        "winningEligibleBest": 2,
+        "naturalContains": 0
+      }
+    },
+    "singleLotus": 20182,
+    "exactQuintProbability": 0.0000023082944039805394,
+    "exactFourTreasuresProbability": 0.0000028966831736226374,
+    "exactAtLeastThreeTreasuresProbability": 0.0003649820798764523
+  },
+  "seconds": 16.152654333
+}

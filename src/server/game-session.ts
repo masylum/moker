@@ -6,6 +6,8 @@ import { GameEngine, type PlayerSetup } from "../game/engine"
 import { analyzePokerMath, chooseHeuristicAction } from "../game/heuristic"
 import type {
   BettingAction,
+  BlankExchange,
+  TreasureSearch,
   DebugGameView,
   DiscardPile,
   GameConfig,
@@ -60,7 +62,11 @@ export class GameSession extends DurableObject<Env> {
     name: string,
   ): Promise<PublicGameState> {
     if (this.isRoom()) throw new Error("[409] This room already exists")
-    const engine = GameEngine.create(players, { ...config, seed: crypto.randomUUID() })
+    const hostIndex = players.findIndex((p) => p.controller === "human")
+    const engine = GameEngine.create(
+      players.map((p, i) => (i === hostIndex ? { ...p, name } : p)),
+      { ...config, seed: crypto.randomUUID() },
+    )
     const host = engine.state.players.find((player) => player.controller === "human")!
     host.name = name
     prepareCharleston(engine)
@@ -120,8 +126,11 @@ export class GameSession extends DurableObject<Env> {
       throw new Error("[409] The table changed. Try again")
     try {
       switch (input.kind) {
+        case "treasure-choice":
+          engine.chooseTreasure(id, input.cardIds, input.returnCardId)
+          break
         case "riichi-stick":
-          if (input.source) engine.spendRiichiStick(id, input.source)
+          if (input.source) engine.spendRiichiStick(id, input.source, input)
           else engine.finishStickDecision(id)
           break
         case "betting":
@@ -217,7 +226,7 @@ export class GameSession extends DurableObject<Env> {
     const actorId = state.pendingDiscard?.playerId ?? state.actingPlayerId
     return (
       !this.waitingPlayers(engine).length &&
-      ["charleston", "exposing", "betting", "discarding"].includes(state.phase) &&
+      ["treasure", "charleston", "exposing", "betting", "discarding"].includes(state.phase) &&
       state.players.some((player) => player.id === actorId && player.controller !== "human")
     )
   }
@@ -233,11 +242,14 @@ export class GameSession extends DurableObject<Env> {
   async getDebugGame(): Promise<DebugGameView> {
     const engine = this.engine()
     const samples = engine.state.config.heuristicSamples
-    const analyses = engine.state.players.map((player) =>
-      analyzePokerMath(engine.state, player.id, samples),
-    )
+    const analyses =
+      engine.state.config.mode === "legacy"
+        ? []
+        : engine.state.players.map((player) => analyzePokerMath(engine.state, player.id, samples))
     const actingDecision =
-      engine.state.phase === "betting" && engine.state.actingPlayerId
+      engine.state.config.mode !== "legacy" &&
+      engine.state.phase === "betting" &&
+      engine.state.actingPlayerId
         ? chooseHeuristicAction(engine.state, engine.state.actingPlayerId, samples)
         : null
 
@@ -263,10 +275,22 @@ export class GameSession extends DurableObject<Env> {
   async resolveStick(
     playerId: string,
     source?: "deck" | "discard-a" | "discard-b",
+    fishing: { blankExchange?: BlankExchange; treasureSearch?: TreasureSearch } = {},
   ): Promise<PublicGameState> {
     const engine = this.engine()
-    if (source) engine.spendRiichiStick(playerId, source)
+    if (source) engine.spendRiichiStick(playerId, source, fishing)
     else engine.finishStickDecision(playerId)
+    this.commit(engine)
+    return engine.publicView(playerId)
+  }
+
+  async legacyChoice(
+    playerId: string,
+    cardIds: string[],
+    returnCardId?: string,
+  ): Promise<PublicGameState> {
+    const engine = this.engine()
+    engine.chooseTreasure(playerId, cardIds, returnCardId)
     this.commit(engine)
     return engine.publicView(playerId)
   }

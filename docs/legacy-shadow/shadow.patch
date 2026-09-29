@@ -1,0 +1,224 @@
+--- a/src/game/cards.ts
++++ b/src/game/cards.ts
+@@ -17,7 +17,7 @@
+ 
+ export function createDeck(mode: "basic" | "riichi" | "legacy" = "riichi"): Card[] {
+   const cards: Card[] = []
+-  for (const suit of SUITS) {
++  for (const suit of SUITS.filter(s => s !== "shadow")) {
+     for (let rank = 1; rank <= 9; rank += 1) {
+       for (let copy = 1; copy <= 3; copy += 1) {
+         cards.push({
+@@ -28,7 +28,7 @@
+     }
+   }
+ 
+-  for (const dragon of DRAGONS) {
++  for (const dragon of DRAGONS.filter(d => d !== "black")) {
+     for (let copy = 1; copy <= 3; copy += 1) {
+       cards.push({ ...dragonFace(dragon), id: `dragon-${dragon}-${copy}` })
+     }
+@@ -59,14 +59,19 @@
+   }
+ 
+   if (mode === "legacy") {
+-    for (const suit of SUITS)
++    for (const suit of SUITS.filter(s => s !== "shadow"))
+       for (let rank = 1; rank <= 9; rank++)
+         cards.push({ ...numberedFace(suit, rank as NumberedRank), id: `${suit}-${rank}-4` })
+-    for (const dragon of DRAGONS) cards.push({ ...dragonFace(dragon), id: `dragon-${dragon}-4` })
++    for (const dragon of DRAGONS.filter(d => d !== "black")) cards.push({ ...dragonFace(dragon), id: `dragon-${dragon}-4` })
+     for (const wind of WINDS) cards.push({ ...windFace(wind), id: `wind-${wind}-4` })
+     cards.push({ ...blankFace(), id: "blank-5" })
+     for (const treasure of [1, 2, 3, 4, 5] as const)
+       cards.push({ id: `treasure-${treasure}`, kind: "treasure", treasure, color: "gold" })
++  }
++  if (mode === "legacy") {
++    for (let rank=1;rank<=9;rank++) for(let copy=1;copy<=4;copy++)
++      cards.push({...numberedFace("shadow",rank as NumberedRank),id:`shadow-${rank}-${copy}`})
++    for(let copy=1;copy<=4;copy++) cards.push({...dragonFace("black"),id:`dragon-black-${copy}`})
+   }
+   return cards
+ }
+@@ -131,7 +136,7 @@
+ }
+ 
+ export function dragonFace(dragon: Dragon): CardFace {
+-  const color = dragon === "green" ? "green" : dragon === "white" ? "blue" : "red"
++  const color = dragon === "black" ? "black" : dragon === "green" ? "green" : dragon === "white" ? "blue" : "red"
+ 
+   return { kind: "dragon", dragon, color }
+ }
+@@ -153,11 +158,11 @@
+ }
+ 
+ function suitColor(suit: Suit): CardColor {
+-  return suit === "bamboo" ? "green" : suit === "dots" ? "blue" : "red"
+-}
+-
+-export function suitLabel(suit: Suit): "Bams" | "Dots" | "Craks" {
+-  return suit === "bamboo" ? "Bams" : suit === "dots" ? "Dots" : "Craks"
++  return suit === "shadow" ? "black" : suit === "bamboo" ? "green" : suit === "dots" ? "blue" : "red"
++}
++
++export function suitLabel(suit: Suit): "Bams" | "Dots" | "Craks" | "Shadow" {
++  return suit === "shadow" ? "Shadow" : suit === "bamboo" ? "Bams" : suit === "dots" ? "Dots" : "Craks"
+ }
+ 
+ export function compareCards(left: Card, right: Card): number {
+--- a/src/game/engine.ts
++++ b/src/game/engine.ts
+@@ -1427,7 +1427,10 @@
+     this.state.foldedPrivateCards = {}
+     this.state.removedCards = []
+     legacy.searchedPlayerIds = []
+-  }
++    this.redistributeDiscardPool()
++  }
++
++  protected redistributeDiscardPool(): void {}
+ 
+   protected createRoundDeck(): Card[] {
+     return this.state.legacy
+--- a/src/game/hand-ranks.ts
++++ b/src/game/hand-ranks.ts
+@@ -15,6 +15,7 @@
+   "long-chow": 11,
+   "three-dragons-eye": 12,
+   "four-winds": 13,
++  "four-dragons": 13,
+   kong: 14,
+   quint: 15,
+ } as const satisfies Record<HandKind, number>
+@@ -43,6 +44,7 @@
+   "twin-lotus",
+   "long-chow",
+   "three-dragons-eye",
++  "four-dragons",
+   "four-winds",
+   "kong",
+   "quint",
+@@ -61,6 +63,7 @@
+   "long-chow": "Long Chow",
+   "three-dragons-eye": "Three Dragons and Eyes",
+   "four-winds": "Four Winds",
++  "four-dragons": "Four Dragons",
+   kong: "Kong",
+   quint: "Quint",
+ }
+--- a/src/game/legacy-identities.ts
++++ b/src/game/legacy-identities.ts
+@@ -1,19 +1,15 @@
+ import { DRAGONS, SUITS, WINDS, type Card } from "./types"
+-// 0..26 suited numbers, 27..29 Dragons, 30..33 Winds.
++const dragonStart=SUITS.length*9, windStart=dragonStart+DRAGONS.length
+ export function identities(card: Card, allowJoker: boolean): number[] {
+-  if (card.kind === "wild") {
+-    if (card.rank !== "dragon") return [card.rank - 1, card.rank + 8, card.rank + 17]
+-    return [27, 28, 29]
+-  }
+-  if (card.kind === "numbered") return [SUITS.indexOf(card.suit) * 9 + card.rank - 1]
+-  if (card.kind === "dragon") return [27 + DRAGONS.indexOf(card.dragon)]
+-  if (card.kind === "wind") return [30 + WINDS.indexOf(card.wind)]
+-  if (card.kind !== "joker" || !allowJoker) return []
+-  if (card.color === "black") return [30, 31, 32, 33]
+-  const suit = card.color === "green" ? 0 : card.color === "blue" ? 1 : 2
+-  const dragon = card.color === "green" ? 28 : card.color === "blue" ? 29 : 27
+-  return [...Array.from({ length: 9 }, (_, rank) => suit * 9 + rank), dragon]
++ if(card.kind==="wild") return card.rank==="dragon" ? DRAGONS.map((_,i)=>dragonStart+i) : SUITS.map((_,i)=>i*9+Number(card.rank)-1)
++ if(card.kind==="numbered") return [SUITS.indexOf(card.suit)*9+card.rank-1]
++ if(card.kind==="dragon") return [dragonStart+DRAGONS.indexOf(card.dragon)]
++ if(card.kind==="wind") return [windStart+WINDS.indexOf(card.wind)]
++ if(card.kind!=="joker" || !allowJoker) return []
++ const winds=WINDS.map((_,i)=>windStart+i)
++ if(card.color==="black") return (SUITS.length===4 ? [...Array.from({length:9},(_,i)=>27+i),dragonStart+3,...winds] : winds)
++ const suit=card.color==="green"?0:card.color==="blue"?1:2
++ const dragon=card.color==="green"?1:card.color==="blue"?2:0
++ return [...Array.from({length:9},(_,i)=>suit*9+i),dragonStart+dragon]
+ }
+-
+-export const identityValue = (identity: number): number =>
+-  identity >= 30 ? 11 : identity >= 27 ? 10 : (identity % 9) + 1
++export const identityValue=(id:number):number=>id>=windStart?11:id>=dragonStart?10:(id%9)+1
+--- a/src/game/legacy-scoring.ts
++++ b/src/game/legacy-scoring.ts
+@@ -1,5 +1,7 @@
+ import { compareHandStrengths } from "./scoring"
+-import type { Card, HandScore } from "./types"
++import { SUITS, DRAGONS, type Card, type HandScore } from "./types"
++const dragonStart=SUITS.length*9, windStart=dragonStart+DRAGONS.length
++const dragonIds=DRAGONS.map((_,i)=>dragonStart+i), windIds=[0,1,2,3].map(i=>windStart+i)
+ import { identities, identityValue } from "./legacy-identities"
+ import { LEGACY_HAND_ORDER, HAND_LABELS } from "./hand-ranks"
+ 
+@@ -68,8 +70,8 @@
+   const key = cards.map((c) => c.id).join(",")
+   const cached = contains ? undefined : cache.get(key)
+   if (cached) return cached
+-  const masks = Array<number>(34).fill(0),
+-    naturalMasks = Array<number>(34).fill(0)
++  const masks = Array<number>(windStart+4).fill(0),
++    naturalMasks = Array<number>(windStart+4).fill(0)
+   cards.forEach((card, index) => {
+     for (const target of identities(card, true)) masks[target] = masks[target]! | (1 << index)
+     for (const target of identities(card, false))
+@@ -110,7 +112,7 @@
+     pungs: Atom[] = [],
+     chows: Atom[] = [],
+     dragons: Atom[] = []
+-  for (let target = 0; target < 34; target++) {
++  for (let target = 0; target < windStart+4; target++) {
+     const value = identityValue(target)
+     if (naturalMasks[target])
+       offer("high-card", naturalMasks[target]! & -naturalMasks[target]!, [value])
+@@ -128,7 +130,7 @@
+       }
+     }
+   }
+-  for (let suit = 0; suit < 3; suit++) {
++  for (let suit = 0; suit < SUITS.length; suit++) {
+     for (const length of [3, 5]) {
+       for (let start = 1; start <= 10 - length; start++) {
+         const targets = Array.from({ length }, (_, i) => suit * 9 + start - 1 + i)
+@@ -140,17 +142,18 @@
+       }
+     }
+   }
+-  for (const mask of match([27, 28, 29], masks)) {
++  for (const trio of (dragonIds.length===3?[dragonIds]:dragonIds.map(omitted=>dragonIds.filter(t=>t!==omitted)))) for (const mask of match(trio, masks)) {
+     dragons.push({ mask, identity: -1, tie: [10, 10, 10] })
+     offer("three-dragons", mask, [10, 10, 10])
+   }
+-  for (let omitted = 30; omitted < 34; omitted++)
++  for (let omitted = windStart; omitted < windStart+4; omitted++)
+     for (const mask of match(
+-      [30, 31, 32, 33].filter((t) => t !== omitted),
++      windIds.filter((t) => t !== omitted),
+       masks,
+     ))
+       offer("three-winds", mask, [11, 11, 11])
+-  for (const mask of match([30, 31, 32, 33], masks)) offer("four-winds", mask, [11, 11, 11, 11])
++  for (const mask of match(windIds, masks)) offer("four-winds", mask, [11, 11, 11, 11])
++  for (const mask of match(dragonIds,masks)) offer("four-dragons",mask,[10,10,10,10])
+   const lotusMask = cards.reduce((m, c, i) => (c.kind === "flower" ? m | (1 << i) : m), 0)
+   for (const mask of subsets(lotusMask, 2)) offer("twin-lotus", mask, [])
+   for (const eye of eyes) {
+--- a/src/game/types.ts
++++ b/src/game/types.ts
+@@ -1,6 +1,6 @@
+-export const SUITS = ["bamboo", "dots", "characters"] as const
++export const SUITS = ["bamboo", "dots", "characters", "shadow"] as const
+ export const WINDS = ["east", "south", "west", "north"] as const
+-export const DRAGONS = ["red", "green", "white"] as const
++export const DRAGONS = ["red", "green", "white", "black"] as const
+ export const JOKER_COLORS = ["green", "blue", "red", "black"] as const
+ export const FLOWERS = ["white-lotus", "black-lotus"] as const
+ 
+@@ -27,6 +27,7 @@
+ export type DiscardPile = "a" | "b"
+ 
+ export type CombinationKind =
++  | "four-dragons"
+   | "quint"
+   | "eye"
+   | "chow"

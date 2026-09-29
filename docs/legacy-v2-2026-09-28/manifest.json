@@ -1,0 +1,253 @@
+{
+  "version": 2,
+  "branch": "codex/legacy-prototype",
+  "baseCommit": "bf26dab2c67a43dbccafcb7d8392145f5462925b",
+  "rules": "Treasure search, no payout or Treasure sets, clockwise fallback, unchanged Riichi sticks",
+  "verification": {
+    "unitTests": 236,
+    "workerTests": 13,
+    "legacyCases": 29,
+    "deterministicReplay": "search-on session 131 matches saved result",
+    "checks": ["lint", "knip", "typecheck", "changed-file formatting", "git diff --check"],
+    "repoFormatException": "pre-existing docs/twin-lotus-2026-09-27 files"
+  },
+  "sourceSha256": {
+    "docs/legacy-prototype.md": "9ff00ff276a7a70d562bcd9c05314a49fa749ef8ed2950e32a5f6a34cd72b731",
+    "scripts/legacy/bots.ts": "b61918b94fb4b25c2cddd9f06a66c780ad60a742d623fe12ab4af3eee038caae",
+    "scripts/legacy/cards.ts": "73c9dd5cfc29afd34b0a9ecb03b5c97287212894d4b5ed9f84ecc4f7f1ee8627",
+    "scripts/legacy/engine.ts": "7221e009f4c887dceaefadcb2bad7cda8a5066164faaa6c06b8f4364b42c83ed",
+    "scripts/legacy/probabilities.ts": "1b29d798a059d9da5fa76c624ee8ecb1eccf48b47dba566713360efd992ab24f",
+    "scripts/legacy/reference.ts": "267ebd9414b0fb2344b20de7de6778aece12680a33c2c9c2daf98c38967f308f",
+    "scripts/legacy/report.py": "09127b1af2428f04818da351a42022f9d08e6b45b3842068883ff8cfc7af15fb",
+    "scripts/legacy/scoring.ts": "4274617638d0ca8f4c28e9fb2c66bb2c241b760aa0f0fc7b0b265fe403c7a422",
+    "scripts/legacy-ladder.ts": "8e2782ca3ebd99bfe8f2b128cda287517646a5481356eead6a16c433214964e9",
+    "scripts/legacy-simulate.ts": "d300dacdc8e998d3180b369ef632574ccdc5c754f7119a1fd78371705336de64",
+    "src/game/automation.ts": "6de8d9593ff3af4d94bbd5922acb5d282a22eec310deda34bd72f72af100380d",
+    "src/game/cards.ts": "b1133434d4fc65ed88c806e75f49281d3db9a3b23a981a3dfb8382ea973d5968",
+    "src/game/engine.ts": "e3f707b9aba3d99b356ad5ad962692739c0398a168082b0ec18b95f8b946ec65",
+    "src/game/hand-progress.ts": "3c4dae70d540ed69b605d25e3f89bd0e8b93bf0667e761dd6db4fbaa2f4bc9e2",
+    "src/game/hand-ranks.ts": "8ce8d5677ca130f7d353803b573e33b041ab6888d742f63884e8113e865e9b19",
+    "src/game/heuristic.ts": "29fe5e5e8d770bd9eafab970a252db8f3cff614b719f2415338dd103700fb7bb",
+    "src/game/information.ts": "daddea5415cf3c7c82249d71f3389659b7d7124fccb0ae00187a0adf09675744",
+    "src/game/melds.ts": "c878b0d4a7d117ea31c17d388c2400c4e6ba1c1c8627d0e286a280c45a61d521",
+    "src/game/random.ts": "762d9e84062490b79439706cbe7c377d67ccaf8d737efd9146b0bf8b144c85a3",
+    "src/game/rules.ts": "bd4bbcfcd339063d98def204be1ebc19d35863769ab371f34a3a219656ddc0c1",
+    "src/game/scoring.ts": "50aa477c46bb5d4cf99f824930a89f3c51516cffda6238b2c08ea727d573c7f3",
+    "src/game/simulation.ts": "de5f77a99c2d9e40d2202ee5672b2e34cb5ebb5b63f3c879f7d38a77ed56ceb2",
+    "src/game/types.ts": "42b509e0330139e25f8dbbcd53dd025bcae0348ce17fb745ae0f9301ddfa6232",
+    "tests/legacy.test.ts": "362735081e54c3cc66d9189758b5599bf29cd1010163b5e1d1679800395c2543"
+  },
+  "artifactSha256": {
+    "README.md": "e77fc2863f5604f7022611b40c5cfeec94605ad702725921e53da33ea5ed4579",
+    "checkdown.json": "c6982f3bb6367c0b147bd1faf4263b9556608f1ae6e29d9fd61d502684e6399b",
+    "exact-legacy.json": "3b2860641344240923af54ff2ed0a8126e49ac94e0c5732b3798ede3f29295a8",
+    "exact-no-extra-utilities.json": "a5e5865f4eee3121cfc0a591eccdbc9f6770ead5f31d0fca2e03561f0b77d43c",
+    "exact-no-extra-winds.json": "2de8404de2f13167972fb36faa0af9c12d821153349bf77f97d8a5162b17af21",
+    "exact-no-wilds.json": "df16bc06fd11c8adf8b81656b0d38c37d2f7547bab2bb63a319a576b8bcd5b74",
+    "exact-riichi.json": "3b738cca67892027cdc76575140b290a71a1d2614099b5d901a152190978cda9",
+    "legacy-a.json": "de71d565f71b54579aee1659dde1c033d733681a5b3e677b540232ba28f00127",
+    "legacy-b.json": "631da73017748c53a7a3db7603cdc46c7c8d0f0a2b6dbfdd637836d46a989057",
+    "no-extra-utilities.json": "72c89db8f8fda5572f38469ba422637df4fffad5e39b9e96b4d594cec04bbffa",
+    "no-extra-winds.json": "c5d54b16902b33b0ee941e22ac2b27136a55a5207a8823fb7abae6bfca6251a7",
+    "no-wilds.json": "4472cac3353ded77da4ab1c0a4316e9300d0805d9052d8ca52b4e52206ef8c25",
+    "prototype-source.tar.gz": "ce83779c3e48dc79495b82fcd0607a03f9aad126e72ac09216eb70d0ebfc9602",
+    "quint-audit.json": "78b2dc62f2df459feb0c36ae568d593be3320ddb8efbe6cbbbd354bf758afd1f",
+    "riichi-a.json": "16f5e4b0ca2f8a381dc14004017362d7dc87a17b39f9effe0cb307a6fa2a5f93",
+    "riichi-b.json": "68dfbe80edff820d5ab895fb6607b49f09c14e222d68ee0666deab68fba971ff",
+    "search-96.json": "c75769c35cc18da0bde240ccf79bcdb2fbe468de7fa861aaced90fe622e870a5",
+    "search-off.json": "ad9d0fb63492d27404ff259f44325532b839738e67b5752982cedd2dc80febec",
+    "search-on.json": "5190c16089cb7c91488da48b9a45a0594ac1c701d2f477d489873d8e4cc67365",
+    "stress-2.json": "d4e18a0de7eca4becd91cab3bf41c589b8d391d31afe1f4629c22f7a74abfb92",
+    "stress-3.json": "eadfb783b5e5e7dfdaee0da69b371e124d0362d863f48f0048e8c60155a7a3db",
+    "stress-5.json": "c59517470ae97e93ea8f209482c668f0878b2a2d0e9dbd31599274d13c95352d",
+    "stress-6.json": "18781186e881dbdde494bc6cc63519b46506c86930d2d451d4bb14014e74ffac",
+    "tournament.json": "811adbab488900672a7c99c647d66877294801db4a616d04382145c66680bd1e"
+  },
+  "commands": {
+    "checkdown.json": {
+      "games": "30",
+      "samples": "32",
+      "orbits": "4",
+      "checkdown": true,
+      "output": "docs/legacy-v2-2026-09-28/checkdown.json",
+      "players": "4",
+      "disable-treasures": false,
+      "seed": "legacy-v2",
+      "offset": "0",
+      "tournament-games": "1"
+    },
+    "exact-legacy.json": {
+      "samples": "0",
+      "deck": "legacy",
+      "output": "docs/legacy-v2-2026-09-28/exact-legacy.json",
+      "seed": "legacy-ladder-v2"
+    },
+    "exact-no-extra-utilities.json": {
+      "samples": "0",
+      "deck": "no-extra-utilities",
+      "output": "docs/legacy-v2-2026-09-28/exact-no-extra-utilities.json",
+      "seed": "legacy-ladder-v2"
+    },
+    "exact-no-extra-winds.json": {
+      "samples": "0",
+      "deck": "no-extra-winds",
+      "output": "docs/legacy-v2-2026-09-28/exact-no-extra-winds.json",
+      "seed": "legacy-ladder-v2"
+    },
+    "exact-no-wilds.json": {
+      "samples": "0",
+      "deck": "no-wilds",
+      "output": "docs/legacy-v2-2026-09-28/exact-no-wilds.json",
+      "seed": "legacy-ladder-v2"
+    },
+    "exact-riichi.json": {
+      "samples": "0",
+      "deck": "riichi",
+      "output": "docs/legacy-v2-2026-09-28/exact-riichi.json",
+      "seed": "legacy-ladder-v2"
+    },
+    "legacy-a.json": {
+      "samples": "1000000",
+      "deck": "legacy",
+      "seed": "legacy-v2-rarity-A",
+      "output": "docs/legacy-v2-2026-09-28/legacy-a.json"
+    },
+    "legacy-b.json": {
+      "samples": "1000000",
+      "deck": "legacy",
+      "seed": "legacy-v2-rarity-B",
+      "output": "docs/legacy-v2-2026-09-28/legacy-b.json"
+    },
+    "no-extra-utilities.json": {
+      "samples": "1000000",
+      "deck": "no-extra-utilities",
+      "seed": "legacy-v2-no-extra-utilities",
+      "output": "docs/legacy-v2-2026-09-28/no-extra-utilities.json"
+    },
+    "no-extra-winds.json": {
+      "samples": "1000000",
+      "deck": "no-extra-winds",
+      "seed": "legacy-v2-no-extra-winds",
+      "output": "docs/legacy-v2-2026-09-28/no-extra-winds.json"
+    },
+    "no-wilds.json": {
+      "samples": "1000000",
+      "deck": "no-wilds",
+      "seed": "legacy-v2-no-wilds",
+      "output": "docs/legacy-v2-2026-09-28/no-wilds.json"
+    },
+    "quint-audit.json": {
+      "seed": "legacy-v2:131",
+      "players": 4,
+      "orbits": 4
+    },
+    "riichi-a.json": {
+      "samples": "1000000",
+      "deck": "riichi",
+      "seed": "riichi-v2-rarity-A",
+      "output": "docs/legacy-v2-2026-09-28/riichi-a.json"
+    },
+    "riichi-b.json": {
+      "samples": "1000000",
+      "deck": "riichi",
+      "seed": "riichi-v2-rarity-B",
+      "output": "docs/legacy-v2-2026-09-28/riichi-b.json"
+    },
+    "search-96.json": {
+      "games": "30",
+      "samples": "96",
+      "orbits": "4",
+      "output": "docs/legacy-v2-2026-09-28/search-96.json",
+      "players": "4",
+      "checkdown": false,
+      "disable-treasures": false,
+      "seed": "legacy-v2",
+      "offset": "0",
+      "tournament-games": "1"
+    },
+    "search-off.json": {
+      "games": "150",
+      "samples": "32",
+      "orbits": "4",
+      "disable-treasures": true,
+      "output": "docs/legacy-v2-2026-09-28/search-off.json",
+      "players": "4",
+      "checkdown": false,
+      "seed": "legacy-v2",
+      "offset": "0",
+      "tournament-games": "1"
+    },
+    "search-on.json": {
+      "games": "150",
+      "samples": "32",
+      "orbits": "4",
+      "output": "docs/legacy-v2-2026-09-28/search-on.json",
+      "players": "4",
+      "checkdown": false,
+      "disable-treasures": false,
+      "seed": "legacy-v2",
+      "offset": "0",
+      "tournament-games": "1"
+    },
+    "stress-2.json": {
+      "games": "30",
+      "samples": "32",
+      "orbits": "4",
+      "players": "2",
+      "output": "docs/legacy-v2-2026-09-28/stress-2.json",
+      "checkdown": false,
+      "disable-treasures": false,
+      "seed": "legacy-v2",
+      "offset": "0",
+      "tournament-games": "1"
+    },
+    "stress-3.json": {
+      "games": "30",
+      "samples": "32",
+      "orbits": "4",
+      "players": "3",
+      "output": "docs/legacy-v2-2026-09-28/stress-3.json",
+      "checkdown": false,
+      "disable-treasures": false,
+      "seed": "legacy-v2",
+      "offset": "0",
+      "tournament-games": "1"
+    },
+    "stress-5.json": {
+      "games": "30",
+      "samples": "32",
+      "orbits": "4",
+      "players": "5",
+      "output": "docs/legacy-v2-2026-09-28/stress-5.json",
+      "checkdown": false,
+      "disable-treasures": false,
+      "seed": "legacy-v2",
+      "offset": "0",
+      "tournament-games": "1"
+    },
+    "stress-6.json": {
+      "games": "30",
+      "samples": "32",
+      "orbits": "4",
+      "players": "6",
+      "output": "docs/legacy-v2-2026-09-28/stress-6.json",
+      "checkdown": false,
+      "disable-treasures": false,
+      "seed": "legacy-v2",
+      "offset": "0",
+      "tournament-games": "1"
+    },
+    "tournament.json": {
+      "games": "30",
+      "samples": "32",
+      "orbits": "2",
+      "tournament-games": "3",
+      "output": "docs/legacy-v2-2026-09-28/tournament.json",
+      "players": "4",
+      "checkdown": false,
+      "disable-treasures": false,
+      "seed": "legacy-v2",
+      "offset": "0"
+    }
+  }
+}

@@ -1,12 +1,14 @@
 export const SUITS = ["bamboo", "dots", "characters"] as const
+export const LEGACY_SUITS = [...SUITS, "shadow"] as const
 export const WINDS = ["east", "south", "west", "north"] as const
 export const DRAGONS = ["red", "green", "white"] as const
+export const LEGACY_DRAGONS = [...DRAGONS, "black"] as const
 export const JOKER_COLORS = ["green", "blue", "red", "black"] as const
 export const FLOWERS = ["white-lotus", "black-lotus"] as const
 
-export type Suit = (typeof SUITS)[number]
+export type Suit = (typeof LEGACY_SUITS)[number]
 export type Wind = (typeof WINDS)[number]
-export type Dragon = (typeof DRAGONS)[number]
+export type Dragon = (typeof LEGACY_DRAGONS)[number]
 export type JokerColor = (typeof JOKER_COLORS)[number]
 export type Flower = (typeof FLOWERS)[number]
 export type CardColor = JokerColor
@@ -19,12 +21,16 @@ export type CardFace =
   | { kind: "flower"; flower: Flower; color: null }
   | { kind: "joker"; color: JokerColor }
   | { kind: "blank"; color: null }
+  | { kind: "wild"; rank: NumberedRank | "dragon"; color: "black" }
+  | { kind: "treasure"; treasure: 1 | 2 | 3 | 4 | 5; color: "gold" }
 
 export type Card = CardFace & { id: string }
 export type CardSource = "deck" | "discard-a" | "discard-b"
 export type DiscardPile = "a" | "b"
 
 export type CombinationKind =
+  | "four-dragons"
+  | "quint"
   | "eye"
   | "chow"
   | "long-chow"
@@ -60,6 +66,7 @@ export type PlayerController = "human" | "heuristic"
 type Street = 0 | 1 | 2 | 3 | 4
 type GamePhase =
   | "between-hands"
+  | "treasure"
   | "charleston"
   | "exposing"
   | "discarding"
@@ -88,6 +95,7 @@ export interface PlayerState {
 }
 
 interface PendingDiscard {
+  sourceDeckId?: string
   playerId: string
   drawnCardId: string
   source: CardSource
@@ -99,7 +107,26 @@ export interface BlankExchange {
   cardIndex: number
 }
 
+export interface TreasureSearch {
+  treasureCardId: string
+  targetPlayerId: string
+}
+
+interface LegacyState {
+  version: 3
+  searchedPlayerIds?: string[]
+  handStart?: { chips: number; loans: number; riichiSticks: number }[]
+  decks: Card[][]
+  pendingTreasure?: {
+    playerId: string
+    targetPlayerId: string
+    treasureCardId: string
+    offered: Card[]
+  }
+}
+
 export interface DrawDiscardRecord {
+  sourceDeckId?: string
   playerId: string
   source: CardSource | "blank-exchange"
   drawnCard: Card
@@ -126,9 +153,11 @@ export type BettingAction =
       type: "check"
       drawSource?: CardSource
       blankExchange?: BlankExchange
+      treasureSearch?: TreasureSearch
       useRiichiStick?: boolean
       riichiDrawSource?: CardSource
       riichiBlankExchange?: BlankExchange
+      riichiTreasureSearch?: TreasureSearch
       curseTargetId?: string
       removeCurse?: boolean
     }
@@ -136,9 +165,11 @@ export type BettingAction =
       type: "call"
       drawSource?: CardSource
       blankExchange?: BlankExchange
+      treasureSearch?: TreasureSearch
       useRiichiStick?: boolean
       riichiDrawSource?: CardSource
       riichiBlankExchange?: BlankExchange
+      riichiTreasureSearch?: TreasureSearch
       curseTargetId?: string
       removeCurse?: boolean
     }
@@ -149,6 +180,7 @@ export type BettingAction =
       useRiichiStick?: boolean
       drawSource?: CardSource
       blankExchange?: BlankExchange
+      treasureSearch?: TreasureSearch
       curseTargetId?: string
       removeCurse?: boolean
     }
@@ -170,7 +202,7 @@ export interface BettingRecord {
 export interface GameConfig {
   playerCount: number
   seed: string
-  mode: "basic" | "riichi"
+  mode: "basic" | "riichi" | "legacy"
   orbits: number
   tournamentGames: 1 | 2 | 3 | 4
   startingChips: number
@@ -183,6 +215,7 @@ export interface DrawContext {
   remaining: Array<{
     source: CardSource
     blankExchange?: BlankExchange
+    treasureSearch?: TreasureSearch
     reason: "call" | "riichi-stick"
   }>
   continuation: {
@@ -194,7 +227,9 @@ export interface DrawContext {
 }
 
 export interface GameState {
+  legacy?: LegacyState
   rulesVersion: 6
+  finishReason?: "central-deck-exhausted"
   stickSpentThisTurn?: boolean
   stickOfferPlayerId?: string
   stickWindow?: { playerId: string; continuation: DrawContext["continuation"] }
@@ -305,6 +340,7 @@ interface HandResultPlayer {
   committed: number
   potCommitted: number
   payout: number
+  treasurePayout?: number
   openingChips: number
 }
 
@@ -408,6 +444,7 @@ export interface PublicPlayerState extends Omit<PlayerState, "privateCards"> {
 export interface PublicGameState extends Omit<
   GameState,
   | "players"
+  | "legacy"
   | "deck"
   | "removedCards"
   | "foldedPrivateCards"
@@ -418,6 +455,11 @@ export interface PublicGameState extends Omit<
   | "charlestonHistory"
   | "exposureSelections"
 > {
+  legacy?: {
+    decks: { playerId: string; count: number }[]
+    personalDrawCount: number
+    treasureOffer?: { targetPlayerId: string; treasureCardId: string; cards: Card[] }
+  }
   room?: {
     viewerId: string | null
     hostId: string

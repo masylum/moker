@@ -24,9 +24,11 @@ const examples: Record<string, CardFace[][]> = {
   ],
   "Long Chow": [[5, 6, 7, 8, 9].map((rank) => numberedFace("dots", rank as 5 | 6 | 7 | 8 | 9))],
   "Four Winds": [winds],
+  "Four Dragons": [[...dragons, dragonFace("black")]],
   "Pung and Eyes": [[bam, bam, bam], pair],
   "Three Dragons and Eyes": [dragons, pair],
   Kong: [[bam, bam, bam, bam]],
+  Quint: [[bam, bam, bam, bam, { kind: "joker", color: "green" }]],
 }
 
 export function handExamples(label: string): Card[][] {

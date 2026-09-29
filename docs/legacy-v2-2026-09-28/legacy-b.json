@@ -1,0 +1,356 @@
+{
+  "version": 2,
+  "options": {
+    "samples": "1000000",
+    "deck": "legacy",
+    "seed": "legacy-v2-rarity-B",
+    "output": "docs/legacy-v2-2026-09-28/legacy-b.json"
+  },
+  "samples": 1000000,
+  "deckSize": 132,
+  "rows": {
+    "high-card": {
+      "contains": 1000000,
+      "best": 490337,
+      "eligibleBest": 429324
+    },
+    "eye": {
+      "contains": 398909,
+      "best": 281385,
+      "eligibleBest": 256025
+    },
+    "chow": {
+      "contains": 133082,
+      "best": 104976,
+      "eligibleBest": 97123
+    },
+    "two-eyes": {
+      "contains": 48793,
+      "best": 40821,
+      "eligibleBest": 38716
+    },
+    "chow-eye": {
+      "contains": 20507,
+      "best": 16359,
+      "eligibleBest": 15750
+    },
+    "pung": {
+      "contains": 29928,
+      "best": 24257,
+      "eligibleBest": 22613
+    },
+    "three-winds": {
+      "contains": 25108,
+      "best": 23739,
+      "eligibleBest": 22158
+    },
+    "pung-eye": {
+      "contains": 3780,
+      "best": 3583,
+      "eligibleBest": 3455
+    },
+    "three-dragons": {
+      "contains": 8650,
+      "best": 7425,
+      "eligibleBest": 6936
+    },
+    "twin-lotus": {
+      "contains": 2387,
+      "best": 2386,
+      "eligibleBest": 2386
+    },
+    "long-chow": {
+      "contains": 1777,
+      "best": 1775,
+      "eligibleBest": 1709
+    },
+    "three-dragons-eye": {
+      "contains": 1211,
+      "best": 1203,
+      "eligibleBest": 1169
+    },
+    "four-winds": {
+      "contains": 1227,
+      "best": 1225,
+      "eligibleBest": 1168
+    },
+    "kong": {
+      "contains": 529,
+      "best": 528,
+      "eligibleBest": 486
+    },
+    "quint": {
+      "contains": 1,
+      "best": 1,
+      "eligibleBest": 1
+    }
+  },
+  "singleLotus": 100981,
+  "cooccurrence": {
+    "high-card": {
+      "high-card": 1000000,
+      "eye": 398909,
+      "chow": 133082,
+      "two-eyes": 48793,
+      "chow-eye": 20507,
+      "pung": 29928,
+      "three-winds": 25108,
+      "pung-eye": 3780,
+      "three-dragons": 8650,
+      "twin-lotus": 2387,
+      "long-chow": 1777,
+      "three-dragons-eye": 1211,
+      "four-winds": 1227,
+      "kong": 529,
+      "quint": 1
+    },
+    "eye": {
+      "high-card": 398909,
+      "eye": 398909,
+      "chow": 45452,
+      "two-eyes": 48793,
+      "chow-eye": 20507,
+      "pung": 29928,
+      "three-winds": 6559,
+      "pung-eye": 3780,
+      "three-dragons": 4550,
+      "twin-lotus": 576,
+      "long-chow": 481,
+      "three-dragons-eye": 1211,
+      "four-winds": 262,
+      "kong": 529,
+      "quint": 1
+    },
+    "chow": {
+      "high-card": 133082,
+      "eye": 45452,
+      "chow": 133082,
+      "two-eyes": 4342,
+      "chow-eye": 20507,
+      "pung": 7082,
+      "three-winds": 675,
+      "pung-eye": 740,
+      "three-dragons": 940,
+      "twin-lotus": 129,
+      "long-chow": 1777,
+      "three-dragons-eye": 114,
+      "four-winds": 8,
+      "kong": 124,
+      "quint": 1
+    },
+    "two-eyes": {
+      "high-card": 48793,
+      "eye": 48793,
+      "chow": 4342,
+      "two-eyes": 48793,
+      "chow-eye": 2778,
+      "pung": 5051,
+      "three-winds": 412,
+      "pung-eye": 3780,
+      "three-dragons": 663,
+      "twin-lotus": 12,
+      "long-chow": 23,
+      "three-dragons-eye": 523,
+      "four-winds": 9,
+      "kong": 84,
+      "quint": 0
+    },
+    "chow-eye": {
+      "high-card": 20507,
+      "eye": 20507,
+      "chow": 20507,
+      "two-eyes": 2778,
+      "chow-eye": 20507,
+      "pung": 3560,
+      "three-winds": 25,
+      "pung-eye": 548,
+      "three-dragons": 291,
+      "twin-lotus": 5,
+      "long-chow": 433,
+      "three-dragons-eye": 42,
+      "four-winds": 0,
+      "kong": 124,
+      "quint": 1
+    },
+    "pung": {
+      "high-card": 29928,
+      "eye": 29928,
+      "chow": 7082,
+      "two-eyes": 5051,
+      "chow-eye": 3560,
+      "pung": 29928,
+      "three-winds": 859,
+      "pung-eye": 3780,
+      "three-dragons": 653,
+      "twin-lotus": 26,
+      "long-chow": 113,
+      "three-dragons-eye": 315,
+      "four-winds": 87,
+      "kong": 529,
+      "quint": 1
+    },
+    "three-winds": {
+      "high-card": 25108,
+      "eye": 6559,
+      "chow": 675,
+      "two-eyes": 412,
+      "chow-eye": 25,
+      "pung": 859,
+      "three-winds": 25108,
+      "pung-eye": 68,
+      "three-dragons": 41,
+      "twin-lotus": 23,
+      "long-chow": 0,
+      "three-dragons-eye": 3,
+      "four-winds": 1227,
+      "kong": 18,
+      "quint": 0
+    },
+    "pung-eye": {
+      "high-card": 3780,
+      "eye": 3780,
+      "chow": 740,
+      "two-eyes": 3780,
+      "chow-eye": 548,
+      "pung": 3780,
+      "three-winds": 68,
+      "pung-eye": 3780,
+      "three-dragons": 108,
+      "twin-lotus": 1,
+      "long-chow": 6,
+      "three-dragons-eye": 106,
+      "four-winds": 3,
+      "kong": 84,
+      "quint": 0
+    },
+    "three-dragons": {
+      "high-card": 8650,
+      "eye": 4550,
+      "chow": 940,
+      "two-eyes": 663,
+      "chow-eye": 291,
+      "pung": 653,
+      "three-winds": 41,
+      "pung-eye": 108,
+      "three-dragons": 8650,
+      "twin-lotus": 9,
+      "long-chow": 5,
+      "three-dragons-eye": 1211,
+      "four-winds": 0,
+      "kong": 8,
+      "quint": 0
+    },
+    "twin-lotus": {
+      "high-card": 2387,
+      "eye": 576,
+      "chow": 129,
+      "two-eyes": 12,
+      "chow-eye": 5,
+      "pung": 26,
+      "three-winds": 23,
+      "pung-eye": 1,
+      "three-dragons": 9,
+      "twin-lotus": 2387,
+      "long-chow": 1,
+      "three-dragons-eye": 0,
+      "four-winds": 0,
+      "kong": 0,
+      "quint": 0
+    },
+    "long-chow": {
+      "high-card": 1777,
+      "eye": 481,
+      "chow": 1777,
+      "two-eyes": 23,
+      "chow-eye": 433,
+      "pung": 113,
+      "three-winds": 0,
+      "pung-eye": 6,
+      "three-dragons": 5,
+      "twin-lotus": 1,
+      "long-chow": 1777,
+      "three-dragons-eye": 0,
+      "four-winds": 0,
+      "kong": 2,
+      "quint": 0
+    },
+    "three-dragons-eye": {
+      "high-card": 1211,
+      "eye": 1211,
+      "chow": 114,
+      "two-eyes": 523,
+      "chow-eye": 42,
+      "pung": 315,
+      "three-winds": 3,
+      "pung-eye": 106,
+      "three-dragons": 1211,
+      "twin-lotus": 0,
+      "long-chow": 0,
+      "three-dragons-eye": 1211,
+      "four-winds": 0,
+      "kong": 8,
+      "quint": 0
+    },
+    "four-winds": {
+      "high-card": 1227,
+      "eye": 262,
+      "chow": 8,
+      "two-eyes": 9,
+      "chow-eye": 0,
+      "pung": 87,
+      "three-winds": 1227,
+      "pung-eye": 3,
+      "three-dragons": 0,
+      "twin-lotus": 0,
+      "long-chow": 0,
+      "three-dragons-eye": 0,
+      "four-winds": 1227,
+      "kong": 2,
+      "quint": 0
+    },
+    "kong": {
+      "high-card": 529,
+      "eye": 529,
+      "chow": 124,
+      "two-eyes": 84,
+      "chow-eye": 124,
+      "pung": 529,
+      "three-winds": 18,
+      "pung-eye": 84,
+      "three-dragons": 8,
+      "twin-lotus": 0,
+      "long-chow": 2,
+      "three-dragons-eye": 8,
+      "four-winds": 2,
+      "kong": 529,
+      "quint": 1
+    },
+    "quint": {
+      "high-card": 1,
+      "eye": 1,
+      "chow": 1,
+      "two-eyes": 0,
+      "chow-eye": 1,
+      "pung": 1,
+      "three-winds": 0,
+      "pung-eye": 0,
+      "three-dragons": 0,
+      "twin-lotus": 0,
+      "long-chow": 0,
+      "three-dragons-eye": 0,
+      "four-winds": 0,
+      "kong": 1,
+      "quint": 1
+    }
+  },
+  "exact": {
+    "kong": 0.0004831797460758407,
+    "quint": 0.0000023082944039805394,
+    "quintSets": 34,
+    "three-winds": 0.025075900349002752,
+    "four-winds": 0.0012448664287309167,
+    "three-dragons": 0.00876711037596833,
+    "twin-lotus": 0.0024288688410825814
+  },
+  "seconds": 25.376077084
+}

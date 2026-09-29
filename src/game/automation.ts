@@ -1,3 +1,4 @@
+import { legacyPass, stepLegacyBot } from "./legacy-bot"
 import { GameEngine } from "./engine"
 import {
   DEFAULT_BOT_POLICY,
@@ -25,6 +26,14 @@ export type BotPolicySource = Readonly<BotPolicy> | Readonly<Record<string, Read
 
 /** Collect secret bot choices together, without taking visible turns. */
 export function prepareCharleston(engine: GameEngine): void {
+  if (engine.state.config.mode === "legacy") {
+    if (engine.state.phase !== "charleston") return
+    const choices = engine.state.players
+      .filter((p) => p.controller !== "human" && engine.state.pendingPlayerIds.includes(p.id))
+      .map((p) => ({ id: p.id, cards: legacyPass(p.privateCards) }))
+    for (const choice of choices) engine.passCharleston(choice.id, choice.cards)
+    return
+  }
   if (engine.state.phase !== "charleston") return
   const choices = engine.state.players
     .filter(
@@ -43,6 +52,14 @@ export function stepHeuristic(
   policies: BotPolicySource = DEFAULT_BOT_POLICY,
 ): AutomatedStep {
   const state = engine.state
+  if (state.config.mode === "legacy" && state.phase !== "between-hands") {
+    const playerId = state.actingPlayerId ?? undefined
+    stepLegacyBot(engine)
+    return {
+      playerId,
+      rationale: "Legacy: build the hand using visible cards and private search offers",
+    }
+  }
 
   if (state.phase === "charleston") {
     const playerId = requiredActor(state.actingPlayerId, "No player is choosing a Charleston pass")
@@ -126,7 +143,7 @@ export function stepHeuristic(
 function policyFor(
   source: BotPolicySource,
   playerId: string,
-  mode: "basic" | "riichi",
+  mode: "basic" | "riichi" | "legacy",
 ): Readonly<BotPolicy> {
   if (source === DEFAULT_BOT_POLICY) return defaultBotPolicy(mode)
   if ("betEquityFloor" in source) return source as Readonly<BotPolicy>

@@ -1,0 +1,74 @@
+[
+  {
+    "players": 4,
+    "size": 14,
+    "hands": 11,
+    "expectedHands": 16,
+    "finishReason": "central-deck-exhausted",
+    "centralRemaining": 8
+  },
+  {
+    "players": 4,
+    "size": 18,
+    "hands": 9,
+    "expectedHands": 16,
+    "finishReason": "central-deck-exhausted",
+    "centralRemaining": 8
+  },
+  {
+    "players": 4,
+    "size": 20,
+    "hands": 8,
+    "expectedHands": 16,
+    "finishReason": "central-deck-exhausted",
+    "centralRemaining": 8
+  },
+  {
+    "players": 5,
+    "size": 14,
+    "hands": 8,
+    "expectedHands": 20,
+    "finishReason": "central-deck-exhausted",
+    "centralRemaining": 2
+  },
+  {
+    "players": 5,
+    "size": 18,
+    "hands": 6,
+    "expectedHands": 20,
+    "finishReason": "central-deck-exhausted",
+    "centralRemaining": 2
+  },
+  {
+    "players": 5,
+    "size": 20,
+    "hands": 5,
+    "expectedHands": 20,
+    "finishReason": "central-deck-exhausted",
+    "centralRemaining": 2
+  },
+  {
+    "players": 6,
+    "size": 14,
+    "hands": 11,
+    "expectedHands": 24,
+    "finishReason": "central-deck-exhausted",
+    "centralRemaining": 2
+  },
+  {
+    "players": 6,
+    "size": 18,
+    "hands": 7,
+    "expectedHands": 24,
+    "finishReason": "central-deck-exhausted",
+    "centralRemaining": 2
+  },
+  {
+    "players": 6,
+    "size": 20,
+    "hands": 5,
+    "expectedHands": 24,
+    "finishReason": "central-deck-exhausted",
+    "centralRemaining": 2
+  }
+]

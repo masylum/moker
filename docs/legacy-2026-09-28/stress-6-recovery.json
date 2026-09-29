@@ -1,0 +1,3470 @@
+{
+  "options": {
+    "games": "12",
+    "players": "6",
+    "samples": "24",
+    "orbits": "4",
+    "short-deck": "skip-seed",
+    "skip-unavailable-fish": true,
+    "output": "docs/legacy-2026-09-28/stress-6-recovery.json",
+    "treasure-ante": "4",
+    "sets": false,
+    "checkdown": false,
+    "policy": "strategic",
+    "seed": "legacy-v1",
+    "offset": "0",
+    "ladder": "0",
+    "tournament-games": "1"
+  },
+  "prototype": "headless Legacy atop rules-v6 betting; approximate information-limited bots",
+  "results": [
+    {
+      "index": 0,
+      "seed": "legacy-v1:0",
+      "finished": true,
+      "failure": null,
+      "steps": 673,
+      "rounds": 18,
+      "showdown": 7,
+      "uncontested": 11,
+      "allInRounds": 4,
+      "street4Rounds": 8,
+      "bonuses": 120,
+      "drawCounts": {
+        "deck": 112,
+        "lane": 26,
+        "blank": 9,
+        "treasure": 6
+      },
+      "scores": {
+        "p1": -90,
+        "p2": 970,
+        "p3": 730,
+        "p4": -250,
+        "p5": -250,
+        "p6": 10
+      },
+      "ranks": {
+        "pung-eye": {
+          "count": 5,
+          "wins": 3
+        },
+        "pung": {
+          "count": 2,
+          "wins": 0
+        },
+        "two-eyes": {
+          "count": 4,
+          "wins": 0
+        },
+        "three-winds": {
+          "count": 1,
+          "wins": 0
+        },
+        "chow-eye": {
+          "count": 3,
+          "wins": 1
+        },
+        "chow": {
+          "count": 1,
+          "wins": 0
+        },
+        "long-chow": {
+          "count": 4,
+          "wins": 2
+        },
+        "three-dragons-eye": {
+          "count": 1,
+          "wins": 1
+        }
+      },
+      "deckSizes": [
+        [22, 22, 22, 22, 22, 22],
+        [21, 22, 22, 21, 25, 21],
+        [21, 23, 19, 21, 25, 23],
+        [21, 23, 17, 23, 22, 26],
+        [20, 24, 19, 22, 22, 25],
+        [18, 26, 21, 21, 20, 26],
+        [14, 31, 19, 28, 14, 26],
+        [11, 30, 19, 31, 12, 29],
+        [10, 30, 20, 32, 14, 26],
+        [10, 30, 18, 35, 14, 25],
+        [7, 32, 18, 36, 18, 21],
+        [8, 28, 21, 37, 19, 19],
+        [8, 26, 20, 41, 22, 15],
+        [8, 26, 16, 46, 22, 14],
+        [8, 24, 18, 47, 24, 11],
+        [9, 20, 21, 48, 26, 8],
+        [8, 21, 21, 49, 26, 7],
+        [7, 19, 18, 54, 26, 8]
+      ],
+      "roundTreasureHolders": [
+        [1, 0],
+        [2],
+        [0, 2, 0],
+        [0],
+        [0, 0, 0, 1, 0],
+        [0, 0, 0],
+        [0, 1, 0],
+        [0],
+        [0],
+        [1],
+        [1],
+        [1],
+        [1],
+        [0],
+        [1],
+        [0],
+        [0, 0],
+        [1, 0, 0]
+      ],
+      "byStreet": [
+        {
+          "street": 1,
+          "opportunities": 22,
+          "chosen": 3,
+          "averageDamageProbability": 0.4805194805194804,
+          "hiddenCounts": [7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7]
+        },
+        {
+          "street": 2,
+          "opportunities": 12,
+          "chosen": 3,
+          "averageDamageProbability": 0.1875,
+          "hiddenCounts": [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+        },
+        {
+          "street": 3,
+          "opportunities": 1,
+          "chosen": 0,
+          "averageDamageProbability": 0.3333333333333333,
+          "hiddenCounts": [3]
+        },
+        {
+          "street": 4,
+          "opportunities": 1,
+          "chosen": 0,
+          "averageDamageProbability": 0,
+          "hiddenCounts": [2]
+        }
+      ],
+      "exchanges": [
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "pung",
+          "afterKind": "pung",
+          "taken": "characters-4-1"
+        },
+        {
+          "street": 2,
+          "hidden": 4,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "eye",
+          "afterKind": "eye",
+          "taken": "dots-1-1"
+        },
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": true,
+          "targetRankDropped": true,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "pung",
+          "afterKind": "chow",
+          "taken": "bamboo-8-3"
+        },
+        {
+          "street": 2,
+          "hidden": 4,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "two-eyes",
+          "afterKind": "two-eyes",
+          "taken": "bamboo-3-3"
+        },
+        {
+          "street": 2,
+          "hidden": 4,
+          "targetWeakened": true,
+          "targetRankDropped": true,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "two-eyes",
+          "afterKind": "eye",
+          "taken": "dragon-green-2"
+        },
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": true,
+          "beforeKind": "eye",
+          "afterKind": "eye",
+          "taken": "treasure-2"
+        }
+      ],
+      "examples": [
+        {
+          "street": 1,
+          "actor": 2,
+          "chosen": "treasure",
+          "treasureCount": 2,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-2",
+                "target": 3
+              },
+              "equity": 0.5416666666666666,
+              "bonus": 20,
+              "utility": 73.88645833333332
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.4166666666666667,
+              "bonus": 40.833333333333336,
+              "utility": 73.629375
+            }
+          ],
+          "damagedFraction": 0.42857142857142855,
+          "eligibleHiddenCards": 7
+        },
+        {
+          "street": 2,
+          "actor": 3,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-2",
+                "target": 2
+              },
+              "equity": 0.8333333333333334,
+              "bonus": 0,
+              "utility": 126.54375
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.7083333333333334,
+              "bonus": 20.833333333333332,
+              "utility": 123.34375
+            }
+          ],
+          "damagedFraction": 0,
+          "eligibleHiddenCards": 4
+        },
+        {
+          "street": 1,
+          "actor": 2,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-3",
+                "target": 3
+              },
+              "equity": 0.75,
+              "bonus": 0,
+              "utility": 159.25125
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.6666666666666666,
+              "bonus": 23.333333333333332,
+              "utility": 156.81666666666666
+            }
+          ],
+          "damagedFraction": 0.42857142857142855,
+          "eligibleHiddenCards": 7
+        }
+      ],
+      "calls": 110,
+      "folds": 52,
+      "bets": 85,
+      "riichi": 10,
+      "loans": 4,
+      "finalChipTotal": 2120,
+      "finalCollectionSizes": [7, 18, 17, 56, 27, 7]
+    },
+    {
+      "index": 1,
+      "seed": "legacy-v1:1",
+      "finished": true,
+      "failure": null,
+      "steps": 642,
+      "rounds": 20,
+      "showdown": 12,
+      "uncontested": 8,
+      "allInRounds": 10,
+      "street4Rounds": 7,
+      "bonuses": 400,
+      "drawCounts": {
+        "deck": 100,
+        "lane": 22,
+        "blank": 11,
+        "treasure": 6
+      },
+      "scores": {
+        "p1": 1495,
+        "p2": -250,
+        "p3": -250,
+        "p4": -250,
+        "p5": 390,
+        "p6": 215
+      },
+      "ranks": {
+        "two-eyes": {
+          "count": 4,
+          "wins": 0
+        },
+        "chow-eye": {
+          "count": 1,
+          "wins": 1
+        },
+        "pung-eye": {
+          "count": 11,
+          "wins": 5
+        },
+        "pung": {
+          "count": 4,
+          "wins": 0
+        },
+        "eye": {
+          "count": 3,
+          "wins": 0
+        },
+        "long-chow": {
+          "count": 2,
+          "wins": 0
+        },
+        "kong": {
+          "count": 4,
+          "wins": 4
+        },
+        "chow": {
+          "count": 4,
+          "wins": 0
+        },
+        "four-winds": {
+          "count": 5,
+          "wins": 1
+        },
+        "three-winds": {
+          "count": 2,
+          "wins": 0
+        },
+        "quint": {
+          "count": 1,
+          "wins": 1
+        }
+      },
+      "deckSizes": [
+        [22, 22, 22, 22, 22, 22],
+        [18, 22, 21, 23, 21, 27],
+        [18, 22, 22, 22, 20, 28],
+        [15, 25, 21, 25, 17, 29],
+        [12, 26, 23, 25, 16, 30],
+        [11, 27, 21, 27, 15, 31],
+        [11, 26, 21, 26, 13, 35],
+        [12, 27, 17, 29, 9, 38],
+        [11, 26, 18, 27, 12, 38],
+        [12, 25, 19, 25, 11, 40],
+        [10, 23, 19, 27, 11, 42],
+        [10, 23, 19, 27, 11, 42],
+        [10, 21, 19, 31, 9, 42],
+        [11, 21, 17, 34, 8, 41],
+        [9, 24, 16, 35, 7, 41],
+        [9, 26, 14, 37, 7, 39],
+        [8, 28, 12, 38, 7, 39],
+        [8, 28, 11, 39, 7, 39],
+        [9, 29, 10, 39, 7, 38],
+        [9, 30, 9, 40, 7, 37]
+      ],
+      "roundTreasureHolders": [
+        [1],
+        [0],
+        [1, 0],
+        [0, 0],
+        [1],
+        [0, 1, 1],
+        [1, 1],
+        [0, 1, 0, 1],
+        [0, 2, 0, 0, 1, 0],
+        [0, 1, 1, 1],
+        [0, 1, 0, 0, 0, 0],
+        [0, 0, 1, 1],
+        [1],
+        [0, 1],
+        [0, 1],
+        [0],
+        [0],
+        [0],
+        [0, 0, 2, 0],
+        [1]
+      ],
+      "byStreet": [
+        {
+          "street": 1,
+          "opportunities": 19,
+          "chosen": 2,
+          "averageDamageProbability": 0.5112781954887218,
+          "hiddenCounts": [7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7]
+        },
+        {
+          "street": 2,
+          "opportunities": 12,
+          "chosen": 0,
+          "averageDamageProbability": 0.3541666666666667,
+          "hiddenCounts": [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+        },
+        {
+          "street": 3,
+          "opportunities": 8,
+          "chosen": 4,
+          "averageDamageProbability": 0.29166666666666663,
+          "hiddenCounts": [3, 3, 3, 3, 3, 3, 3, 3]
+        },
+        {
+          "street": 4,
+          "opportunities": 1,
+          "chosen": 0,
+          "averageDamageProbability": 0.5,
+          "hiddenCounts": [2]
+        }
+      ],
+      "exchanges": [
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": true,
+          "targetRankDropped": true,
+          "actorImproved": true,
+          "takenTreasure": false,
+          "beforeKind": "three-dragons-eye",
+          "afterKind": "two-eyes",
+          "taken": "joker-green"
+        },
+        {
+          "street": 3,
+          "hidden": 3,
+          "targetWeakened": true,
+          "targetRankDropped": true,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "pung-eye",
+          "afterKind": "two-eyes",
+          "taken": "joker-blue"
+        },
+        {
+          "street": 3,
+          "hidden": 3,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": true,
+          "takenTreasure": false,
+          "beforeKind": "pung-eye",
+          "afterKind": "pung-eye",
+          "taken": "joker-blue"
+        },
+        {
+          "street": 3,
+          "hidden": 3,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "pung-eye",
+          "afterKind": "pung-eye",
+          "taken": "wild-3"
+        },
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": true,
+          "targetRankDropped": true,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "pung",
+          "afterKind": "eye",
+          "taken": "bamboo-4-3"
+        },
+        {
+          "street": 3,
+          "hidden": 3,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "quint",
+          "afterKind": "quint",
+          "taken": "characters-3-3"
+        }
+      ],
+      "examples": [
+        {
+          "street": 1,
+          "actor": 5,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-4",
+                "target": 2
+              },
+              "equity": 0.3333333333333333,
+              "bonus": 0.8333333333333334,
+              "utility": 28.644583333333333
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.125,
+              "bonus": 20.833333333333332,
+              "utility": 24.850416666666664
+            }
+          ],
+          "damagedFraction": 0.7142857142857143,
+          "eligibleHiddenCards": 7
+        },
+        {
+          "street": 3,
+          "actor": 0,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-2",
+                "target": 2
+              },
+              "equity": 0.5,
+              "bonus": 0,
+              "utility": 135.966875
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0,
+              "bonus": 20,
+              "utility": 17.915
+            }
+          ],
+          "damagedFraction": 0.3333333333333333,
+          "eligibleHiddenCards": 3
+        },
+        {
+          "street": 3,
+          "actor": 2,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-2",
+                "target": 0
+              },
+              "equity": 0.7916666666666666,
+              "bonus": 0,
+              "utility": 301.5808333333333
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.6666666666666666,
+              "bonus": 20,
+              "utility": 271.0708333333333
+            }
+          ],
+          "damagedFraction": 0.6666666666666666,
+          "eligibleHiddenCards": 3
+        }
+      ],
+      "calls": 116,
+      "folds": 53,
+      "bets": 83,
+      "riichi": 11,
+      "loans": 5,
+      "finalChipTotal": 2600,
+      "finalCollectionSizes": [8, 32, 9, 40, 7, 36]
+    },
+    {
+      "index": 2,
+      "seed": "legacy-v1:2",
+      "finished": true,
+      "failure": null,
+      "steps": 555,
+      "rounds": 19,
+      "showdown": 10,
+      "uncontested": 9,
+      "allInRounds": 7,
+      "street4Rounds": 4,
+      "bonuses": 80,
+      "drawCounts": {
+        "deck": 90,
+        "lane": 16,
+        "blank": 7,
+        "treasure": 5
+      },
+      "scores": {
+        "p1": -250,
+        "p2": -250,
+        "p3": -250,
+        "p4": 130,
+        "p5": -250,
+        "p6": 1900
+      },
+      "ranks": {
+        "pung-eye": {
+          "count": 8,
+          "wins": 4
+        },
+        "four-winds": {
+          "count": 2,
+          "wins": 2
+        },
+        "chow-eye": {
+          "count": 8,
+          "wins": 1
+        },
+        "two-eyes": {
+          "count": 3,
+          "wins": 0
+        },
+        "pung": {
+          "count": 2,
+          "wins": 1
+        },
+        "eye": {
+          "count": 2,
+          "wins": 0
+        },
+        "high-card": {
+          "count": 1,
+          "wins": 0
+        },
+        "chow": {
+          "count": 3,
+          "wins": 0
+        },
+        "three-winds": {
+          "count": 2,
+          "wins": 1
+        },
+        "long-chow": {
+          "count": 1,
+          "wins": 1
+        }
+      },
+      "deckSizes": [
+        [22, 22, 22, 22, 22, 22],
+        [25, 19, 22, 20, 23, 23],
+        [28, 18, 20, 22, 23, 21],
+        [27, 18, 21, 22, 23, 21],
+        [26, 16, 22, 23, 25, 20],
+        [23, 18, 24, 25, 23, 19],
+        [22, 17, 26, 26, 22, 19],
+        [23, 15, 25, 25, 24, 20],
+        [23, 18, 28, 20, 24, 19],
+        [24, 22, 25, 18, 23, 20],
+        [26, 25, 24, 17, 23, 17],
+        [25, 29, 21, 16, 23, 18],
+        [25, 30, 20, 16, 23, 18],
+        [28, 32, 17, 16, 19, 20],
+        [31, 34, 16, 13, 19, 19],
+        [35, 34, 15, 11, 20, 17],
+        [37, 34, 15, 10, 17, 19],
+        [38, 34, 15, 9, 15, 21],
+        [41, 34, 15, 8, 16, 18]
+      ],
+      "roundTreasureHolders": [
+        [0, 0],
+        [1],
+        [0],
+        [1],
+        [0, 0],
+        [0],
+        [0],
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+        [1],
+        [1],
+        [0, 1, 0, 0, 1],
+        [0, 0],
+        [0, 0],
+        [0, 1, 0],
+        [0, 1, 0],
+        [0, 0, 0],
+        [0],
+        [0]
+      ],
+      "byStreet": [
+        {
+          "street": 1,
+          "opportunities": 22,
+          "chosen": 4,
+          "averageDamageProbability": 0.4805194805194805,
+          "hiddenCounts": [7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7]
+        },
+        {
+          "street": 2,
+          "opportunities": 4,
+          "chosen": 1,
+          "averageDamageProbability": 0.25,
+          "hiddenCounts": [4, 4, 4, 4]
+        },
+        {
+          "street": 3,
+          "opportunities": 1,
+          "chosen": 0,
+          "averageDamageProbability": 0.3333333333333333,
+          "hiddenCounts": [3]
+        },
+        {
+          "street": 4,
+          "opportunities": 0,
+          "chosen": 0,
+          "averageDamageProbability": 0,
+          "hiddenCounts": []
+        }
+      ],
+      "exchanges": [
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "eye",
+          "afterKind": "eye",
+          "taken": "characters-2-2"
+        },
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "three-dragons",
+          "afterKind": "three-dragons",
+          "taken": "wild-7"
+        },
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": true,
+          "targetRankDropped": true,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "two-eyes",
+          "afterKind": "eye",
+          "taken": "bamboo-4-3"
+        },
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": true,
+          "targetRankDropped": true,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "chow-eye",
+          "afterKind": "chow",
+          "taken": "dots-3-1"
+        },
+        {
+          "street": 2,
+          "hidden": 4,
+          "targetWeakened": true,
+          "targetRankDropped": true,
+          "actorImproved": true,
+          "takenTreasure": false,
+          "beforeKind": "long-chow",
+          "afterKind": "pung",
+          "taken": "dots-9-3"
+        }
+      ],
+      "examples": [
+        {
+          "street": 1,
+          "actor": 4,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-2",
+                "target": 3
+              },
+              "equity": 0.8541666666666666,
+              "bonus": 2.5,
+              "utility": 177.14729166666666
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "discard-b"
+              },
+              "equity": 0.7916666666666666,
+              "bonus": 20,
+              "utility": 176.19166666666666
+            }
+          ],
+          "damagedFraction": 0.2857142857142857,
+          "eligibleHiddenCards": 7
+        },
+        {
+          "street": 1,
+          "actor": 3,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-2",
+                "target": 2
+              },
+              "equity": 0.34722222222222227,
+              "bonus": 0,
+              "utility": 49.77923611111112
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.18055555555555555,
+              "bonus": 20.833333333333332,
+              "utility": 39.974444444444444
+            }
+          ],
+          "damagedFraction": 0.42857142857142855,
+          "eligibleHiddenCards": 7
+        },
+        {
+          "street": 1,
+          "actor": 2,
+          "chosen": "treasure",
+          "treasureCount": 2,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-4",
+                "target": 1
+              },
+              "equity": 0.16666666666666666,
+              "bonus": 21.666666666666668,
+              "utility": 39.158541666666665
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.041666666666666664,
+              "bonus": 40,
+              "utility": 33.61270833333333
+            }
+          ],
+          "damagedFraction": 0.5714285714285714,
+          "eligibleHiddenCards": 7
+        }
+      ],
+      "calls": 99,
+      "folds": 49,
+      "bets": 70,
+      "riichi": 12,
+      "loans": 5,
+      "finalChipTotal": 2280,
+      "finalCollectionSizes": [42, 34, 15, 7, 17, 17]
+    },
+    {
+      "index": 3,
+      "seed": "legacy-v1:3",
+      "finished": true,
+      "failure": null,
+      "steps": 567,
+      "rounds": 17,
+      "showdown": 9,
+      "uncontested": 8,
+      "allInRounds": 7,
+      "street4Rounds": 5,
+      "bonuses": 140,
+      "drawCounts": {
+        "deck": 99,
+        "lane": 17,
+        "blank": 14,
+        "treasure": 5
+      },
+      "scores": {
+        "p1": -250,
+        "p2": -250,
+        "p3": 910,
+        "p4": 640,
+        "p5": -250,
+        "p6": 290
+      },
+      "ranks": {
+        "pung-eye": {
+          "count": 5,
+          "wins": 1
+        },
+        "three-dragons": {
+          "count": 2,
+          "wins": 2
+        },
+        "eye": {
+          "count": 3,
+          "wins": 0
+        },
+        "pung": {
+          "count": 5,
+          "wins": 0
+        },
+        "kong": {
+          "count": 1,
+          "wins": 1
+        },
+        "long-chow": {
+          "count": 4,
+          "wins": 3
+        },
+        "chow": {
+          "count": 1,
+          "wins": 0
+        },
+        "two-eyes": {
+          "count": 2,
+          "wins": 0
+        },
+        "four-winds": {
+          "count": 2,
+          "wins": 2
+        },
+        "three-winds": {
+          "count": 1,
+          "wins": 0
+        },
+        "chow-eye": {
+          "count": 2,
+          "wins": 0
+        }
+      },
+      "deckSizes": [
+        [22, 22, 22, 22, 22, 22],
+        [18, 24, 21, 25, 20, 24],
+        [16, 25, 22, 24, 19, 26],
+        [17, 25, 22, 25, 18, 25],
+        [19, 23, 21, 28, 16, 25],
+        [17, 23, 21, 29, 15, 27],
+        [23, 19, 19, 31, 12, 28],
+        [26, 17, 20, 29, 11, 29],
+        [29, 16, 20, 27, 11, 29],
+        [32, 17, 18, 27, 11, 27],
+        [35, 21, 13, 26, 11, 26],
+        [36, 21, 12, 25, 10, 28],
+        [37, 21, 11, 24, 9, 30],
+        [41, 21, 10, 23, 11, 26],
+        [45, 21, 9, 21, 14, 22],
+        [47, 21, 8, 21, 15, 20],
+        [49, 22, 7, 20, 16, 18]
+      ],
+      "roundTreasureHolders": [
+        [1, 0],
+        [0, 0, 0, 1],
+        [1, 0],
+        [1, 1, 0, 0],
+        [0, 0, 0, 0, 1],
+        [0],
+        [0],
+        [0, 0],
+        [0],
+        [0, 0],
+        [0, 0, 1],
+        [0, 0, 0, 0],
+        [0],
+        [0],
+        [0],
+        [0],
+        [0]
+      ],
+      "byStreet": [
+        {
+          "street": 1,
+          "opportunities": 21,
+          "chosen": 3,
+          "averageDamageProbability": 0.44217687074829926,
+          "hiddenCounts": [7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7]
+        },
+        {
+          "street": 2,
+          "opportunities": 11,
+          "chosen": 1,
+          "averageDamageProbability": 0.29545454545454547,
+          "hiddenCounts": [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+        },
+        {
+          "street": 3,
+          "opportunities": 1,
+          "chosen": 1,
+          "averageDamageProbability": 0.6666666666666666,
+          "hiddenCounts": [3]
+        },
+        {
+          "street": 4,
+          "opportunities": 0,
+          "chosen": 0,
+          "averageDamageProbability": 0,
+          "hiddenCounts": []
+        }
+      ],
+      "exchanges": [
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "pung-eye",
+          "afterKind": "pung-eye",
+          "taken": "blank-3"
+        },
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "pung-eye",
+          "afterKind": "pung-eye",
+          "taken": "characters-1-3"
+        },
+        {
+          "street": 2,
+          "hidden": 4,
+          "targetWeakened": true,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "pung-eye",
+          "afterKind": "pung-eye",
+          "taken": "wind-north-2"
+        },
+        {
+          "street": 3,
+          "hidden": 3,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "kong",
+          "afterKind": "kong",
+          "taken": "characters-8-2"
+        },
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": true,
+          "targetRankDropped": true,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "chow-eye",
+          "afterKind": "chow",
+          "taken": "wind-east-3"
+        }
+      ],
+      "examples": [
+        {
+          "street": 1,
+          "actor": 5,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-3",
+                "target": 0
+              },
+              "equity": 0.7083333333333334,
+              "bonus": 0.8333333333333334,
+              "utility": 172.29479166666667
+            },
+            {
+              "plan": {
+                "kind": "blank",
+                "cardId": "blank-6",
+                "lane": 2,
+                "index": 0
+              },
+              "equity": 0.625,
+              "bonus": 20,
+              "utility": 165.295
+            }
+          ],
+          "damagedFraction": 0.7142857142857143,
+          "eligibleHiddenCards": 7
+        },
+        {
+          "street": 1,
+          "actor": 1,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-1",
+                "target": 5
+              },
+              "equity": 0.4583333333333333,
+              "bonus": 0.8333333333333334,
+              "utility": 139.36729166666666
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.4166666666666667,
+              "bonus": 20,
+              "utility": 139.3425
+            }
+          ],
+          "damagedFraction": 0.7142857142857143,
+          "eligibleHiddenCards": 7
+        },
+        {
+          "street": 2,
+          "actor": 5,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-1",
+                "target": 2
+              },
+              "equity": 0.375,
+              "bonus": 0,
+              "utility": 114.0675
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.25,
+              "bonus": 20.833333333333332,
+              "utility": 92.21375
+            }
+          ],
+          "damagedFraction": 0.5,
+          "eligibleHiddenCards": 4
+        }
+      ],
+      "calls": 101,
+      "folds": 40,
+      "bets": 67,
+      "riichi": 13,
+      "loans": 5,
+      "finalChipTotal": 2340,
+      "finalCollectionSizes": [50, 22, 7, 19, 17, 17]
+    },
+    {
+      "index": 4,
+      "seed": "legacy-v1:4",
+      "finished": true,
+      "failure": null,
+      "steps": 657,
+      "rounds": 19,
+      "showdown": 14,
+      "uncontested": 5,
+      "allInRounds": 11,
+      "street4Rounds": 5,
+      "bonuses": 280,
+      "drawCounts": {
+        "deck": 108,
+        "lane": 31,
+        "blank": 7,
+        "treasure": 9
+      },
+      "scores": {
+        "p1": 1930,
+        "p2": -250,
+        "p3": -190,
+        "p4": 70,
+        "p5": -80,
+        "p6": -250
+      },
+      "ranks": {
+        "three-dragons-eye": {
+          "count": 1,
+          "wins": 1
+        },
+        "pung-eye": {
+          "count": 6,
+          "wins": 1
+        },
+        "pung": {
+          "count": 5,
+          "wins": 0
+        },
+        "long-chow": {
+          "count": 16,
+          "wins": 10
+        },
+        "chow": {
+          "count": 2,
+          "wins": 0
+        },
+        "chow-eye": {
+          "count": 5,
+          "wins": 0
+        },
+        "two-eyes": {
+          "count": 5,
+          "wins": 0
+        },
+        "kong": {
+          "count": 2,
+          "wins": 2
+        },
+        "three-winds": {
+          "count": 1,
+          "wins": 0
+        }
+      },
+      "deckSizes": [
+        [22, 22, 22, 22, 22, 22],
+        [17, 24, 20, 21, 28, 22],
+        [15, 23, 22, 21, 30, 21],
+        [16, 22, 21, 21, 30, 22],
+        [18, 20, 20, 23, 31, 20],
+        [16, 20, 18, 22, 33, 23],
+        [13, 21, 18, 23, 34, 23],
+        [8, 24, 19, 22, 35, 24],
+        [10, 22, 19, 22, 37, 22],
+        [7, 23, 19, 21, 37, 25],
+        [7, 22, 17, 20, 37, 29],
+        [7, 18, 20, 19, 37, 31],
+        [7, 20, 17, 16, 39, 33],
+        [7, 22, 16, 13, 41, 33],
+        [7, 24, 13, 13, 39, 36],
+        [7, 26, 11, 12, 35, 41],
+        [7, 26, 10, 11, 35, 43],
+        [7, 27, 8, 9, 36, 45],
+        [7, 28, 7, 8, 34, 48]
+      ],
+      "roundTreasureHolders": [
+        [0, 0, 0],
+        [0],
+        [0, 1],
+        [1],
+        [1, 0, 0],
+        [0],
+        [1, 1],
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0],
+        [0, 0, 1, 0],
+        [0, 0],
+        [1],
+        [0],
+        [0, 1, 1],
+        [0, 0, 1, 0],
+        [0, 0, 1, 1],
+        [0, 0, 0, 3],
+        [1, 0, 0, 0]
+      ],
+      "byStreet": [
+        {
+          "street": 1,
+          "opportunities": 32,
+          "chosen": 5,
+          "averageDamageProbability": 0.46874999999999994,
+          "hiddenCounts": [
+            7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+            7, 7, 7
+          ]
+        },
+        {
+          "street": 2,
+          "opportunities": 11,
+          "chosen": 4,
+          "averageDamageProbability": 0.3181818181818182,
+          "hiddenCounts": [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+        },
+        {
+          "street": 3,
+          "opportunities": 0,
+          "chosen": 0,
+          "averageDamageProbability": 0,
+          "hiddenCounts": []
+        },
+        {
+          "street": 4,
+          "opportunities": 0,
+          "chosen": 0,
+          "averageDamageProbability": 0,
+          "hiddenCounts": []
+        }
+      ],
+      "exchanges": [
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "high-card",
+          "afterKind": "high-card",
+          "taken": "bamboo-5-3"
+        },
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": true,
+          "takenTreasure": false,
+          "beforeKind": "three-winds",
+          "afterKind": "three-winds",
+          "taken": "characters-5-2"
+        },
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "chow-eye",
+          "afterKind": "chow-eye",
+          "taken": "dots-6-3"
+        },
+        {
+          "street": 2,
+          "hidden": 4,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "chow-eye",
+          "afterKind": "chow-eye",
+          "taken": "characters-7-1"
+        },
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "chow",
+          "afterKind": "chow",
+          "taken": "joker-black"
+        },
+        {
+          "street": 2,
+          "hidden": 4,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "chow-eye",
+          "afterKind": "chow-eye",
+          "taken": "characters-6-2"
+        },
+        {
+          "street": 2,
+          "hidden": 4,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": true,
+          "takenTreasure": false,
+          "beforeKind": "chow-eye",
+          "afterKind": "chow-eye",
+          "taken": "joker-red"
+        },
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "three-winds",
+          "afterKind": "three-winds",
+          "taken": "characters-3-3"
+        },
+        {
+          "street": 2,
+          "hidden": 4,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "kong",
+          "afterKind": "kong",
+          "taken": "wild-4"
+        }
+      ],
+      "examples": [
+        {
+          "street": 1,
+          "actor": 0,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-1",
+                "target": 2
+              },
+              "equity": 0.3333333333333333,
+              "bonus": 0,
+              "utility": 31.11375
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.125,
+              "bonus": 20.833333333333332,
+              "utility": 25.854791666666664
+            }
+          ],
+          "damagedFraction": 0.14285714285714285,
+          "eligibleHiddenCards": 7
+        },
+        {
+          "street": 1,
+          "actor": 5,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-4",
+                "target": 2
+              },
+              "equity": 0.4166666666666667,
+              "bonus": 0,
+              "utility": 38.949375
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.20833333333333334,
+              "bonus": 20,
+              "utility": 32.996875
+            }
+          ],
+          "damagedFraction": 0.42857142857142855,
+          "eligibleHiddenCards": 7
+        },
+        {
+          "street": 1,
+          "actor": 1,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-2",
+                "target": 5
+              },
+              "equity": 0.75,
+              "bonus": 0,
+              "utility": 115.14375
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.625,
+              "bonus": 20,
+              "utility": 109.2475
+            }
+          ],
+          "damagedFraction": 0.5714285714285714,
+          "eligibleHiddenCards": 7
+        }
+      ],
+      "calls": 126,
+      "folds": 47,
+      "bets": 75,
+      "riichi": 14,
+      "loans": 5,
+      "finalChipTotal": 2480,
+      "finalCollectionSizes": [7, 29, 7, 7, 34, 48]
+    },
+    {
+      "index": 5,
+      "seed": "legacy-v1:5",
+      "finished": true,
+      "failure": null,
+      "steps": 618,
+      "rounds": 18,
+      "showdown": 13,
+      "uncontested": 5,
+      "allInRounds": 10,
+      "street4Rounds": 3,
+      "bonuses": 380,
+      "drawCounts": {
+        "deck": 116,
+        "lane": 20,
+        "blank": 11,
+        "treasure": 8
+      },
+      "scores": {
+        "p1": 455,
+        "p2": -250,
+        "p3": 1825,
+        "p4": -250,
+        "p5": -250,
+        "p6": -250
+      },
+      "ranks": {
+        "two-eyes": {
+          "count": 3,
+          "wins": 0
+        },
+        "chow-eye": {
+          "count": 4,
+          "wins": 0
+        },
+        "pung-eye": {
+          "count": 17,
+          "wins": 7
+        },
+        "pung": {
+          "count": 5,
+          "wins": 0
+        },
+        "three-dragons-eye": {
+          "count": 4,
+          "wins": 4
+        },
+        "high-card": {
+          "count": 1,
+          "wins": 0
+        },
+        "eye": {
+          "count": 3,
+          "wins": 0
+        },
+        "chow": {
+          "count": 3,
+          "wins": 0
+        },
+        "long-chow": {
+          "count": 1,
+          "wins": 1
+        },
+        "three-dragons": {
+          "count": 1,
+          "wins": 1
+        }
+      },
+      "deckSizes": [
+        [22, 22, 22, 22, 22, 22],
+        [25, 21, 21, 24, 22, 19],
+        [24, 21, 23, 25, 20, 19],
+        [24, 22, 24, 24, 21, 17],
+        [24, 24, 22, 27, 18, 17],
+        [23, 24, 23, 25, 23, 14],
+        [24, 22, 21, 29, 26, 10],
+        [23, 22, 23, 28, 28, 8],
+        [18, 25, 24, 23, 35, 7],
+        [14, 24, 28, 21, 38, 7],
+        [12, 23, 28, 22, 40, 7],
+        [10, 23, 29, 21, 42, 7],
+        [7, 22, 30, 21, 45, 7],
+        [7, 19, 30, 24, 45, 7],
+        [8, 16, 31, 25, 45, 7],
+        [8, 14, 30, 28, 45, 7],
+        [7, 11, 32, 30, 45, 7],
+        [7, 7, 32, 34, 45, 7]
+      ],
+      "roundTreasureHolders": [
+        [1, 0, 0],
+        [0],
+        [0, 0],
+        [1, 0, 0],
+        [0],
+        [0, 0],
+        [0, 0],
+        [2, 1, 0],
+        [0, 1, 0, 1, 0],
+        [0, 1, 0, 1, 0],
+        [0, 1, 0, 0, 1],
+        [0, 2, 0, 0],
+        [0],
+        [0],
+        [0],
+        [0, 2],
+        [0, 1, 1],
+        [0, 0, 2]
+      ],
+      "byStreet": [
+        {
+          "street": 1,
+          "opportunities": 29,
+          "chosen": 2,
+          "averageDamageProbability": 0.4975369458128078,
+          "hiddenCounts": [
+            7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7
+          ]
+        },
+        {
+          "street": 2,
+          "opportunities": 13,
+          "chosen": 1,
+          "averageDamageProbability": 0.23076923076923078,
+          "hiddenCounts": [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+        },
+        {
+          "street": 3,
+          "opportunities": 12,
+          "chosen": 4,
+          "averageDamageProbability": 0.2777777777777778,
+          "hiddenCounts": [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
+        },
+        {
+          "street": 4,
+          "opportunities": 4,
+          "chosen": 1,
+          "averageDamageProbability": 0.25,
+          "hiddenCounts": [2, 2, 2, 2]
+        }
+      ],
+      "exchanges": [
+        {
+          "street": 3,
+          "hidden": 3,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "chow-eye",
+          "afterKind": "chow-eye",
+          "taken": "dragon-red-3"
+        },
+        {
+          "street": 3,
+          "hidden": 3,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "chow-eye",
+          "afterKind": "chow-eye",
+          "taken": "dragon-red-3"
+        },
+        {
+          "street": 4,
+          "hidden": 2,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "two-eyes",
+          "afterKind": "two-eyes",
+          "taken": "joker-blue"
+        },
+        {
+          "street": 2,
+          "hidden": 4,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "eye",
+          "afterKind": "eye",
+          "taken": "dragon-red-2"
+        },
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": true,
+          "targetRankDropped": true,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "two-eyes",
+          "afterKind": "eye",
+          "taken": "dots-5-3"
+        },
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": true,
+          "targetRankDropped": true,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "pung-eye",
+          "afterKind": "two-eyes",
+          "taken": "dots-9-3"
+        },
+        {
+          "street": 3,
+          "hidden": 3,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "three-dragons",
+          "afterKind": "three-dragons",
+          "taken": "bamboo-2-3"
+        },
+        {
+          "street": 3,
+          "hidden": 3,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "three-dragons",
+          "afterKind": "three-dragons",
+          "taken": "dots-2-1"
+        }
+      ],
+      "examples": [
+        {
+          "street": 3,
+          "actor": 5,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-2",
+                "target": 2
+              },
+              "equity": 0.3333333333333333,
+              "bonus": 0,
+              "utility": 30.981875
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.041666666666666664,
+              "bonus": 19.166666666666668,
+              "utility": 20.96604166666667
+            }
+          ],
+          "damagedFraction": 0.3333333333333333,
+          "eligibleHiddenCards": 3
+        },
+        {
+          "street": 3,
+          "actor": 1,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-3",
+                "target": 5
+              },
+              "equity": 0.7916666666666666,
+              "bonus": 0.8333333333333334,
+              "utility": 215.03833333333336
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.5416666666666666,
+              "bonus": 20,
+              "utility": 163.7925
+            }
+          ],
+          "damagedFraction": 0.3333333333333333,
+          "eligibleHiddenCards": 3
+        },
+        {
+          "street": 4,
+          "actor": 2,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-2",
+                "target": 1
+              },
+              "equity": 0.7916666666666666,
+              "bonus": 0.8333333333333334,
+              "utility": 238.33333333333334
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.6666666666666666,
+              "bonus": 20.833333333333332,
+              "utility": 220.83333333333334
+            }
+          ],
+          "damagedFraction": 0,
+          "eligibleHiddenCards": 2
+        }
+      ],
+      "calls": 114,
+      "folds": 35,
+      "bets": 69,
+      "riichi": 16,
+      "loans": 6,
+      "finalChipTotal": 2780,
+      "finalCollectionSizes": [7, 7, 29, 37, 45, 7]
+    },
+    {
+      "index": 6,
+      "seed": "legacy-v1:6",
+      "finished": true,
+      "failure": null,
+      "steps": 588,
+      "rounds": 18,
+      "showdown": 10,
+      "uncontested": 8,
+      "allInRounds": 7,
+      "street4Rounds": 5,
+      "bonuses": 400,
+      "drawCounts": {
+        "deck": 110,
+        "lane": 25,
+        "blank": 2,
+        "treasure": 4
+      },
+      "scores": {
+        "p1": 870,
+        "p2": -250,
+        "p3": 1300,
+        "p4": -250,
+        "p5": -20,
+        "p6": -250
+      },
+      "ranks": {
+        "pung-eye": {
+          "count": 5,
+          "wins": 2
+        },
+        "two-eyes": {
+          "count": 4,
+          "wins": 0
+        },
+        "chow-eye": {
+          "count": 1,
+          "wins": 0
+        },
+        "three-dragons-eye": {
+          "count": 2,
+          "wins": 1
+        },
+        "long-chow": {
+          "count": 4,
+          "wins": 1
+        },
+        "kong": {
+          "count": 8,
+          "wins": 6
+        },
+        "pung": {
+          "count": 3,
+          "wins": 0
+        },
+        "chow": {
+          "count": 2,
+          "wins": 0
+        },
+        "eye": {
+          "count": 2,
+          "wins": 0
+        }
+      },
+      "deckSizes": [
+        [22, 22, 22, 22, 22, 22],
+        [24, 22, 22, 23, 19, 22],
+        [20, 20, 25, 25, 26, 16],
+        [19, 21, 26, 24, 24, 18],
+        [19, 19, 26, 24, 24, 20],
+        [19, 17, 28, 23, 23, 22],
+        [21, 19, 26, 20, 23, 23],
+        [17, 25, 25, 21, 22, 22],
+        [12, 30, 21, 30, 18, 21],
+        [12, 31, 19, 34, 16, 20],
+        [10, 33, 18, 38, 13, 20],
+        [12, 34, 16, 43, 7, 20],
+        [11, 38, 15, 44, 7, 17],
+        [11, 40, 14, 44, 7, 16],
+        [11, 42, 13, 45, 7, 14],
+        [11, 45, 12, 46, 7, 11],
+        [13, 46, 10, 48, 7, 8],
+        [11, 49, 9, 49, 7, 7]
+      ],
+      "roundTreasureHolders": [
+        [0],
+        [0, 1, 1, 0],
+        [0],
+        [0],
+        [1, 0, 2],
+        [0, 0],
+        [0, 1],
+        [0, 0],
+        [1],
+        [0],
+        [1, 2],
+        [0],
+        [0],
+        [0, 0, 1, 1],
+        [1, 0, 1, 1],
+        [1, 0, 1, 1],
+        [2, 0, 1, 0],
+        [0]
+      ],
+      "byStreet": [
+        {
+          "street": 1,
+          "opportunities": 37,
+          "chosen": 3,
+          "averageDamageProbability": 0.4710424710424712,
+          "hiddenCounts": [
+            7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+            7, 7, 7, 7, 7, 7, 7, 7
+          ]
+        },
+        {
+          "street": 2,
+          "opportunities": 9,
+          "chosen": 1,
+          "averageDamageProbability": 0.19444444444444445,
+          "hiddenCounts": [4, 4, 4, 4, 4, 4, 4, 4, 4]
+        },
+        {
+          "street": 3,
+          "opportunities": 2,
+          "chosen": 0,
+          "averageDamageProbability": 0.3333333333333333,
+          "hiddenCounts": [3, 3]
+        },
+        {
+          "street": 4,
+          "opportunities": 0,
+          "chosen": 0,
+          "averageDamageProbability": 0,
+          "hiddenCounts": []
+        }
+      ],
+      "exchanges": [
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": true,
+          "targetRankDropped": true,
+          "actorImproved": true,
+          "takenTreasure": false,
+          "beforeKind": "chow-eye",
+          "afterKind": "eye",
+          "taken": "wild-4"
+        },
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "two-eyes",
+          "afterKind": "two-eyes",
+          "taken": "dragon-green-2"
+        },
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": true,
+          "targetRankDropped": true,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "pung-eye",
+          "afterKind": "two-eyes",
+          "taken": "characters-5-1"
+        },
+        {
+          "street": 2,
+          "hidden": 4,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "kong",
+          "afterKind": "kong",
+          "taken": "characters-5-2"
+        }
+      ],
+      "examples": [
+        {
+          "street": 1,
+          "actor": 1,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-1",
+                "target": 4
+              },
+              "equity": 0.25,
+              "bonus": 1.6666666666666667,
+              "utility": 21.74520833333333
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.08333333333333333,
+              "bonus": 20.833333333333332,
+              "utility": 20.804583333333333
+            }
+          ],
+          "damagedFraction": 0.7142857142857143,
+          "eligibleHiddenCards": 7
+        },
+        {
+          "street": 1,
+          "actor": 2,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-4",
+                "target": 4
+              },
+              "equity": 0.3958333333333333,
+              "bonus": 0,
+              "utility": 66.431875
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.2708333333333333,
+              "bonus": 20,
+              "utility": 58.71875
+            }
+          ],
+          "damagedFraction": 0.5714285714285714,
+          "eligibleHiddenCards": 7
+        },
+        {
+          "street": 1,
+          "actor": 5,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-4",
+                "target": 4
+              },
+              "equity": 0.4166666666666667,
+              "bonus": 2.5,
+              "utility": 32.259791666666665
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.20833333333333334,
+              "bonus": 20,
+              "utility": 28.856458333333336
+            }
+          ],
+          "damagedFraction": 0.7142857142857143,
+          "eligibleHiddenCards": 7
+        }
+      ],
+      "calls": 93,
+      "folds": 43,
+      "bets": 67,
+      "riichi": 13,
+      "loans": 4,
+      "finalChipTotal": 2400,
+      "finalCollectionSizes": [8, 52, 8, 49, 7, 8]
+    },
+    {
+      "index": 7,
+      "seed": "legacy-v1:7",
+      "finished": true,
+      "failure": null,
+      "steps": 558,
+      "rounds": 17,
+      "showdown": 7,
+      "uncontested": 10,
+      "allInRounds": 5,
+      "street4Rounds": 7,
+      "bonuses": 180,
+      "drawCounts": {
+        "deck": 87,
+        "lane": 22,
+        "blank": 7,
+        "treasure": 2
+      },
+      "scores": {
+        "p1": -250,
+        "p2": 1705,
+        "p3": -250,
+        "p4": 245,
+        "p5": -70,
+        "p6": -250
+      },
+      "ranks": {
+        "pung": {
+          "count": 2,
+          "wins": 0
+        },
+        "pung-eye": {
+          "count": 8,
+          "wins": 2
+        },
+        "long-chow": {
+          "count": 3,
+          "wins": 3
+        },
+        "chow-eye": {
+          "count": 1,
+          "wins": 0
+        },
+        "three-winds": {
+          "count": 1,
+          "wins": 0
+        },
+        "two-eyes": {
+          "count": 4,
+          "wins": 0
+        },
+        "three-dragons-eye": {
+          "count": 2,
+          "wins": 2
+        },
+        "chow": {
+          "count": 2,
+          "wins": 0
+        }
+      },
+      "deckSizes": [
+        [22, 22, 22, 22, 22, 22],
+        [21, 24, 21, 23, 21, 22],
+        [19, 26, 20, 23, 19, 25],
+        [18, 29, 21, 21, 19, 24],
+        [20, 27, 22, 21, 19, 23],
+        [24, 25, 20, 22, 19, 22],
+        [28, 24, 18, 23, 19, 20],
+        [33, 21, 16, 23, 21, 18],
+        [37, 20, 13, 24, 20, 18],
+        [43, 17, 12, 25, 19, 16],
+        [43, 16, 11, 23, 20, 19],
+        [47, 11, 12, 21, 19, 22],
+        [47, 10, 16, 17, 19, 23],
+        [47, 7, 24, 11, 15, 28],
+        [47, 7, 25, 9, 15, 29],
+        [47, 7, 26, 7, 12, 33],
+        [47, 7, 26, 7, 9, 36]
+      ],
+      "roundTreasureHolders": [
+        [0],
+        [0, 0],
+        [0, 0, 0, 0],
+        [0],
+        [0],
+        [1],
+        [1],
+        [0, 0, 0, 1],
+        [1, 0, 1, 0],
+        [1],
+        [1, 0, 0],
+        [1],
+        [1, 1, 1],
+        [0],
+        [0],
+        [0, 0, 2],
+        [1]
+      ],
+      "byStreet": [
+        {
+          "street": 1,
+          "opportunities": 19,
+          "chosen": 0,
+          "averageDamageProbability": 0.5112781954887217,
+          "hiddenCounts": [7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7]
+        },
+        {
+          "street": 2,
+          "opportunities": 12,
+          "chosen": 1,
+          "averageDamageProbability": 0.2916666666666667,
+          "hiddenCounts": [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+        },
+        {
+          "street": 3,
+          "opportunities": 3,
+          "chosen": 1,
+          "averageDamageProbability": 0.3333333333333333,
+          "hiddenCounts": [3, 3, 3]
+        },
+        {
+          "street": 4,
+          "opportunities": 0,
+          "chosen": 0,
+          "averageDamageProbability": 0,
+          "hiddenCounts": []
+        }
+      ],
+      "exchanges": [
+        {
+          "street": 2,
+          "hidden": 4,
+          "targetWeakened": true,
+          "targetRankDropped": true,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "pung-eye",
+          "afterKind": "two-eyes",
+          "taken": "dots-3-2"
+        },
+        {
+          "street": 3,
+          "hidden": 3,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "three-dragons-eye",
+          "afterKind": "three-dragons-eye",
+          "taken": "bamboo-4-1"
+        }
+      ],
+      "examples": [
+        {
+          "street": 2,
+          "actor": 1,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-1",
+                "target": 3
+              },
+              "equity": 1,
+              "bonus": 0,
+              "utility": 181.3375
+            }
+          ],
+          "damagedFraction": 0.5,
+          "eligibleHiddenCards": 4
+        },
+        {
+          "street": 3,
+          "actor": 3,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-1",
+                "target": 1
+              },
+              "equity": 0.5,
+              "bonus": 0,
+              "utility": 90.809375
+            }
+          ],
+          "damagedFraction": 0.3333333333333333,
+          "eligibleHiddenCards": 3
+        }
+      ],
+      "calls": 98,
+      "folds": 41,
+      "bets": 76,
+      "riichi": 13,
+      "loans": 5,
+      "finalChipTotal": 2380,
+      "finalCollectionSizes": [47, 7, 26, 7, 8, 37]
+    },
+    {
+      "index": 8,
+      "seed": "legacy-v1:8",
+      "finished": true,
+      "failure": null,
+      "steps": 562,
+      "rounds": 19,
+      "showdown": 13,
+      "uncontested": 6,
+      "allInRounds": 13,
+      "street4Rounds": 3,
+      "bonuses": 540,
+      "drawCounts": {
+        "deck": 79,
+        "lane": 31,
+        "blank": 8,
+        "treasure": 4
+      },
+      "scores": {
+        "p1": -190,
+        "p2": -250,
+        "p3": 905,
+        "p4": -250,
+        "p5": -250,
+        "p6": 1525
+      },
+      "ranks": {
+        "pung": {
+          "count": 4,
+          "wins": 0
+        },
+        "three-dragons": {
+          "count": 2,
+          "wins": 1
+        },
+        "three-winds": {
+          "count": 2,
+          "wins": 0
+        },
+        "pung-eye": {
+          "count": 3,
+          "wins": 2
+        },
+        "chow-eye": {
+          "count": 3,
+          "wins": 1
+        },
+        "three-dragons-eye": {
+          "count": 1,
+          "wins": 1
+        },
+        "eye": {
+          "count": 3,
+          "wins": 0
+        },
+        "two-eyes": {
+          "count": 2,
+          "wins": 0
+        },
+        "high-card": {
+          "count": 1,
+          "wins": 0
+        },
+        "chow": {
+          "count": 6,
+          "wins": 0
+        },
+        "kong": {
+          "count": 8,
+          "wins": 8
+        }
+      },
+      "deckSizes": [
+        [22, 22, 22, 22, 22, 22],
+        [20, 22, 21, 23, 21, 25],
+        [18, 23, 20, 24, 20, 27],
+        [22, 22, 16, 29, 19, 24],
+        [23, 22, 15, 28, 18, 26],
+        [23, 22, 14, 30, 15, 28],
+        [25, 20, 14, 30, 16, 27],
+        [23, 21, 12, 33, 17, 26],
+        [22, 22, 11, 33, 21, 23],
+        [15, 28, 8, 34, 27, 20],
+        [12, 27, 11, 33, 29, 20],
+        [12, 27, 11, 33, 30, 19],
+        [7, 33, 9, 31, 36, 16],
+        [8, 34, 7, 31, 37, 15],
+        [8, 35, 7, 29, 39, 14],
+        [8, 36, 7, 28, 42, 11],
+        [8, 37, 7, 27, 45, 8],
+        [7, 38, 7, 25, 48, 7],
+        [7, 38, 7, 24, 49, 7]
+      ],
+      "roundTreasureHolders": [
+        [0],
+        [0],
+        [0],
+        [0],
+        [0, 2],
+        [0],
+        [0, 0],
+        [0],
+        [1, 0, 0],
+        [2, 0, 0],
+        [1, 0, 0, 0, 1],
+        [2, 0],
+        [2, 0, 1],
+        [2, 0],
+        [2, 0],
+        [2, 0, 0],
+        [2, 0],
+        [2, 0, 0, 2],
+        [3, 0]
+      ],
+      "byStreet": [
+        {
+          "street": 1,
+          "opportunities": 22,
+          "chosen": 3,
+          "averageDamageProbability": 0.435064935064935,
+          "hiddenCounts": [7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7]
+        },
+        {
+          "street": 2,
+          "opportunities": 10,
+          "chosen": 1,
+          "averageDamageProbability": 0.25,
+          "hiddenCounts": [4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+        },
+        {
+          "street": 3,
+          "opportunities": 4,
+          "chosen": 0,
+          "averageDamageProbability": 0.25,
+          "hiddenCounts": [3, 3, 3, 3]
+        },
+        {
+          "street": 4,
+          "opportunities": 1,
+          "chosen": 0,
+          "averageDamageProbability": 0.5,
+          "hiddenCounts": [2]
+        }
+      ],
+      "exchanges": [
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": true,
+          "targetRankDropped": true,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "chow-eye",
+          "afterKind": "eye",
+          "taken": "bamboo-3-2"
+        },
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": true,
+          "targetRankDropped": true,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "three-dragons-eye",
+          "afterKind": "three-dragons",
+          "taken": "characters-4-1"
+        },
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": true,
+          "beforeKind": "chow",
+          "afterKind": "chow",
+          "taken": "treasure-2"
+        },
+        {
+          "street": 2,
+          "hidden": 4,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": true,
+          "takenTreasure": false,
+          "beforeKind": "pung",
+          "afterKind": "pung",
+          "taken": "dots-7-2"
+        }
+      ],
+      "examples": [
+        {
+          "street": 1,
+          "actor": 4,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-4",
+                "target": 2
+              },
+              "equity": 0.25,
+              "bonus": 0.8333333333333334,
+              "utility": 44.02041666666666
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "discard-b"
+              },
+              "equity": 0.08333333333333333,
+              "bonus": 20,
+              "utility": 28.561666666666664
+            }
+          ],
+          "damagedFraction": 0.7142857142857143,
+          "eligibleHiddenCards": 7
+        },
+        {
+          "street": 1,
+          "actor": 2,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-4",
+                "target": 5
+              },
+              "equity": 0.25,
+              "bonus": 0.8333333333333334,
+              "utility": 47.36416666666666
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.125,
+              "bonus": 20,
+              "utility": 37.140625
+            }
+          ],
+          "damagedFraction": 0.7142857142857143,
+          "eligibleHiddenCards": 7
+        },
+        {
+          "street": 1,
+          "actor": 0,
+          "chosen": "treasure",
+          "treasureCount": 2,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-3",
+                "target": 5
+              },
+              "equity": 0.875,
+              "bonus": 20,
+              "utility": 50.431875
+            }
+          ],
+          "damagedFraction": 0.14285714285714285,
+          "eligibleHiddenCards": 7
+        }
+      ],
+      "calls": 97,
+      "folds": 50,
+      "bets": 64,
+      "riichi": 12,
+      "loans": 5,
+      "finalChipTotal": 2740,
+      "finalCollectionSizes": [7, 38, 7, 24, 49, 7]
+    },
+    {
+      "index": 9,
+      "seed": "legacy-v1:9",
+      "finished": true,
+      "failure": null,
+      "steps": 635,
+      "rounds": 18,
+      "showdown": 7,
+      "uncontested": 11,
+      "allInRounds": 5,
+      "street4Rounds": 7,
+      "bonuses": 60,
+      "drawCounts": {
+        "deck": 99,
+        "lane": 17,
+        "blank": 6,
+        "treasure": 2
+      },
+      "scores": {
+        "p1": 1545,
+        "p2": -250,
+        "p3": -100,
+        "p4": 265,
+        "p5": -250,
+        "p6": -250
+      },
+      "ranks": {
+        "three-dragons-eye": {
+          "count": 4,
+          "wins": 4
+        },
+        "three-winds": {
+          "count": 1,
+          "wins": 0
+        },
+        "pung-eye": {
+          "count": 8,
+          "wins": 0
+        },
+        "kong": {
+          "count": 3,
+          "wins": 3
+        },
+        "pung": {
+          "count": 1,
+          "wins": 0
+        },
+        "long-chow": {
+          "count": 1,
+          "wins": 0
+        },
+        "two-eyes": {
+          "count": 2,
+          "wins": 0
+        },
+        "chow-eye": {
+          "count": 1,
+          "wins": 0
+        }
+      },
+      "deckSizes": [
+        [22, 22, 22, 22, 22, 22],
+        [23, 20, 23, 21, 22, 23],
+        [23, 19, 25, 20, 22, 23],
+        [21, 19, 26, 17, 26, 23],
+        [22, 18, 26, 16, 26, 24],
+        [20, 23, 24, 12, 29, 24],
+        [22, 22, 23, 13, 29, 23],
+        [20, 23, 24, 10, 35, 20],
+        [19, 23, 25, 10, 39, 16],
+        [18, 25, 22, 9, 42, 16],
+        [15, 24, 22, 10, 43, 18],
+        [12, 22, 24, 9, 45, 20],
+        [10, 21, 23, 11, 46, 21],
+        [7, 18, 25, 12, 47, 23],
+        [7, 16, 25, 13, 48, 23],
+        [8, 13, 25, 13, 50, 23],
+        [7, 14, 24, 10, 54, 23],
+        [7, 16, 21, 10, 55, 23]
+      ],
+      "roundTreasureHolders": [
+        [1, 0],
+        [1],
+        [1],
+        [0],
+        [0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 0, 1],
+        [0, 0, 0],
+        [0],
+        [0],
+        [0],
+        [0],
+        [0],
+        [0],
+        [0, 0, 0],
+        [0, 0],
+        [0],
+        [0]
+      ],
+      "byStreet": [
+        {
+          "street": 1,
+          "opportunities": 16,
+          "chosen": 0,
+          "averageDamageProbability": 0.5892857142857143,
+          "hiddenCounts": [7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7]
+        },
+        {
+          "street": 2,
+          "opportunities": 7,
+          "chosen": 1,
+          "averageDamageProbability": 0.17857142857142858,
+          "hiddenCounts": [4, 4, 4, 4, 4, 4, 4]
+        },
+        {
+          "street": 3,
+          "opportunities": 3,
+          "chosen": 1,
+          "averageDamageProbability": 0.1111111111111111,
+          "hiddenCounts": [3, 3, 3]
+        },
+        {
+          "street": 4,
+          "opportunities": 0,
+          "chosen": 0,
+          "averageDamageProbability": 0,
+          "hiddenCounts": []
+        }
+      ],
+      "exchanges": [
+        {
+          "street": 2,
+          "hidden": 4,
+          "targetWeakened": true,
+          "targetRankDropped": true,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "pung-eye",
+          "afterKind": "pung",
+          "taken": "characters-4-3"
+        },
+        {
+          "street": 3,
+          "hidden": 3,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "two-eyes",
+          "afterKind": "two-eyes",
+          "taken": "bamboo-5-2"
+        }
+      ],
+      "examples": [
+        {
+          "street": 2,
+          "actor": 3,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-2",
+                "target": 4
+              },
+              "equity": 0.6666666666666666,
+              "bonus": 0.8333333333333334,
+              "utility": 283.4725
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.625,
+              "bonus": 21.666666666666668,
+              "utility": 281.47875
+            }
+          ],
+          "damagedFraction": 0.5,
+          "eligibleHiddenCards": 4
+        },
+        {
+          "street": 3,
+          "actor": 0,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-1",
+                "target": 5
+              },
+              "equity": 0.7916666666666666,
+              "bonus": 0.8333333333333334,
+              "utility": 515.8704166666666
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.7083333333333334,
+              "bonus": 20,
+              "utility": 477.9635416666667
+            }
+          ],
+          "damagedFraction": 0,
+          "eligibleHiddenCards": 3
+        }
+      ],
+      "calls": 113,
+      "folds": 51,
+      "bets": 87,
+      "riichi": 10,
+      "loans": 6,
+      "finalChipTotal": 2460,
+      "finalCollectionSizes": [7, 17, 19, 10, 56, 23]
+    },
+    {
+      "index": 10,
+      "seed": "legacy-v1:10",
+      "finished": true,
+      "failure": null,
+      "steps": 688,
+      "rounds": 21,
+      "showdown": 13,
+      "uncontested": 8,
+      "allInRounds": 12,
+      "street4Rounds": 4,
+      "bonuses": 340,
+      "drawCounts": {
+        "deck": 119,
+        "lane": 29,
+        "blank": 9,
+        "treasure": 6
+      },
+      "scores": {
+        "p1": -250,
+        "p2": -250,
+        "p3": -250,
+        "p4": 667.5,
+        "p5": 732.5,
+        "p6": 590
+      },
+      "ranks": {
+        "chow-eye": {
+          "count": 5,
+          "wins": 1
+        },
+        "three-winds": {
+          "count": 5,
+          "wins": 2
+        },
+        "three-dragons": {
+          "count": 1,
+          "wins": 0
+        },
+        "long-chow": {
+          "count": 4,
+          "wins": 4
+        },
+        "two-eyes": {
+          "count": 7,
+          "wins": 0
+        },
+        "pung": {
+          "count": 3,
+          "wins": 0
+        },
+        "chow": {
+          "count": 2,
+          "wins": 0
+        },
+        "eye": {
+          "count": 4,
+          "wins": 0
+        },
+        "pung-eye": {
+          "count": 16,
+          "wins": 6
+        }
+      },
+      "deckSizes": [
+        [22, 22, 22, 22, 22, 22],
+        [22, 23, 23, 20, 21, 23],
+        [24, 22, 22, 21, 20, 23],
+        [23, 22, 23, 21, 19, 24],
+        [23, 18, 27, 22, 17, 25],
+        [24, 19, 25, 24, 17, 23],
+        [24, 24, 21, 20, 20, 23],
+        [25, 27, 20, 18, 21, 21],
+        [25, 31, 18, 14, 21, 23],
+        [24, 35, 15, 14, 21, 23],
+        [23, 39, 13, 11, 22, 24],
+        [24, 44, 12, 9, 20, 23],
+        [24, 47, 10, 9, 19, 23],
+        [24, 50, 8, 8, 20, 22],
+        [26, 51, 7, 9, 17, 22],
+        [23, 56, 7, 7, 15, 24],
+        [21, 59, 7, 7, 12, 26],
+        [21, 61, 7, 7, 10, 26],
+        [23, 63, 7, 8, 8, 23],
+        [22, 67, 8, 7, 7, 21],
+        [21, 73, 8, 7, 7, 16]
+      ],
+      "roundTreasureHolders": [
+        [0],
+        [1],
+        [0],
+        [0, 0],
+        [0, 0],
+        [0],
+        [0, 1, 0],
+        [0, 1, 0, 1, 0],
+        [0, 1, 0, 1],
+        [1],
+        [0, 1, 0, 1, 1],
+        [0, 1, 0, 0, 0],
+        [0],
+        [0, 0, 0],
+        [1],
+        [0, 0, 0, 2],
+        [0],
+        [0, 1, 1],
+        [0, 0, 0],
+        [1, 0, 0, 2],
+        [0, 0, 0, 1]
+      ],
+      "byStreet": [
+        {
+          "street": 1,
+          "opportunities": 46,
+          "chosen": 4,
+          "averageDamageProbability": 0.4968944099378883,
+          "hiddenCounts": [
+            7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+            7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7
+          ]
+        },
+        {
+          "street": 2,
+          "opportunities": 12,
+          "chosen": 2,
+          "averageDamageProbability": 0.20833333333333334,
+          "hiddenCounts": [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+        },
+        {
+          "street": 3,
+          "opportunities": 4,
+          "chosen": 0,
+          "averageDamageProbability": 0.25,
+          "hiddenCounts": [3, 3, 3, 3]
+        },
+        {
+          "street": 4,
+          "opportunities": 0,
+          "chosen": 0,
+          "averageDamageProbability": 0,
+          "hiddenCounts": []
+        }
+      ],
+      "exchanges": [
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "high-card",
+          "afterKind": "high-card",
+          "taken": "dots-7-3"
+        },
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": true,
+          "targetRankDropped": true,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "chow-eye",
+          "afterKind": "chow",
+          "taken": "dots-6-3"
+        },
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": true,
+          "targetRankDropped": true,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "pung-eye",
+          "afterKind": "eye",
+          "taken": "characters-5-3"
+        },
+        {
+          "street": 2,
+          "hidden": 4,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "eye",
+          "afterKind": "eye",
+          "taken": "dots-8-1"
+        },
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": true,
+          "targetRankDropped": true,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "pung",
+          "afterKind": "eye",
+          "taken": "joker-green"
+        },
+        {
+          "street": 2,
+          "hidden": 4,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "chow",
+          "afterKind": "chow",
+          "taken": "characters-9-3"
+        }
+      ],
+      "examples": [
+        {
+          "street": 1,
+          "actor": 5,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-4",
+                "target": 2
+              },
+              "equity": 0.3125,
+              "bonus": 0.8333333333333334,
+              "utility": 17.72854166666667
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.0625,
+              "bonus": 20,
+              "utility": 17.70375
+            }
+          ],
+          "damagedFraction": 0.14285714285714285,
+          "eligibleHiddenCards": 7
+        },
+        {
+          "street": 1,
+          "actor": 3,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-2",
+                "target": 4
+              },
+              "equity": 0.7916666666666666,
+              "bonus": 1.6666666666666667,
+              "utility": 126.30604166666666
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "discard-a"
+              },
+              "equity": 0.6666666666666666,
+              "bonus": 20,
+              "utility": 118.67333333333333
+            }
+          ],
+          "damagedFraction": 0.7142857142857143,
+          "eligibleHiddenCards": 7
+        },
+        {
+          "street": 1,
+          "actor": 4,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-2",
+                "target": 5
+              },
+              "equity": 0.7291666666666666,
+              "bonus": 0,
+              "utility": 128.42916666666665
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.6458333333333334,
+              "bonus": 20.833333333333332,
+              "utility": 127.38937500000002
+            }
+          ],
+          "damagedFraction": 0.7142857142857143,
+          "eligibleHiddenCards": 7
+        }
+      ],
+      "calls": 134,
+      "folds": 50,
+      "bets": 80,
+      "riichi": 16,
+      "loans": 6,
+      "finalChipTotal": 2740,
+      "finalCollectionSizes": [20, 76, 8, 7, 7, 14]
+    },
+    {
+      "index": 11,
+      "seed": "legacy-v1:11",
+      "finished": true,
+      "failure": null,
+      "steps": 619,
+      "rounds": 17,
+      "showdown": 7,
+      "uncontested": 10,
+      "allInRounds": 5,
+      "street4Rounds": 6,
+      "bonuses": 180,
+      "drawCounts": {
+        "deck": 100,
+        "lane": 26,
+        "blank": 8,
+        "treasure": 7
+      },
+      "scores": {
+        "p1": -250,
+        "p2": -250,
+        "p3": 700,
+        "p4": -250,
+        "p5": 125,
+        "p6": 1105
+      },
+      "ranks": {
+        "three-winds": {
+          "count": 4,
+          "wins": 0
+        },
+        "three-dragons": {
+          "count": 1,
+          "wins": 1
+        },
+        "long-chow": {
+          "count": 3,
+          "wins": 0
+        },
+        "three-dragons-eye": {
+          "count": 2,
+          "wins": 1
+        },
+        "four-winds": {
+          "count": 1,
+          "wins": 1
+        },
+        "chow-eye": {
+          "count": 5,
+          "wins": 0
+        },
+        "pung-eye": {
+          "count": 6,
+          "wins": 4
+        },
+        "two-eyes": {
+          "count": 2,
+          "wins": 0
+        }
+      },
+      "deckSizes": [
+        [22, 22, 22, 22, 22, 22],
+        [23, 23, 20, 23, 22, 21],
+        [23, 23, 20, 24, 22, 20],
+        [24, 24, 19, 23, 21, 21],
+        [24, 25, 20, 23, 19, 21],
+        [22, 27, 18, 25, 19, 21],
+        [24, 28, 16, 24, 20, 20],
+        [23, 29, 16, 23, 20, 21],
+        [20, 31, 16, 24, 18, 23],
+        [29, 27, 14, 23, 15, 24],
+        [33, 23, 13, 22, 16, 25],
+        [37, 22, 9, 31, 11, 22],
+        [41, 21, 8, 34, 8, 20],
+        [42, 21, 7, 36, 7, 19],
+        [43, 21, 7, 36, 7, 18],
+        [48, 21, 7, 36, 7, 13],
+        [50, 21, 7, 36, 7, 11]
+      ],
+      "roundTreasureHolders": [
+        [0],
+        [1, 1],
+        [1],
+        [0],
+        [0, 0, 0, 0],
+        [0],
+        [0],
+        [0, 0, 1, 0],
+        [0, 1, 0, 1, 1],
+        [0, 0, 0],
+        [1, 0, 1],
+        [0, 0, 1],
+        [0],
+        [1],
+        [2],
+        [0],
+        [1]
+      ],
+      "byStreet": [
+        {
+          "street": 1,
+          "opportunities": 30,
+          "chosen": 3,
+          "averageDamageProbability": 0.4619047619047618,
+          "hiddenCounts": [
+            7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7
+          ]
+        },
+        {
+          "street": 2,
+          "opportunities": 13,
+          "chosen": 3,
+          "averageDamageProbability": 0.36538461538461536,
+          "hiddenCounts": [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+        },
+        {
+          "street": 3,
+          "opportunities": 4,
+          "chosen": 1,
+          "averageDamageProbability": 0.25,
+          "hiddenCounts": [3, 3, 3, 3]
+        },
+        {
+          "street": 4,
+          "opportunities": 1,
+          "chosen": 0,
+          "averageDamageProbability": 0,
+          "hiddenCounts": [2]
+        }
+      ],
+      "exchanges": [
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "eye",
+          "afterKind": "eye",
+          "taken": "dots-1-3"
+        },
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "two-eyes",
+          "afterKind": "two-eyes",
+          "taken": "characters-1-3"
+        },
+        {
+          "street": 1,
+          "hidden": 7,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "pung-eye",
+          "afterKind": "pung-eye",
+          "taken": "dragon-white-3"
+        },
+        {
+          "street": 2,
+          "hidden": 4,
+          "targetWeakened": true,
+          "targetRankDropped": true,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "pung-eye",
+          "afterKind": "chow-eye",
+          "taken": "characters-7-3"
+        },
+        {
+          "street": 2,
+          "hidden": 4,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "kong",
+          "afterKind": "kong",
+          "taken": "bamboo-7-2"
+        },
+        {
+          "street": 2,
+          "hidden": 4,
+          "targetWeakened": true,
+          "targetRankDropped": true,
+          "actorImproved": false,
+          "takenTreasure": false,
+          "beforeKind": "pung-eye",
+          "afterKind": "pung",
+          "taken": "bamboo-6-2"
+        },
+        {
+          "street": 3,
+          "hidden": 3,
+          "targetWeakened": false,
+          "targetRankDropped": false,
+          "actorImproved": true,
+          "takenTreasure": false,
+          "beforeKind": "kong",
+          "afterKind": "kong",
+          "taken": "bamboo-6-2"
+        }
+      ],
+      "examples": [
+        {
+          "street": 1,
+          "actor": 1,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-4",
+                "target": 5
+              },
+              "equity": 0.5,
+              "bonus": 1.6666666666666667,
+              "utility": 48.232083333333335
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.3333333333333333,
+              "bonus": 20.833333333333332,
+              "utility": 45.62291666666666
+            }
+          ],
+          "damagedFraction": 0.2857142857142857,
+          "eligibleHiddenCards": 7
+        },
+        {
+          "street": 1,
+          "actor": 0,
+          "chosen": "treasure",
+          "treasureCount": 1,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-2",
+                "target": 4
+              },
+              "equity": 0.2916666666666667,
+              "bonus": 0,
+              "utility": 51.72270833333334
+            },
+            {
+              "plan": {
+                "kind": "draw",
+                "source": "deck"
+              },
+              "equity": 0.041666666666666664,
+              "bonus": 20,
+              "utility": 21.99958333333333
+            }
+          ],
+          "damagedFraction": 0.5714285714285714,
+          "eligibleHiddenCards": 7
+        },
+        {
+          "street": 1,
+          "actor": 4,
+          "chosen": "treasure",
+          "treasureCount": 2,
+          "options": [
+            {
+              "plan": {
+                "kind": "treasure",
+                "cardId": "treasure-2",
+                "target": 2
+              },
+              "equity": 0.875,
+              "bonus": 20.833333333333332,
+              "utility": 49.940416666666664
+            }
+          ],
+          "damagedFraction": 0.7142857142857143,
+          "eligibleHiddenCards": 7
+        }
+      ],
+      "calls": 103,
+      "folds": 47,
+      "bets": 70,
+      "riichi": 7,
+      "loans": 4,
+      "finalChipTotal": 2180,
+      "finalCollectionSizes": [51, 21, 7, 36, 7, 10]
+    }
+  ],
+  "seconds": 32.199421709
+}

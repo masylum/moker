@@ -1,5 +1,6 @@
 /* Shared design tokens. Change a role here instead of overriding a component. */
 :root {
+  --shadow-personal-deck: 0 3px 0 #fff, 0 5px 0 #abc3ad, 0 7px 0 #fff, 0 9px 0 #abc3ad;
   --layout-max-width: 1440px;
   --color-rules-example: rgb(219 227 178 / 0.2);
   --color-drawer-overlay: rgb(24 59 37 / 0.16);
@@ -104,4 +105,10 @@
   --space-10: 40px;
   --space-12: 48px;
   --space-15: 60px;
+}
+
+:root {
+  --color-legacy-border: #c6964a;
+  --color-legacy-surface: #fff3ce;
+  --color-legacy-accent: #ad650b;
 }

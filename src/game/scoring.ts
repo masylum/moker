@@ -1,3 +1,4 @@
+import { evaluateLegacy } from "./legacy-scoring"
 import { generateHandCandidates, type HandCandidate } from "./melds"
 import { HAND_RANKS, handRank } from "./hand-ranks"
 import type { Card, CardFace, HandScore } from "./types"
@@ -8,7 +9,11 @@ const strengthCache = new Map<string, HandStrength>()
 const STRENGTH_CACHE_LIMIT = 200_000
 
 /** Scores any subset of the seven Roll Your Own tiles. */
-export function scoreHand(cards: readonly Card[], mode: "basic" | "riichi" = "riichi"): HandScore {
+export function scoreHand(
+  cards: readonly Card[],
+  mode: "basic" | "riichi" | "legacy" = "riichi",
+): HandScore {
+  if (mode === "legacy") return evaluateLegacy(cards)
   return scoreCandidates(
     generateHandCandidates(cards)
       .filter(
@@ -23,7 +28,7 @@ export function scoreHand(cards: readonly Card[], mode: "basic" | "riichi" = "ri
 
 export function scoreHandStrength(
   cards: readonly Card[],
-  mode: "basic" | "riichi" = "riichi",
+  mode: "basic" | "riichi" | "legacy" = "riichi",
 ): HandStrength {
   const key = mode + ":" + cards.map(cardCacheKey).sort().join("|")
   const cached = strengthCache.get(key)
@@ -107,6 +112,8 @@ function tieValue(card: CardFace): number {
 }
 
 function cardCacheKey(card: CardFace): string {
+  if (card.kind === "wild") return `wild-${card.rank}`
+  if (card.kind === "treasure") return `treasure-${card.treasure}`
   if (card.kind === "numbered") return `${card.suit}-${card.rank}`
   if (card.kind === "dragon") return `dragon-${card.dragon}`
   if (card.kind === "wind") return `wind-${card.wind}`

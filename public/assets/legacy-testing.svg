@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="210" height="49" viewBox="0 0 210 49" role="img" aria-label="unfinished, testing">
+  <g fill="none" stroke="#ad650b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M150 17C175 16 189 28 187 44"/>
+    <path d="m180 37 7 8 7-8"/>
+  </g>
+  <text x="5" y="24" fill="#ad650b" font-family="Georgia, serif" font-style="italic" font-size="17">unfinished, testing</text>
+</svg>

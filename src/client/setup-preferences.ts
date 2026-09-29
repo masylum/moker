@@ -2,7 +2,7 @@ import type { SeatKind } from "./api"
 
 const KEY = "moker.setup"
 export interface SetupPreferences {
-  mode: "basic" | "riichi"
+  mode: "basic" | "riichi" | "legacy"
   seats: SeatKind[]
   games: number
 }
@@ -16,7 +16,7 @@ export function readSetup(): SetupPreferences {
     const saved = JSON.parse(localStorage.getItem(KEY) ?? "null")
     if (!saved || typeof saved !== "object") return defaults
     return {
-      mode: saved.mode === "riichi" ? "riichi" : "basic",
+      mode: saved.mode === "legacy" ? "legacy" : saved.mode === "riichi" ? "riichi" : "basic",
       seats:
         Array.isArray(saved.seats) &&
         saved.seats.length === 6 &&

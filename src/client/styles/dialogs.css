@@ -675,3 +675,15 @@
 .result-dialog .round-result > .eyebrow {
   padding-right: var(--space-10);
 }
+
+.legacy-rule-cards {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.legacy-rule-cards img {
+  width: 90px;
+  border: 1px solid var(--color-legacy-border);
+  border-radius: 8px;
+}

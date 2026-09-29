@@ -2,6 +2,11 @@ import type { Card } from "../game/types"
 
 /** Original artwork exported from the linked Moker Figma component library. */
 export function cardAsset(card: Card): string {
+  if (card.kind === "wild") return `/assets/cards/wild-${card.rank}.svg`
+  if (card.kind === "treasure") return `/assets/cards/treasure-${card.treasure}.svg`
+  if (card.kind === "numbered" && card.suit === "shadow")
+    return `/assets/cards/shadow-${card.rank}.svg`
+  if (card.kind === "dragon" && card.dragon === "black") return "/assets/cards/shadow-dragon.svg"
   let name: string
   if (card.kind === "numbered")
     name = `${card.suit === "bamboo" ? "bam" : card.suit === "characters" ? "crak" : "dot"}${card.rank}`

@@ -1,0 +1,25 @@
+{
+  "baseCommit": "bf26dab2c67a43dbccafcb7d8392145f5462925b",
+  "sha256": {
+    "scripts/legacy/bots.ts": "d8513b00172872a687b584ee08947820c071c777cdaeebd5f26aae25129c5eb1",
+    "scripts/legacy/cards.ts": "fcdc912c7c4eb414d00ec9f8a49d745367f5b1cd851e6f537db1b53099a6e6fe",
+    "scripts/legacy/engine.ts": "7292f988fd1ef871cdf8f34a54dc5f300b33b7b3d6efbec46f591c24f97f7891",
+    "scripts/legacy/report.py": "15cfb84814defd34e564ce211a2ee1f92e41a62db1c971af8e039a2e9607ece3",
+    "scripts/legacy/scoring.ts": "0a348a55fda0c813ed2e383eb76c6c29d6a36d74bcebfc5a2424489de5ea5594",
+    "scripts/legacy-simulate.ts": "e4575fc4c9ef461921444201630341a9ad677bd701ae3f2b9f3fbd0ea3959664",
+    "src/game/automation.ts": "6de8d9593ff3af4d94bbd5922acb5d282a22eec310deda34bd72f72af100380d",
+    "src/game/cards.ts": "b1133434d4fc65ed88c806e75f49281d3db9a3b23a981a3dfb8382ea973d5968",
+    "src/game/engine.ts": "41c381bf73f5a35d9d98602b2adc8b697cdcfe920368d6baa53bd43584e1ab32",
+    "src/game/hand-progress.ts": "3c4dae70d540ed69b605d25e3f89bd0e8b93bf0667e761dd6db4fbaa2f4bc9e2",
+    "src/game/hand-ranks.ts": "8ce8d5677ca130f7d353803b573e33b041ab6888d742f63884e8113e865e9b19",
+    "src/game/heuristic.ts": "29fe5e5e8d770bd9eafab970a252db8f3cff614b719f2415338dd103700fb7bb",
+    "src/game/information.ts": "daddea5415cf3c7c82249d71f3389659b7d7124fccb0ae00187a0adf09675744",
+    "src/game/melds.ts": "c878b0d4a7d117ea31c17d388c2400c4e6ba1c1c8627d0e286a280c45a61d521",
+    "src/game/random.ts": "762d9e84062490b79439706cbe7c377d67ccaf8d737efd9146b0bf8b144c85a3",
+    "src/game/rules.ts": "bd4bbcfcd339063d98def204be1ebc19d35863769ab371f34a3a219656ddc0c1",
+    "src/game/scoring.ts": "50aa477c46bb5d4cf99f824930a89f3c51516cffda6238b2c08ea727d573c7f3",
+    "src/game/simulation.ts": "de5f77a99c2d9e40d2202ee5672b2e34cb5ebb5b63f3c879f7d38a77ed56ceb2",
+    "src/game/types.ts": "42b509e0330139e25f8dbbcd53dd025bcae0348ce17fb745ae0f9301ddfa6232",
+    "tests/legacy.test.ts": "2b381829c2d2dae92991d4533b98b2710e611c9f0630ba819985c7294df2dd7d"
+  }
+}

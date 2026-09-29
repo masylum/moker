@@ -272,7 +272,7 @@
   z-index: -1;
   background: var(--color-selected);
   border-radius: var(--radius-control);
-  width: calc(50% - 6px);
+  width: calc((100% - 16px) / 3);
   transition: transform var(--duration-standard) var(--ease-out);
   position: absolute;
   inset: 4px auto 4px 4px;
@@ -418,5 +418,21 @@
 @media (width <= 900px) {
   .expansion-decor .decor-fan {
     right: -110px;
+  }
+}
+
+.mode-picker.legacy-selected:before {
+  transform: translateX(calc(200% + 2 * var(--space-1)));
+}
+.legacy-testing-pointer {
+  width: 210px;
+  height: 49px;
+  justify-self: end;
+  margin: -12px 0 -6px;
+}
+@media (max-width: 520px) {
+  .mode-picker button {
+    white-space: normal;
+    font-size: 13px;
   }
 }

@@ -76,7 +76,7 @@ const RIICHI_BOT_POLICY: Readonly<BotPolicy> = Object.freeze({
   equityCalibration: 0.65,
 })
 
-export function defaultBotPolicy(mode: "basic" | "riichi"): Readonly<BotPolicy> {
+export function defaultBotPolicy(mode: "basic" | "riichi" | "legacy"): Readonly<BotPolicy> {
   return mode === "riichi" ? RIICHI_BOT_POLICY : DEFAULT_BOT_POLICY
 }
 
@@ -1058,7 +1058,7 @@ function analyzeCurrentEquity(
   }
 }
 
-function projectedHand(cards: readonly Card[], mode: "basic" | "riichi") {
+function projectedHand(cards: readonly Card[], mode: "basic" | "riichi" | "legacy") {
   const lotusCount = cards.filter((card) => card.kind === "flower").length
   return {
     eligible: lotusCount !== 1,
@@ -1066,7 +1066,7 @@ function projectedHand(cards: readonly Card[], mode: "basic" | "riichi") {
   }
 }
 
-function handPotential(cards: readonly Card[], mode: "basic" | "riichi"): number {
+function handPotential(cards: readonly Card[], mode: "basic" | "riichi" | "legacy"): number {
   const key = mode + ":" + cards.map(cardKey).sort().join("|")
   const cached = potentialCache.get(key)
   if (cached !== undefined) return cached
@@ -1231,7 +1231,7 @@ function bestDrawValue(
   hidden: readonly Card[],
   publicCards: readonly Card[],
   drawn: Card,
-  mode: "basic" | "riichi",
+  mode: "basic" | "riichi" | "legacy",
 ): number {
   return Math.max(
     ...[...hidden, drawn].map((discard) =>

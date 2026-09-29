@@ -1,5 +1,7 @@
 import {
   DRAGONS,
+  LEGACY_SUITS,
+  LEGACY_DRAGONS,
   FLOWERS,
   JOKER_COLORS,
   SUITS,
@@ -15,7 +17,7 @@ import {
   type Wind,
 } from "./types"
 
-export function createDeck(mode: "basic" | "riichi" = "riichi"): Card[] {
+export function createDeck(mode: "basic" | "riichi" | "legacy" = "riichi"): Card[] {
   const cards: Card[] = []
   for (const suit of SUITS) {
     for (let rank = 1; rank <= 9; rank += 1) {
@@ -58,11 +60,33 @@ export function createDeck(mode: "basic" | "riichi" = "riichi"): Card[] {
     throw new Error(`Deck invariant failed: ${cards.length}`)
   }
 
+  if (mode === "legacy") {
+    for (const suit of SUITS)
+      for (let rank = 1; rank <= 9; rank++)
+        cards.push({ ...numberedFace(suit, rank as NumberedRank), id: `${suit}-${rank}-4` })
+    for (const dragon of DRAGONS) cards.push({ ...dragonFace(dragon), id: `dragon-${dragon}-4` })
+    for (const wind of WINDS) cards.push({ ...windFace(wind), id: `wind-${wind}-4` })
+    cards.push({ ...blankFace(), id: "blank-5" })
+    for (const treasure of [1, 2, 3, 4, 5] as const)
+      cards.push({ id: `treasure-${treasure}`, kind: "treasure", treasure, color: "gold" })
+    for (let rank = 1; rank <= 9; rank++)
+      for (let copy = 1; copy <= 4; copy++)
+        cards.push({
+          ...numberedFace("shadow", rank as NumberedRank),
+          id: `shadow-${rank}-${copy}`,
+        })
+    for (let copy = 1; copy <= 4; copy++)
+      cards.push({ ...dragonFace("black"), id: `dragon-black-${copy}` })
+  }
   return cards
 }
 
 export function faceKey(card: CardFace): string {
   switch (card.kind) {
+    case "wild":
+      return `wild-${card.rank}`
+    case "treasure":
+      return `treasure-${card.treasure}`
     case "numbered":
       return `${card.suit}-${card.rank}`
     case "dragon":
@@ -80,6 +104,10 @@ export function faceKey(card: CardFace): string {
 
 export function cardLabel(card: CardFace): string {
   switch (card.kind) {
+    case "wild":
+      return card.rank === "dragon" ? "Wild Dragon" : `Wild ${card.rank}`
+    case "treasure":
+      return "Treasure"
     case "numbered":
       return `${card.rank} ${suitLabel(card.suit)}`
     case "dragon":
@@ -113,7 +141,14 @@ export function numberedFace(suit: Suit, rank: NumberedRank): CardFace {
 }
 
 export function dragonFace(dragon: Dragon): CardFace {
-  const color = dragon === "green" ? "green" : dragon === "white" ? "blue" : "red"
+  const color =
+    dragon === "black"
+      ? "black"
+      : dragon === "green"
+        ? "green"
+        : dragon === "white"
+          ? "blue"
+          : "red"
 
   return { kind: "dragon", dragon, color }
 }
@@ -135,11 +170,23 @@ export function blankFace(): CardFace {
 }
 
 function suitColor(suit: Suit): CardColor {
-  return suit === "bamboo" ? "green" : suit === "dots" ? "blue" : "red"
+  return suit === "shadow"
+    ? "black"
+    : suit === "bamboo"
+      ? "green"
+      : suit === "dots"
+        ? "blue"
+        : "red"
 }
 
-export function suitLabel(suit: Suit): "Bams" | "Dots" | "Craks" {
-  return suit === "bamboo" ? "Bams" : suit === "dots" ? "Dots" : "Craks"
+export function suitLabel(suit: Suit): "Bams" | "Dots" | "Craks" | "Shadow" {
+  return suit === "shadow"
+    ? "Shadow"
+    : suit === "bamboo"
+      ? "Bams"
+      : suit === "dots"
+        ? "Dots"
+        : "Craks"
 }
 
 export function compareCards(left: Card, right: Card): number {
@@ -156,10 +203,14 @@ export function compareCards(left: Card, right: Card): number {
 
 function visualSortKey(card: Card): [number, number, number] {
   switch (card.kind) {
+    case "wild":
+      return [5, 0, card.rank === "dragon" ? 10 : card.rank]
+    case "treasure":
+      return [6, 0, card.treasure]
     case "numbered":
-      return [0, SUITS.indexOf(card.suit), card.rank]
+      return [0, LEGACY_SUITS.indexOf(card.suit), card.rank]
     case "dragon":
-      return [1, DRAGONS.indexOf(card.dragon), 0]
+      return [1, LEGACY_DRAGONS.indexOf(card.dragon), 0]
     case "wind":
       return [2, WINDS.indexOf(card.wind), 0]
     case "flower":

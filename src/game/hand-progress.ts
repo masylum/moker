@@ -1,3 +1,4 @@
+import { HAND_LABELS } from "./hand-ranks"
 import { createDeck, dragonFace, flowerFace, faceKey, numberedFace, windFace } from "./cards"
 import { HAND_RANKS, handRank } from "./hand-ranks"
 import { scoreHand } from "./scoring"
@@ -28,7 +29,7 @@ interface PreparedCards {
 interface PreparedTargets {
   requirements: Requirement[]
   natural: Map<string, { preferred: number; allowed: number }>
-  jokers: Map<CardColor | null, number>
+  jokers: Map<CardColor | "gold" | null, number>
 }
 
 interface HandDefinition {
@@ -90,8 +91,22 @@ const definitions: HandDefinition[] = [
 
 export function analyzeHandProgress(
   cards: readonly Card[],
-  mode: "basic" | "riichi" = "riichi",
+  mode: "basic" | "riichi" | "legacy" = "riichi",
 ): HandProgressSummary[] {
+  if (mode === "legacy") {
+    const score = scoreHand(cards, mode),
+      kind = score.combinations[0]?.kind ?? "high-card"
+    return [
+      {
+        kind,
+        label: HAND_LABELS[kind],
+        rank: score.total,
+        size: score.selectedCardIds.length,
+        missing: 0,
+        matchedCardIds: score.selectedCardIds,
+      },
+    ]
+  }
   const highCard = cards
     .filter((card) => card.kind !== "blank" && card.kind !== "joker" && card.kind !== "flower")
     .sort((left, right) => cardValue(right) - cardValue(left) || left.id.localeCompare(right.id))[0]
@@ -130,9 +145,10 @@ export function analyzeHandProgress(
 /** Count-only projection for bots; shares the rule matcher with UI explanations. */
 export function nextHandPotential(
   cards: readonly Card[],
-  mode: "basic" | "riichi",
+  mode: "basic" | "riichi" | "legacy",
   currentRank: number,
 ): { nextRank: number | null; nextMissing: number | null } {
+  if (mode === "legacy") return { nextRank: null, nextMissing: null }
   const prepared = prepareCards(cards)
   let nextRank: number | null = null
   let nextMissing: number | null = null
@@ -164,11 +180,13 @@ export function nextHandPotential(
 
 export function summarizeHandProgress(
   cards: readonly Card[],
-  mode: "basic" | "riichi" = "riichi",
+  mode: "basic" | "riichi" | "legacy" = "riichi",
 ): {
   currentBest: HandProgressSummary
   nextClosest: HandProgressSummary | null
 } {
+  if (mode === "legacy")
+    return { currentBest: analyzeHandProgress(cards, mode)[0]!, nextClosest: null }
   const score = scoreHand(cards, mode)
   const kind = score.combinations[0]?.kind ?? "high-card"
   const currentBest = { ...summarizeKind(cards, kind), rank: score.total }
@@ -306,7 +324,7 @@ function prepareCards(cards: readonly Card[]): PreparedCards {
 // natural-pair-first rule; Jokers can only fill matching-color non-pair slots.
 function prepareTargets(requirements: Requirement[]): PreparedTargets {
   const natural = new Map<string, { preferred: number; allowed: number }>()
-  const jokers = new Map<CardColor | null, number>()
+  const jokers = new Map<CardColor | "gold" | null, number>()
   requirements.forEach((target, index) => {
     const bit = 1 << index
     const masks = natural.get(target.key) ?? { preferred: 0, allowed: 0 }
