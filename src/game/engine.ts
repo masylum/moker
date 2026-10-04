@@ -63,7 +63,7 @@ export class GameEngine {
     const config = createConfig({ ...partial, playerCount: players.length })
     const random = new SeededRandom(config.seed)
     const state: GameState = {
-      rulesVersion: 6,
+      rulesVersion: 7,
       id: `game-${config.seed}`,
       config,
       rngState: random.state,
@@ -138,8 +138,8 @@ export class GameEngine {
   }
 
   static restore(state: GameState, events: GameEvent[] = []): GameEngine {
-    if (state.rulesVersion !== 6) {
-      throw new Error("This saved game uses obsolete rules. Start a new table for Moker rules v6.")
+    if (state.rulesVersion !== 7) {
+      throw new Error("This saved game uses obsolete rules. Start a new table for Moker rules v7.")
     }
     const restored = structuredClone(state)
     restored.config = createConfig(restored.config)
@@ -345,7 +345,7 @@ export class GameEngine {
     }
     this.state.exposureSelections = {}
     this.emit("cards-revealed", { street: this.state.street, cardIds: revealed })
-    this.openBettingStreet((this.state.street + 1) as 2 | 3 | 4)
+    this.openBettingStreet((this.state.street + 1) as 2 | 3)
   }
 
   legalActions(playerId: string): LegalAction[] {
@@ -638,17 +638,11 @@ export class GameEngine {
             (result.reason === "showdown" && !player.folded && !player.eliminated)
           )
             return player
-          const lotuses = result.winnerIds.includes(player.playerId)
-            ? player.cards.filter((card) => card.kind === "flower")
-            : []
           return {
             ...player,
             openingCards: [],
             acquiredCards: [],
-            cards: [
-              ...player.publicCards,
-              ...lotuses.filter((c) => !player.publicCards.some((p) => p.id === c.id)),
-            ],
+            cards: [...player.publicCards],
             score: { total: 0, selectedCardIds: [], combinations: [], tieBreak: [] },
           }
         }),
@@ -676,7 +670,7 @@ export class GameEngine {
     }
   }
 
-  private openBettingStreet(street: 1 | 2 | 3 | 4): void {
+  private openBettingStreet(street: 1 | 2 | 3): void {
     this.state.street = street
     if (street === 1 && !this.state.streetOpenerId) {
       this.state.streetOpenerId = this.playerAt(this.state.dealerIndex).id
@@ -934,7 +928,7 @@ export class GameEngine {
     const pot = this.state.pot
     winner.chips += pot
     this.state.pot = 0
-    const lotusBluff = this.hasSingleLotus(winner) ? this.payLotusBluff(winner) : null
+    const lotusBluff = null
     this.state.handWinners = [winner.id]
     const settlement = this.resolveRiichi([winner.id])
     const pots: PotResult[] = [
@@ -992,9 +986,7 @@ export class GameEngine {
   }
 
   private showdownWinners(contenders: PlayerState[]): PlayerState[] {
-    const eligible = contenders.filter((player) => !this.hasSingleLotus(player))
-    if (eligible.length === 0) return contenders
-    const pool = eligible.length > 0 ? eligible : contenders
+    const pool = contenders
     const best = pool.map((player) => player.score!).sort((a, b) => compareHandScores(b, a))[0]
     return best ? pool.filter((player) => compareHandScores(player.score!, best) === 0) : pool
   }
@@ -1005,18 +997,6 @@ export class GameEngine {
     const payouts = Object.fromEntries(winners.map((winner) => [winner.id, share]))
     for (const winner of winners) winner.chips += share
     return payouts
-  }
-
-  private payLotusBluff(winner: PlayerState): HandResult["lotusBluff"] {
-    let total = 0
-    for (const opponent of this.state.players) {
-      if (opponent.id === winner.id || opponent.eliminated) continue
-      const paid = Math.min(this.state.orbitValue * 3, opponent.chips)
-      opponent.chips -= paid
-      winner.chips += paid
-      total += paid
-    }
-    return { winnerId: winner.id, perOpponent: this.state.orbitValue * 3, total }
   }
 
   private recordHandResult(
@@ -1054,7 +1034,7 @@ export class GameEngine {
           folded: player.folded,
           eliminated: player.eliminated,
           riichi: player.riichi,
-          lotusDisqualified: reason === "showdown" && this.hasSingleLotus(player),
+          lotusDisqualified: false,
           openingCards: structuredClone(this.state.openingPrivateCards[player.id] ?? []),
           acquiredCards: uniqueCards([
             ...charlestonCards,
@@ -1132,7 +1112,7 @@ export class GameEngine {
   private canDeclareRiichi(player: PlayerState): boolean {
     return (
       this.state.config.mode === "riichi" &&
-      this.state.street <= 3 &&
+      this.state.street < STREET_COUNT &&
       !player.riichi &&
       !this.state.players.some((candidate) => candidate.riichi && !candidate.folded)
     )
@@ -1192,13 +1172,6 @@ export class GameEngine {
     if (action.type === "call") return this.state.currentWager - player.roundCommitted
     if (action.type === "bet") return action.amount - player.roundCommitted
     return 0
-  }
-
-  private hasSingleLotus(player: PlayerState): boolean {
-    return (
-      [...player.privateCards, ...player.publicCards].filter((card) => card.kind === "flower")
-        .length === 1
-    )
   }
 
   private scoreShowdownHand(player: PlayerState) {

@@ -1,5 +1,5 @@
 import { generateHandCandidates, type HandCandidate } from "./melds"
-import { HAND_RANKS, handRank } from "./hand-ranks"
+import { HAND_RANKS, handRank, isHandEnabled } from "./hand-ranks"
 import type { Card, CardFace, HandScore } from "./types"
 
 export type HandStrength = Pick<HandScore, "total" | "tieBreak">
@@ -7,15 +7,11 @@ export type HandStrength = Pick<HandScore, "total" | "tieBreak">
 const strengthCache = new Map<string, HandStrength>()
 const STRENGTH_CACHE_LIMIT = 200_000
 
-/** Scores any subset of the seven Roll Your Own tiles. */
+/** Scores any subset of the six Roll Your Own tiles (at most four scoring cards). */
 export function scoreHand(cards: readonly Card[], mode: "basic" | "riichi" = "riichi"): HandScore {
   return scoreCandidates(
     generateHandCandidates(cards)
-      .filter(
-        (c) =>
-          mode === "riichi" ||
-          !["pung-eye", "three-dragons-eye", "kong", "long-chow", "twin-lotus"].includes(c.kind),
-      )
+      .filter((c) => isHandEnabled(c.kind, mode))
       .map((c) => ({ ...c, score: handRank(c.kind, mode) })),
     highCards(playableCards(cards)),
   )

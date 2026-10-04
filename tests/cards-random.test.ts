@@ -1,27 +1,24 @@
 import { describe, expect, it } from "vitest"
 import { coloredTile, tileGlyph } from "../src/cli/tiles"
-import { cardLabel, createDeck, jokerCanRepresent } from "../src/game/cards"
+import { cardLabel, createDeck, flowerFace, jokerCanRepresent } from "../src/game/cards"
 import { SeededRandom } from "../src/game/random"
 
 describe("deck and seeded randomness", () => {
-  it("builds the exact 112-card deck described by its component list", () => {
+  it("builds the exact 110-card deck described by its component list", () => {
     const deck = createDeck()
-    expect(deck).toHaveLength(112)
-    expect(new Set(deck.map((card) => card.id))).toHaveLength(112)
+    expect(deck).toHaveLength(110)
+    expect(new Set(deck.map((card) => card.id))).toHaveLength(110)
     expect(deck.filter((card) => card.kind === "numbered")).toHaveLength(81)
     expect(deck.filter((card) => card.kind === "dragon")).toHaveLength(9)
     expect(deck.filter((card) => card.kind === "wind")).toHaveLength(12)
     expect(deck.filter((card) => card.kind === "joker")).toHaveLength(4)
     expect(deck.filter((card) => card.kind === "blank")).toHaveLength(4)
-    expect(deck.filter((card) => card.kind === "flower")).toHaveLength(2)
+    expect(deck.filter((card) => card.kind === "flower")).toHaveLength(0)
     expect(deck.find((card) => card.id === "bamboo-1-1")?.color).toBe("green")
     expect(deck.find((card) => card.id === "dots-1-1")?.color).toBe("blue")
     expect(deck.find((card) => card.id === "dragon-white-1")?.color).toBe("blue")
     expect(deck.find((card) => card.id === "wind-east-1")?.color).toBe("black")
     expect(deck.find((card) => card.id === "blank-1")?.color).toBeNull()
-    expect(deck.find((card) => card.id === "flower-white-lotus")?.color).toBeNull()
-    expect(deck.find((card) => card.id === "flower-black-lotus")?.color).toBeNull()
-    expect(cardLabel(deck.find((card) => card.id === "flower-white-lotus")!)).toBe("White Lotus")
   })
 
   it("replays the same shuffle from the same seed", () => {
@@ -33,8 +30,7 @@ describe("deck and seeded randomness", () => {
   })
 
   it("gives neither Lotus a Joker equivalent", () => {
-    const deck = createDeck()
-    const flower = deck.find((card) => card.kind === "flower")!
+    const flower = flowerFace("white-lotus")
 
     expect(jokerCanRepresent({ kind: "joker", color: "black" }, flower)).toBe(false)
     expect(jokerCanRepresent({ kind: "joker", color: "red" }, flower)).toBe(false)
@@ -58,7 +54,7 @@ describe("deck and seeded randomness", () => {
   it("renders colored Unicode Mahjong tiles for the terminal client", () => {
     const bambooOne = createDeck().find((card) => card.id === "bamboo-1-1")!
     const blank = createDeck().find((card) => card.id === "blank-1")!
-    const flowers = createDeck().filter((card) => card.kind === "flower")
+    const flowers = [flowerFace("white-lotus"), flowerFace("black-lotus")]
 
     expect(tileGlyph(bambooOne)).toBe("🀐")
     expect(coloredTile(bambooOne)).toContain("\u001B[32m🀐\u001B[0m")

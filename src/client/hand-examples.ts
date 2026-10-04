@@ -1,4 +1,4 @@
-import { dragonFace, numberedFace, windFace } from "../game/cards"
+import { dragonFace, jokerFace, numberedFace, windFace } from "../game/cards"
 import type { Card, CardFace } from "../game/types"
 
 const bam = numberedFace("bamboo", 3)
@@ -12,21 +12,12 @@ const examples: Record<string, CardFace[][]> = {
   Eyes: [pair],
   Chow: [chow],
   "Two Eyes": [[bam, bam], pair],
-  "Chow and Eyes": [chow, pair],
   "Three Winds": [winds.slice(0, 3)],
   Pung: [[bam, bam, bam]],
   "Three Dragons": [dragons],
-  "Twin Lotus": [
-    [
-      { kind: "flower", flower: "white-lotus", color: null },
-      { kind: "flower", flower: "black-lotus", color: null },
-    ],
-  ],
-  "Long Chow": [[5, 6, 7, 8, 9].map((rank) => numberedFace("dots", rank as 5 | 6 | 7 | 8 | 9))],
+  "Long Chow": [[6, 7, 8, 9].map((rank) => numberedFace("dots", rank as 6 | 7 | 8 | 9))],
   "Four Winds": [winds],
-  "Pung and Eyes": [[bam, bam, bam], pair],
-  "Three Dragons and Eyes": [dragons, pair],
-  Kong: [[bam, bam, bam, bam]],
+  Kong: [[bam, bam, bam, jokerFace("green")]],
 }
 
 export function handExamples(label: string): Card[][] {

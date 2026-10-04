@@ -2,11 +2,7 @@ import { readFileSync } from "node:fs"
 import type { GameState } from "../src/game/types"
 import { describe, expect, it } from "vitest"
 import { GameEngine } from "../src/game/engine"
-import {
-  analyzePokerMath,
-  chooseHeuristicAction,
-  continuationRiskCost,
-} from "../src/game/heuristic"
+import { analyzePokerMath, continuationRiskCost } from "../src/game/heuristic"
 import { createDeck } from "../src/game/cards"
 import { stepHeuristic } from "../src/game/automation"
 
@@ -107,23 +103,6 @@ describe("one loan per game", () => {
 })
 
 describe("Call equity and continuation", () => {
-  it("values the chance to discard a Single Lotus when an all-in call includes fishing", () => {
-    const { game, player } = fixture()
-    const deck = createDeck("riichi")
-    player.privateCards = [
-      deck.find((c) => c.kind === "flower")!,
-      ...deck.filter((c) => c.kind === "numbered").slice(0, 6),
-    ]
-    player.publicCards = []
-    player.chips = 5
-    game.state.currentWager = 5
-    game.state.pot = 1000
-    game.state.allInPlayerIds = [game.state.players.find((p) => p !== player)!.id]
-    expect(analyzePokerMath(game.state, player.id, 24).showdownEquity).toBe(0)
-    const d = chooseHeuristicAction(game.state, player.id, 24)
-    expect(d.evaluations.find((e) => e.action.type === "call")!.estimatedWinRate).toBeGreaterThan(0)
-    expect(d.action.type).toBe("call")
-  })
   it("conditions on raise size and Riichi signals without reading opposing hidden cards", () => {
     const { game, player } = fixture()
     const other = game.state.players.find((p) => p !== player)!
@@ -179,16 +158,11 @@ describe("Call equity and continuation", () => {
   })
 })
 
-it("includes fishing when evaluating the archived Chow + Eye all-in Call", () => {
+it("rejects archived v6 games rather than reinterpreting seven-card hands", () => {
   const state = JSON.parse(
     readFileSync(new URL("./fixtures/riichi-large-call.json", import.meta.url), "utf8"),
   ) as GameState
-  const decision = chooseHeuristicAction(state, "p4", 24)
-  const call = decision.evaluations.find((e) => e.action.type === "call")!
-  expect(call.estimatedWinRate).toBeLessThan(0.5)
-  expect(call.rationale).toContain("next-ante risk cost")
-  expect(decision.action.type).toBe("call")
-  expect(decision.action.type === "call" && decision.action.drawSource).toBeTruthy()
+  expect(() => GameEngine.restore(state)).toThrow(/obsolete/)
 })
 
 describe("optional Charleston loans", () => {

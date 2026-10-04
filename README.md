@@ -2,7 +2,9 @@
 
 A browser and terminal card game for 2–6 players, with a shared deterministic TypeScript engine, heuristic opponents, and persisted Cloudflare game sessions.
 
-The [attached rules](public/rules.md) are the source of truth for rules version 6. Basic play starts with 200 chips, a 5-chip ante, a 102-card deck, and one dealer orbit by default. Browser setup also allows 2–4 continuous orbits, with chips carried over. The Riichi Expansion adds Charleston, Jokers, Blanks, Lotuses, fishing sticks, one automatic ante loan per player per game, and the advanced ladder. Three- and four-game tournaments reset each game and sum adjusted scores.
+The [attached rules](public/rules.md) are the source of truth for rules version 7 (streamlined branch). Each hand has six cards, three streets (0/2/2 newly revealed cards), and combinations of at most four cards. Long Chow now uses four consecutive cards; Lotuses and five-card compound hands are removed. See [variant health and ladder](docs/streamlined-2026-10-04/README.md).
+
+Basic play starts with 200 chips, a 5-chip ante, a 102-card deck, and one dealer orbit by default. Browser setup also allows 2–4 continuous orbits, with chips carried over. The Riichi Expansion adds Charleston, Jokers, Blanks, fishing sticks, one automatic ante loan per player per game, and the advanced ladder. Three- and four-game tournaments reset each game and sum adjusted scores.
 
 The browser uses original cards, logo, and illustrations exported from the supplied Figma file, its chip palette, and Gelica/Dela Gothic One typography. See [asset provenance](docs/design-assets.md) for sources and font loading.
 
@@ -17,7 +19,7 @@ Browser play uses heuristic opponents and needs no API keys. Choose more than on
 
 Rooms retain seat ownership in a browser cookie, so refreshing or reopening the same link in the same browser restores your seat. Use separate browsers/devices (or a private browser window) to test multiple people. Seats stay reserved when someone disconnects; clearing cookies loses access to that seat. The host deals subsequent rounds. The table refreshes once per second, and Durable Object alarms run robot turns independently of connected browsers. Choose your name during setup or when joining a room.
 
-The server authorizes each room action and filters private cards for the current player or observer. Room seeds and RNG state stay private, and legacy debug/event endpoints are blocked for rooms. Single-human games and CLI simulations retain their existing behavior. Old rules-v5 and earlier sessions cannot be resumed under the new engine.
+The server authorizes each room action and filters private cards for the current player or observer. Room seeds and RNG state stay private, and legacy debug/event endpoints are blocked for rooms. Single-human games and CLI simulations retain their existing behavior. Old rules-v6 and earlier sessions cannot be resumed under the new engine.
 
 ## Commands
 
@@ -41,7 +43,7 @@ See [architecture](docs/architecture.md) and [implementation notes](docs/impleme
 npm run simulate -- 20 health-v6 --riichi --workers auto --output /tmp/health.md --jsonl /tmp/health.jsonl --logs /tmp/health-logs
 ```
 
-The summary includes all-ins, Street 4, eliminations, loans and showdown hand win rates. JSONL retains each completed game's full state and events, including hands for subsequent catch-up analysis. `--logs` additionally saves decision alternatives for the first ten seed indices; change this with `--log-count`. Logs increase disk usage, so omit them for throughput-only runs. Aggregate runs discard decision alternatives after use and do not retain all completed games in memory.
+The summary includes all-ins, Street 3, eliminations, loans and showdown hand win rates. JSONL retains each completed game's full state and events, including hands for subsequent catch-up analysis. `--logs` additionally saves decision alternatives for the first ten seed indices; change this with `--log-count`. Logs increase disk usage, so omit them for throughput-only runs. Aggregate runs discard decision alternatives after use and do not retain all completed games in memory.
 
 `--orbits 1` runs shorter smoke checks; `--offset 20` starts at seed index 20. Each game's result is independent of worker count. JSONL completion order can differ: compare by `index` or `seed`, not line position. Progress reports every ten seconds. Ctrl-C terminates workers and leaves completed JSONL records; incomplete games are not recorded. A new invocation replaces its outputs, so choose another path when extending a run. There is no automatic resume. `--help` lists all options.
 

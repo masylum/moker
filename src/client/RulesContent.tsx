@@ -31,7 +31,7 @@ export function RulesContent() {
           <h4>Goal</h4>
           <p>Finish the game with the most chips.</p>
           <p>
-            Each round, build a hand of 7 cards by fishing, choose which cards to reveal, and bet.
+            Each round, build a hand of 6 cards by fishing, choose which cards to reveal, and bet.
             Win the pot by having the strongest hand or making everyone else fold.
           </p>
           <p>
@@ -61,10 +61,6 @@ export function RulesContent() {
               name="card-families"
               description="Winds: North, East, West, South. Bams: 1–9 and Green Dragon. Craks: 1–9 and Red Dragon. Dots: 1–9 and Blue Dragon."
             />
-            <RuleIllustration
-              name="table-setup"
-              description="Your 7 private cards. The pot. The deck and discard lanes."
-            />
           </div>
           <h5>Start a round</h5>
           <ol>
@@ -73,7 +69,7 @@ export function RulesContent() {
               chips you are playing for are the <em>pot.</em>
             </li>
             <li>
-              Shuffle the deck and deal everyone <strong>7 cards,</strong> kept hidden.
+              Shuffle the deck and deal everyone <strong>6 cards,</strong> kept hidden.
             </li>
             <li>
               Put the deck face-down in the middle. Turn over 2 cards beside it, one to start each{" "}
@@ -82,20 +78,16 @@ export function RulesContent() {
           </ol>
         </section>
         <section>
-          <h4>Play the four streets</h4>
-          <RuleIllustration
-            name="streets"
-            description="Street 1: Private hand. Street 2: Reveal 3 cards. Street 3: Reveal 1 card. Street 4: Reveal 1 card. Showdown: Reveal all cards."
-          />
+          <h4>Play the three streets</h4>
           <p>
-            Each round has four betting stages, called <em>streets.</em>
+            Each round has three betting stages, called <em>streets.</em>
           </p>
           <p>
-            On street 1, keep all 7 cards hidden. Before betting on streets 2, 3 and 4, everyone
-            still in secretly chooses and simultaneously reveals 3, then 1, then 1 card.
+            On street 1, keep all 6 cards hidden. Before betting on streets 2 and 3, everyone still
+            in secretly chooses and simultaneously reveals 2, then 2 cards.
           </p>
           <p>Revealed cards stay yours but cannot be exchanged or discarded.</p>
-          <p>After street 4, reveal your last 2 cards and compare hands.</p>
+          <p>After street 3, reveal your last 2 cards and compare hands.</p>
           <h5>Betting</h5>
           <p>The dealer starts street 1.</p>
           <p>
@@ -162,7 +154,7 @@ export function RulesContent() {
           </p>
           <p>
             Revealed cards cannot be discarded. You finish fishing with{" "}
-            <strong>seven cards in total,</strong> counting both hidden and revealed cards.
+            <strong>six cards in total,</strong> counting both hidden and revealed cards.
           </p>
           <h5>All-in</h5>
           <p>
@@ -189,9 +181,8 @@ export function RulesContent() {
           </p>
           <p>
             Once payments and the final fishing action are settled, everyone still in reveals all
-            seven cards. Compare hands and award the pot. Skip the remaining streets, even if a
-            refund gave someone chips back. If everyone but one player folds, that player wins
-            immediately.
+            six cards. Compare hands and award the pot. Skip the remaining streets, even if a refund
+            gave someone chips back. If everyone but one player folds, that player wins immediately.
           </p>
           <h5>Running out of chips</h5>
           <p>
@@ -207,16 +198,15 @@ export function RulesContent() {
               <strong>If everyone else folds:</strong> You win the pot without showing your cards.
             </li>
             <li>
-              <strong>If two or more players remain:</strong> Reveal all cards. Use up to 5 of your
-              7 cards to make your best combination on the Hand Ladder. You may use any of your
+              <strong>If two or more players remain:</strong> Reveal all cards. Use up to 4 of your
+              6 cards to make your best combination on the Hand Ladder. You may use any of your
               cards, including those kept hidden. The highest-ranked hand wins the pot.
             </li>
           </ul>
           <p>
-            If hands have the same rank, compare the larger combination first. For example, compare
-            the <em>Pung</em> before the pair in <em>Pung and Eyes.</em> For <em>Two Eyes,</em>{" "}
-            compare the stronger pair first, then the other pair. Within each combination, compare
-            cards from highest to lowest. The first difference wins.
+            If hands have the same rank, compare the defining cards. For Two Eyes, compare the
+            stronger pair first, then the other pair. Within each combination, compare cards from
+            highest to lowest. The first difference wins.
           </p>
           <p>
             <em>When comparing cards:</em> Winds rank above Dragons, then numbers from 9 down to 1.
@@ -286,7 +276,7 @@ export function RulesContent() {
           <RuleIllustration name="riichi-sticks" description="Riichi sticks" />
           <ul>
             <li>
-              Add the 4 <em>Jokers,</em> 4 <em>Blanks</em> and 2 <em>Lotuses</em> to the deck.
+              Add the 4 <em>Jokers</em> and 4 <em>Blanks</em> to the deck (110 cards total).
             </li>
             <li>
               Give each player{" "}
@@ -388,27 +378,6 @@ export function RulesContent() {
             This replaces your entire fishing action: do not draw or discard another card. Blanks
             have no hand value.
           </p>
-          <h5>Lotuses</h5>
-          <RuleIllustration name="lotuses" description="The two lotuses" />
-          <p>At the end of the round, reveal any Lotuses you hold, even if everyone else folded.</p>
-          <ul>
-            <li>
-              <strong>Both Lotuses:</strong> Form Twin Lotus, ranked above Three Dragons and below
-              Long Chow.
-            </li>
-            <li>
-              <strong>One Lotus:</strong> Lose the showdown, regardless of your other cards. If
-              everyone still in holds one Lotus, split the pot.
-            </li>
-            <li>
-              <strong>One Lotus and everyone else has folded:</strong> Win the pot, plus 3 times the
-              ante from each opponent who played this round.
-            </li>
-          </ul>
-          <p>
-            Anyone who cannot afford the bonus pays only their remaining chips. They cannot borrow
-            and owe nothing more.
-          </p>
         </section>
         <section>
           <h4>Spend Riichi sticks</h4>
@@ -442,8 +411,8 @@ export function RulesContent() {
             description="Win after declaring Riichi to earn 2 sticks."
           />
           <p>
-            On streets 1, 2 or 3, immediately after you bet, you may declare Riichi if nobody else
-            is in Riichi. Declare before fishing or spending a stick. Calling does not qualify.
+            On streets 1 or 2, immediately after you bet, you may declare Riichi if nobody else is
+            in Riichi. Declare before fishing or spending a stick. Calling does not qualify.
           </p>
           <p>
             Take 2 Riichi sticks from the supply and place them on your hidden cards. You earn them

@@ -23,15 +23,15 @@ describe("known hand summaries", () => {
     opponent.knownPrivateCards = [{ id: "remembered", ...windFace("east") }]
     expect(knownHand(opponent, "basic")).toEqual({ label: "", rank: undefined })
   })
-  it("ranks revealed cards with mode-specific ranks", () => {
+  it("ranks revealed cards with streamlined ranks", () => {
     const opponent = player()
     opponent.publicCards = [
       { id: "east", ...windFace("east") },
       { id: "south", ...windFace("south") },
       { id: "west", ...windFace("west") },
     ]
-    expect(knownHand(opponent, "basic")).toEqual({ label: "Three Winds", rank: 6 })
-    expect(knownHand(opponent, "riichi").rank).toBe(7)
+    expect(knownHand(opponent, "basic")).toEqual({ label: "Three Winds", rank: 5 })
+    expect(knownHand(opponent, "riichi").rank).toBe(5)
   })
   it("never counts the same physical card twice", () => {
     const opponent = player()

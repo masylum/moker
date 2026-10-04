@@ -75,7 +75,7 @@ describe("public opponent information", () => {
     const analysis = analyzePokerMath(game.state, "p2", 8)
     expect(analysis.knownOpponentTiles).toBeGreaterThanOrEqual(1)
     expect(analysis.opponentAggressiveActions).toBe(2)
-    expect(game.publicView("p2").players[0]!.privateCards).toEqual({ count: 7 })
+    expect(game.publicView("p2").players[0]!.privateCards).toEqual({ count: 6 })
   })
 
   it("removes folded concealed tiles without leaking the face-down discard", () => {
@@ -87,7 +87,7 @@ describe("public opponent information", () => {
     expect(view).not.toHaveProperty("removedCards")
     expect(view).not.toHaveProperty("foldedPrivateCards")
     expect(game.state.players.find((player) => player.id === folderId)!.privateCards).toEqual([])
-    expect(game.state.foldedPrivateCards[folderId]).toHaveLength(7)
+    expect(game.state.foldedPrivateCards[folderId]).toHaveLength(6)
   })
 })
 

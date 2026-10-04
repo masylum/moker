@@ -39,20 +39,10 @@ const threeWindTargets = WINDS.map((omitted) =>
 export function generateHandCandidates(cards: readonly Card[]): HandCandidate[] {
   const candidates: HandCandidate[] = []
 
-  for (const size of [2, 3, 4, 5]) {
+  for (const size of [2, 3, 4]) {
     forEachSubset(cards.length, size, (indexes, mask) => {
       const subset = indexes.map((index) => cards[index]!)
       if (size === 2) {
-        if (subset.every((card) => card.kind === "flower"))
-          candidates.push({
-            kind: "twin-lotus",
-            label: "Twin Lotus",
-            description: "Both Lotuses",
-            score: HAND_RANKS["twin-lotus"],
-            cardIds: subset.map((card) => card.id),
-            mask,
-            tieBreak: [],
-          })
         addEye(subset, mask, candidates)
       } else if (size === 3) {
         addChow(subset, mask, candidates)
@@ -63,7 +53,6 @@ export function generateHandCandidates(cards: readonly Card[]): HandCandidate[] 
         addTwoEyes(subset, mask, candidates)
         addFourWinds(subset, mask, candidates)
         addKong(subset, mask, candidates)
-      } else {
         const run = runIdentity(subset)
         if (run)
           candidates.push(
@@ -73,10 +62,9 @@ export function generateHandCandidates(cards: readonly Card[]): HandCandidate[] 
               subset,
               mask,
               runTieBreak(run),
-              "Long Chow · five consecutive cards of one suit",
+              "Long Chow · four consecutive cards of one suit",
             ),
           )
-        addCompoundHands(subset, mask, candidates)
       }
     })
   }
@@ -186,56 +174,6 @@ function addKong(cards: Card[], mask: number, candidates: HandCandidate[]): void
   )
 }
 
-function addCompoundHands(cards: Card[], mask: number, candidates: HandCandidate[]): void {
-  forEachSubset(cards.length, 3, (mainIndexes, mainMask) => {
-    const eyeCards = cards.filter((_, index) => (mainMask & (1 << index)) === 0)
-    const eye = naturalPairFace(eyeCards)
-    if (!eye) return
-    const main = mainIndexes.map((index) => cards[index]!)
-
-    const chow = runIdentity(main)
-    if (chow) {
-      candidates.push(
-        candidate(
-          "chow-eye",
-          "Chow + Eye",
-          cards,
-          mask,
-          [...chowTieBreak(chow), faceValue(eye), faceValue(eye)],
-          `Chow + Eye · ${chow.start}-${chow.start + 1}-${chow.start + 2} ${suitLabel(chow.suit)} + ${cardLabel(eye)}`,
-        ),
-      )
-    }
-
-    const pung = identicalFace(main)
-    if (pung && faceKey(pung) !== faceKey(eye)) {
-      candidates.push(
-        candidate(
-          "pung-eye",
-          "Pung + Eye",
-          cards,
-          mask,
-          [...valuesFor([pung, pung, pung]), ...valuesFor([eye, eye])],
-          `Pung + Eye · ${cardLabel(pung)} + ${cardLabel(eye)}`,
-        ),
-      )
-    }
-
-    if (matchesTargets(main, dragonTargets)) {
-      candidates.push(
-        candidate(
-          "three-dragons-eye",
-          "Three Dragons + Eye",
-          cards,
-          mask,
-          [...valuesFor(dragonTargets), ...valuesFor([eye, eye])],
-          `Three Dragons + Eye · ${cardLabel(eye)}`,
-        ),
-      )
-    }
-  })
-}
-
 function addThreeWinds(cards: Card[], mask: number, candidates: HandCandidate[]): void {
   if (cards.length !== 3) return
   const flock = cards
@@ -293,7 +231,7 @@ function naturalPairFaces(cards: readonly Card[]): CardFace[] {
 }
 
 function runIdentity(cards: readonly Card[]): RunIdentity | null {
-  if (cards.length < 3 || cards.length > 5) return null
+  if (cards.length < 3 || cards.length > 4) return null
   for (const suit of SUITS) {
     const naturalRanks: number[] = []
     let compatible = true
@@ -383,7 +321,7 @@ function candidate(
   }
 }
 
-// Only seven-card hands and their subsets are evaluated in normal play.
+// Only six-card hands and their subsets are evaluated in normal play.
 // Cache index combinations, never cards, and retain the original visit order.
 const subsetCache = new Map<string, { indexes: number[]; mask: number }[]>()
 function forEachSubset(

@@ -1,10 +1,10 @@
-# Moker rules
+# Moker streamlined rules (v7)
 
 For **2 to 6 players**.
 
 ## 1. Goal and game length
 
-Build a seven-card hand by fishing, choosing cards to reveal, and betting. Win each round's pot by having the strongest hand or making all opponents fold.
+Build a six-card hand by fishing, choosing cards to reveal, and betting. Win each round's pot by having the strongest hand or making all opponents fold.
 
 After each round, pass the dealer stick clockwise, skipping eliminated players. The game ends when the stick returns to the starting dealer or passes that player's original seat if they were eliminated. It also ends if only one player remains in the game.
 
@@ -29,7 +29,7 @@ The **Blue Dragon** is shown with the symbol 白.
 ## 3. Start a round
 
 1. Each participating player pays the **5-chip ante** into the pot. Tournament antes replace this amount as listed below.
-2. Shuffle the deck and deal each player **seven hidden cards**.
+2. Shuffle the deck and deal each player **six hidden cards**.
 3. Put the remaining deck face-down in the middle.
 4. Turn over two cards from the deck, placing one face-up at the start of each of the two discard lanes.
 
@@ -39,17 +39,16 @@ If the ante uses someone's last chips, finish setting up the round, then reveal 
 
 ## 4. Streets and reveals
 
-Each round has four betting stages, called **streets**.
+Each round has three betting stages, called **streets**.
 
 | Stage    | Reveal before betting                    | Public cards | Hidden cards |
 | -------- | ---------------------------------------- | -----------: | -----------: |
-| Street 1 | None                                     |            0 |            7 |
-| Street 2 | Three cards                              |            3 |            4 |
-| Street 3 | One more card                            |            4 |            3 |
-| Street 4 | One more card                            |            5 |            2 |
-| Showdown | Reveal the last two cards after Street 4 |            7 |            0 |
+| Street 1 | None                                     |            0 |            6 |
+| Street 2 | Two cards                                |            2 |            4 |
+| Street 3 | Two more cards                           |            4 |            2 |
+| Showdown | Reveal the last two cards after Street 3 |            6 |            0 |
 
-Before betting on Streets 2, 3, and 4, everyone still in the round secretly chooses the required cards, then reveals them simultaneously.
+Before betting on Streets 2 and 3, everyone still in secretly chooses two cards, then reveals them simultaneously.
 
 Revealed cards still belong to their owner but cannot be exchanged or discarded.
 
@@ -99,7 +98,7 @@ One normal fishing action consists of:
 
 Keep both lanes visible by overlapping their cards. Always take from and add to the same end of each lane. Taking the available card uncovers the next card in that lane.
 
-You may discard the card you just drew. After fishing, you still have seven cards in total. Public cards cannot be discarded.
+You may discard the card you just drew. After fishing, you still have six cards in total. Public cards cannot be discarded.
 
 The expansion's Blank exchange replaces this entire action.
 
@@ -118,9 +117,9 @@ If the ante itself uses someone's last chips, finish round setup and go directly
 
 ## 8. Ending a round and comparing hands
 
-If everyone else folds, the remaining player wins the pot without showing their cards, except for the expansion's Lotus reveal requirement.
+If everyone else folds, the remaining player wins the pot without showing their cards.
 
-If two or more players remain, reveal all cards. Each player uses **up to five of their seven cards** to form their best listed hand. Any of their cards may be selected, including previously hidden cards. The highest-ranked hand wins the whole pot, subject to the expansion's Lotus rules.
+If two or more players remain, reveal all cards. Each player uses **up to four of their six cards** to form their best listed hand. Any of their cards may be selected, including previously hidden cards. The highest-ranked hand wins the whole pot.
 
 For hands of equal rank:
 
@@ -142,11 +141,11 @@ Ranks run from weakest to strongest.
 | Rank | Hand          | Required combination                |
 | ---: | ------------- | ----------------------------------- |
 |    1 | High Card     | One card                            |
-|    2 | Eyes          | Two identical cards                 |
+|    2 | Eyes          | Two identical natural cards         |
 |    3 | Chow          | Three consecutive cards of one suit |
-|    4 | Two Eyes      | Two pairs of identical cards        |
-|    5 | Chow and Eyes | A Chow plus a pair                  |
-|    6 | Three Winds   | Three different Winds               |
+|    4 | Two Eyes      | Two different natural pairs         |
+|    5 | Three Winds   | Three different Winds               |
+|    6 | Long Chow     | Four consecutive cards of one suit  |
 |    7 | Pung          | Three identical cards               |
 |    8 | Three Dragons | One of each Dragon                  |
 |    9 | Four Winds    | One of each Wind                    |
@@ -174,7 +173,7 @@ Use the Basic Game rules with the following additions and changes.
 
 ### Expansion setup
 
-- Add **four Jokers, four Blanks, and two Lotuses** to the basic deck, for **112 cards** in total.
+- Add **four Jokers and four Blanks** to the basic deck, for **110 cards** in total.
 - Give each player **two Riichi sticks**.
 - Keep remaining Riichi sticks and all loan sticks in the supply.
 - Use the **Advanced Hand Ladder**.
@@ -208,28 +207,13 @@ Each Joker may substitute for one eligible card:
 | Red   | Any Crak or Red Dragon  |
 | Black | Any Wind                |
 
-Jokers may be used only in combinations of **three or more cards**. They cannot complete a pair, including the pair within a larger hand such as Chow and Eyes or Pung and Eyes.
+Jokers may be used only in combinations of **three or more cards**. They cannot complete a pair.
 
 ### Blanks
 
 When fishing, a player may exchange a hidden Blank for **any card in either discard lane**, including a buried card. Leave the Blank in the exact position of the card taken.
 
 This replaces the entire fishing action. Do not draw or discard an additional card. Blanks have no hand value.
-
-### Lotuses
-
-At the end of the round, reveal your Lotuses.
-
-| Situation                                           | Result                                                                         |
-| --------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Hold both Lotuses at showdown                       | Twin Lotus: above Three Dragons, below Long Chow                               |
-| Hold exactly one Lotus at showdown                  | Lose regardless of other cards                                                 |
-| Every remaining showdown player holds one Lotus     | Split the pot equally                                                          |
-| Hold exactly one Lotus and everyone else has folded | Win the pot plus three times the ante from each opponent who played that round |
-
-An opponent who cannot afford the Lotus bonus pays only their remaining chips. They cannot borrow to pay it and owe nothing further.
-
-The uncontested Lotus bonus applies whether the Lotus is hidden or revealed.
 
 ### Charleston
 
@@ -253,7 +237,7 @@ Sticks cannot be spent after folding or while in Riichi. Calling an all-in still
 
 ### Declaring Riichi
 
-On **Street 1, 2, or 3**, immediately after Betting, a player may declare Riichi if nobody else is currently in Riichi. Calling does not qualify.
+On **Street 1 or 2**, immediately after Betting, a player may declare Riichi if nobody else is currently in Riichi. Calling does not qualify.
 
 Place **two Riichi sticks from the supply** on the player's hidden cards as a potential reward. These sticks cannot be spent yet. The reward is always **two sticks**, regardless of the street on which Riichi is declared.
 
@@ -273,21 +257,17 @@ If a player's Bet uses their last chips, they may declare Riichi before anyone r
 
 ## 12. Advanced Hand Ladder
 
-Ranks run from weakest to strongest. Twin Lotus is rank 10, above Three Dragons and below Long Chow.
+Ranks run from weakest to strongest. All combinations use at most four cards.
 
-| Rank | Hand                   | Required combination                |
-| ---: | ---------------------- | ----------------------------------- |
-|    1 | High Card              | One card                            |
-|    2 | Eyes                   | Two identical cards                 |
-|    3 | Chow                   | Three consecutive cards of one suit |
-|    4 | Two Eyes               | Two pairs of identical cards        |
-|    5 | Chow and Eyes          | A Chow plus a pair                  |
-|    6 | Pung                   | Three identical cards               |
-|    7 | Three Winds            | Three different Winds               |
-|    8 | Pung and Eyes          | A Pung plus a pair                  |
-|    9 | Three Dragons          | One of each Dragon                  |
-|   10 | Twin Lotus             | Both Lotuses                        |
-|   11 | Long Chow              | Five consecutive cards of one suit  |
-|   12 | Three Dragons and Eyes | One of each Dragon plus a pair      |
-|   13 | Four Winds             | One of each Wind                    |
-|   14 | Kong                   | Four identical cards                |
+| Rank | Hand          | Required combination                             |
+| ---: | ------------- | ------------------------------------------------ |
+|    1 | High Card     | One card                                         |
+|    2 | Eyes          | Two identical natural cards                      |
+|    3 | Chow          | Three consecutive cards of one suit              |
+|    4 | Two Eyes      | Two different natural pairs                      |
+|    5 | Three Winds   | Three different Winds                            |
+|    6 | Pung          | Three identical cards                            |
+|    7 | Long Chow     | Four consecutive cards of one suit               |
+|    8 | Three Dragons | One of each Dragon                               |
+|    9 | Four Winds    | One of each Wind                                 |
+|   10 | Kong          | Four identical cards (requires a matching Joker) |

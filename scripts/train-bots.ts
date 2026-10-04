@@ -35,7 +35,6 @@ const PARAMETERS: readonly ParameterSpec[] = [
   { key: "maxStackRisk", minimum: 0.35, maximum: 1, sigma: 0.1 },
   { key: "allInEquityFloor", minimum: 0.55, maximum: 0.95, sigma: 0.055 },
   { key: "bluffFrequency", minimum: 0, maximum: 0.15, sigma: 0.025 },
-  { key: "lotusBluffFrequency", minimum: 0.05, maximum: 0.8, sigma: 0.1 },
   { key: "foldPressure", minimum: 0.3, maximum: 1.1, sigma: 0.1 },
   { key: "reserveChips", minimum: 0, maximum: 350, sigma: 45 },
   { key: "standingAwareness", minimum: 0, maximum: 0.9, sigma: 0.11 },

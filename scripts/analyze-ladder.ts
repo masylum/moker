@@ -1,8 +1,9 @@
 import { writeFileSync } from "node:fs"
 import { parseArgs } from "node:util"
 import { createDeck } from "../src/game/cards"
-import { HAND_RANKS, handRank } from "../src/game/hand-ranks"
+import { HAND_RANKS, handRank, isHandEnabled } from "../src/game/hand-ranks"
 import { generateHandCandidates } from "../src/game/melds"
+import { OPENING_PRIVATE_CARD_COUNT } from "../src/game/rules"
 import { SeededRandom } from "../src/game/random"
 import type { HandKind } from "../src/game/types"
 
@@ -15,7 +16,7 @@ const { values, positionals } = parseArgs({
   },
 })
 const samples = Number(positionals[0] ?? 100000)
-const seed = positionals[1] ?? "ladder-v6"
+const seed = positionals[1] ?? "ladder-v7"
 if (
   !Number.isSafeInteger(samples) ||
   samples < 1 ||
@@ -31,9 +32,7 @@ const results = []
 for (const mode of modes) {
   const random = new SeededRandom(`${seed}:${mode}`),
     deck = createDeck(mode)
-  const kinds = (Object.keys(HAND_RANKS) as HandKind[]).filter(
-    (kind) => mode === "riichi" || !["pung-eye", "three-dragons-eye", "kong"].includes(kind),
-  )
+  const kinds = (Object.keys(HAND_RANKS) as HandKind[]).filter((kind) => isHandEnabled(kind, mode))
   const rank = (kind: HandKind) => handRank(kind, mode)
   const rows = Object.fromEntries(
     kinds.map((kind) => [
@@ -48,14 +47,9 @@ for (const mode of modes) {
       },
     ]),
   )
-  let singleLotus = 0,
-    twinLotus = 0,
-    jokerHands = 0
+  let jokerHands = 0
   for (let sample = 0; sample < samples; sample++) {
-    const cards = random.shuffle(deck).slice(0, 7)
-    const flowers = cards.filter((c) => c.kind === "flower").length
-    if (flowers === 1) singleLotus++
-    if (flowers === 2) twinLotus++
+    const cards = random.shuffle(deck).slice(0, OPENING_PRIVATE_CARD_COUNT)
     const candidates = generateHandCandidates(cards.filter((c) => c.kind !== "flower")).filter(
       (c) => kinds.includes(c.kind),
     )
@@ -88,8 +82,6 @@ for (const mode of modes) {
     deckSize: deck.length,
     samples,
     seed: `${seed}:${mode}`,
-    singleLotus,
-    twinLotus,
     jokerHands,
     rows: Object.values(rows).sort((a, b) => a.rank - b.rank),
   })
@@ -101,7 +93,7 @@ const text = results
     [
       `## ${r.mode} — ${r.deckSize} cards`,
       "",
-      `${r.samples} uniform seven-card deals, seed ${r.seed}. Contains counts overlap; best counts partition the ordinary scoring ladder. Lotuses are reported separately.`,
+      `${r.samples} uniform six-card deals, seed ${r.seed}. Contains counts overlap; best counts partition the ordinary scoring ladder.`,
       "",
       "| Rank | Hand | Contains | Frequency | Ordinary best | Joker-dependent contains |",
       "|---:|---|---:|---:|---:|---:|",
@@ -110,7 +102,7 @@ const text = results
           `| ${x.rank} | ${x.kind} | ${x.contains} | ${((100 * x.contains) / r.samples).toFixed(3)}% | ${x.best} | ${x.jokerDependent} |`,
       ),
       "",
-      `Single Lotus: ${r.singleLotus}; Twin Lotus: ${r.twinLotus}; hands with Jokers: ${r.jokerHands}.`,
+      `Hands with Jokers: ${r.jokerHands}.`,
       "",
     ].join("\n"),
   )

@@ -1,0 +1,574 @@
+[
+  {
+    "file": "moker-baseline-basic.jsonl",
+    "rulesVersion": 6,
+    "mode": "basic",
+    "all": {
+      "games": 40,
+      "hands": 628,
+      "showdowns": 245,
+      "showdownPercent": 39.01273885350319,
+      "showdownTiePercent": 2.0408163265306123,
+      "allInPercent": 8.121019108280255,
+      "finalStreetPercent": 45.70063694267516,
+      "bettingActionsPerHand": 11.67515923566879,
+      "fishPerHand": 8.26592356687898,
+      "foldActionPercent": 18.085106382978722,
+      "highCardShowdownPercent": 8.723958333333334,
+      "visibleWinningCombinationPercent": 38.69346733668342,
+      "riichiWonPercent": 0,
+      "riichiDeclarations": 0,
+      "eliminatedPlayers": 9,
+      "loans": 0,
+      "seatWins": {
+        "p2": 12,
+        "p3": 11,
+        "p1": 10.5,
+        "p4": 6.5
+      },
+      "showdownKinds": {
+        "two-eyes": {
+          "appearances": 216,
+          "wins": 61
+        },
+        "eye": {
+          "appearances": 162,
+          "wins": 11
+        },
+        "high-card": {
+          "appearances": 67,
+          "wins": 7
+        },
+        "chow-eye": {
+          "appearances": 142,
+          "wins": 80
+        },
+        "chow": {
+          "appearances": 94,
+          "wins": 18
+        },
+        "pung": {
+          "appearances": 45,
+          "wins": 40
+        },
+        "three-winds": {
+          "appearances": 28,
+          "wins": 20
+        },
+        "three-dragons": {
+          "appearances": 12,
+          "wins": 12
+        },
+        "four-winds": {
+          "appearances": 2,
+          "wins": 2
+        }
+      },
+      "variantViolations": []
+    },
+    "first40": {
+      "games": 40,
+      "hands": 628,
+      "showdowns": 245,
+      "showdownPercent": 39.01273885350319,
+      "showdownTiePercent": 2.0408163265306123,
+      "allInPercent": 8.121019108280255,
+      "finalStreetPercent": 45.70063694267516,
+      "bettingActionsPerHand": 11.67515923566879,
+      "fishPerHand": 8.26592356687898,
+      "foldActionPercent": 18.085106382978722,
+      "highCardShowdownPercent": 8.723958333333334,
+      "visibleWinningCombinationPercent": 38.69346733668342,
+      "riichiWonPercent": 0,
+      "riichiDeclarations": 0,
+      "eliminatedPlayers": 9,
+      "loans": 0,
+      "seatWins": {
+        "p2": 12,
+        "p3": 11,
+        "p1": 10.5,
+        "p4": 6.5
+      },
+      "showdownKinds": {
+        "two-eyes": {
+          "appearances": 216,
+          "wins": 61
+        },
+        "eye": {
+          "appearances": 162,
+          "wins": 11
+        },
+        "high-card": {
+          "appearances": 67,
+          "wins": 7
+        },
+        "chow-eye": {
+          "appearances": 142,
+          "wins": 80
+        },
+        "chow": {
+          "appearances": 94,
+          "wins": 18
+        },
+        "pung": {
+          "appearances": 45,
+          "wins": 40
+        },
+        "three-winds": {
+          "appearances": 28,
+          "wins": 20
+        },
+        "three-dragons": {
+          "appearances": 12,
+          "wins": 12
+        },
+        "four-winds": {
+          "appearances": 2,
+          "wins": 2
+        }
+      },
+      "variantViolations": []
+    }
+  },
+  {
+    "file": "moker-variant-basic.jsonl",
+    "rulesVersion": 7,
+    "mode": "basic",
+    "all": {
+      "games": 80,
+      "hands": 1254,
+      "showdowns": 605,
+      "showdownPercent": 48.24561403508772,
+      "showdownTiePercent": 4.297520661157025,
+      "allInPercent": 8.373205741626794,
+      "finalStreetPercent": 62.759170653907496,
+      "bettingActionsPerHand": 9.965709728867624,
+      "fishPerHand": 6.895534290271132,
+      "foldActionPercent": 18.692486196687206,
+      "highCardShowdownPercent": 14.18953909891248,
+      "visibleWinningCombinationPercent": 46.71814671814672,
+      "riichiWonPercent": 0,
+      "riichiDeclarations": 0,
+      "eliminatedPlayers": 21,
+      "loans": 0,
+      "seatWins": {
+        "p4": 18,
+        "p2": 23.5,
+        "p3": 24,
+        "p1": 14.5
+      },
+      "showdownKinds": {
+        "two-eyes": {
+          "appearances": 433,
+          "wins": 243
+        },
+        "eye": {
+          "appearances": 674,
+          "wins": 77
+        },
+        "chow": {
+          "appearances": 315,
+          "wins": 102
+        },
+        "high-card": {
+          "appearances": 274,
+          "wins": 12
+        },
+        "three-winds": {
+          "appearances": 58,
+          "wins": 44
+        },
+        "pung": {
+          "appearances": 59,
+          "wins": 54
+        },
+        "long-chow": {
+          "appearances": 98,
+          "wins": 83
+        },
+        "three-dragons": {
+          "appearances": 16,
+          "wins": 14
+        },
+        "four-winds": {
+          "appearances": 4,
+          "wins": 4
+        }
+      },
+      "variantViolations": []
+    },
+    "first40": {
+      "games": 40,
+      "hands": 626,
+      "showdowns": 301,
+      "showdownPercent": 48.08306709265176,
+      "showdownTiePercent": 3.654485049833887,
+      "allInPercent": 8.146964856230031,
+      "finalStreetPercent": 61.501597444089455,
+      "bettingActionsPerHand": 9.80670926517572,
+      "fishPerHand": 6.73961661341853,
+      "foldActionPercent": 19.0258999837107,
+      "highCardShowdownPercent": 14.01673640167364,
+      "visibleWinningCombinationPercent": 47.47081712062257,
+      "riichiWonPercent": 0,
+      "riichiDeclarations": 0,
+      "eliminatedPlayers": 10,
+      "loans": 0,
+      "seatWins": {
+        "p4": 9,
+        "p2": 14,
+        "p3": 10,
+        "p1": 7
+      },
+      "showdownKinds": {
+        "two-eyes": {
+          "appearances": 218,
+          "wins": 127
+        },
+        "eye": {
+          "appearances": 335,
+          "wins": 39
+        },
+        "chow": {
+          "appearances": 149,
+          "wins": 42
+        },
+        "high-card": {
+          "appearances": 134,
+          "wins": 2
+        },
+        "three-winds": {
+          "appearances": 29,
+          "wins": 22
+        },
+        "pung": {
+          "appearances": 37,
+          "wins": 33
+        },
+        "long-chow": {
+          "appearances": 47,
+          "wins": 40
+        },
+        "three-dragons": {
+          "appearances": 6,
+          "wins": 6
+        },
+        "four-winds": {
+          "appearances": 1,
+          "wins": 1
+        }
+      },
+      "variantViolations": []
+    }
+  },
+  {
+    "file": "moker-baseline-riichi.jsonl",
+    "rulesVersion": 6,
+    "mode": "riichi",
+    "all": {
+      "games": 40,
+      "hands": 639,
+      "showdowns": 220,
+      "showdownPercent": 34.42879499217528,
+      "showdownTiePercent": 4.090909090909091,
+      "allInPercent": 8.450704225352112,
+      "finalStreetPercent": 38.341158059467915,
+      "bettingActionsPerHand": 10.42566510172144,
+      "fishPerHand": 7.427230046948357,
+      "foldActionPercent": 21.254878414890424,
+      "highCardShowdownPercent": 6.954102920723226,
+      "visibleWinningCombinationPercent": 38.50574712643678,
+      "riichiWonPercent": 92.4812030075188,
+      "riichiDeclarations": 133,
+      "eliminatedPlayers": 1,
+      "loans": 8,
+      "seatWins": {
+        "p1": 9,
+        "p3": 11.5,
+        "p4": 13,
+        "p2": 6.5
+      },
+      "showdownKinds": {
+        "two-eyes": {
+          "appearances": 151,
+          "wins": 12
+        },
+        "eye": {
+          "appearances": 89,
+          "wins": 6
+        },
+        "high-card": {
+          "appearances": 50,
+          "wins": 7
+        },
+        "long-chow": {
+          "appearances": 32,
+          "wins": 26
+        },
+        "pung-eye": {
+          "appearances": 53,
+          "wins": 40
+        },
+        "chow-eye": {
+          "appearances": 122,
+          "wins": 50
+        },
+        "three-winds": {
+          "appearances": 55,
+          "wins": 26
+        },
+        "pung": {
+          "appearances": 56,
+          "wins": 25
+        },
+        "three-dragons": {
+          "appearances": 19,
+          "wins": 13
+        },
+        "chow": {
+          "appearances": 66,
+          "wins": 3
+        },
+        "twin-lotus": {
+          "appearances": 8,
+          "wins": 7
+        },
+        "four-winds": {
+          "appearances": 5,
+          "wins": 5
+        },
+        "kong": {
+          "appearances": 2,
+          "wins": 2
+        },
+        "three-dragons-eye": {
+          "appearances": 11,
+          "wins": 10
+        }
+      },
+      "variantViolations": []
+    },
+    "first40": {
+      "games": 40,
+      "hands": 639,
+      "showdowns": 220,
+      "showdownPercent": 34.42879499217528,
+      "showdownTiePercent": 4.090909090909091,
+      "allInPercent": 8.450704225352112,
+      "finalStreetPercent": 38.341158059467915,
+      "bettingActionsPerHand": 10.42566510172144,
+      "fishPerHand": 7.427230046948357,
+      "foldActionPercent": 21.254878414890424,
+      "highCardShowdownPercent": 6.954102920723226,
+      "visibleWinningCombinationPercent": 38.50574712643678,
+      "riichiWonPercent": 92.4812030075188,
+      "riichiDeclarations": 133,
+      "eliminatedPlayers": 1,
+      "loans": 8,
+      "seatWins": {
+        "p1": 9,
+        "p3": 11.5,
+        "p4": 13,
+        "p2": 6.5
+      },
+      "showdownKinds": {
+        "two-eyes": {
+          "appearances": 151,
+          "wins": 12
+        },
+        "eye": {
+          "appearances": 89,
+          "wins": 6
+        },
+        "high-card": {
+          "appearances": 50,
+          "wins": 7
+        },
+        "long-chow": {
+          "appearances": 32,
+          "wins": 26
+        },
+        "pung-eye": {
+          "appearances": 53,
+          "wins": 40
+        },
+        "chow-eye": {
+          "appearances": 122,
+          "wins": 50
+        },
+        "three-winds": {
+          "appearances": 55,
+          "wins": 26
+        },
+        "pung": {
+          "appearances": 56,
+          "wins": 25
+        },
+        "three-dragons": {
+          "appearances": 19,
+          "wins": 13
+        },
+        "chow": {
+          "appearances": 66,
+          "wins": 3
+        },
+        "twin-lotus": {
+          "appearances": 8,
+          "wins": 7
+        },
+        "four-winds": {
+          "appearances": 5,
+          "wins": 5
+        },
+        "kong": {
+          "appearances": 2,
+          "wins": 2
+        },
+        "three-dragons-eye": {
+          "appearances": 11,
+          "wins": 10
+        }
+      },
+      "variantViolations": []
+    }
+  },
+  {
+    "file": "moker-variant-riichi.jsonl",
+    "rulesVersion": 7,
+    "mode": "riichi",
+    "all": {
+      "games": 80,
+      "hands": 1279,
+      "showdowns": 504,
+      "showdownPercent": 39.405785770132916,
+      "showdownTiePercent": 4.365079365079365,
+      "allInPercent": 8.991399530883502,
+      "finalStreetPercent": 44.17513682564503,
+      "bettingActionsPerHand": 8.900703674745895,
+      "fishPerHand": 5.831118060985145,
+      "foldActionPercent": 23.94588896697119,
+      "highCardShowdownPercent": 11.290322580645162,
+      "visibleWinningCombinationPercent": 58.064516129032256,
+      "riichiWonPercent": 83.10185185185185,
+      "riichiDeclarations": 432,
+      "eliminatedPlayers": 1,
+      "loans": 27,
+      "seatWins": {
+        "p4": 19.5,
+        "p3": 14,
+        "p1": 18.5,
+        "p2": 28
+      },
+      "showdownKinds": {
+        "two-eyes": {
+          "appearances": 323,
+          "wins": 128
+        },
+        "three-dragons": {
+          "appearances": 49,
+          "wins": 47
+        },
+        "long-chow": {
+          "appearances": 172,
+          "wins": 124
+        },
+        "chow": {
+          "appearances": 294,
+          "wins": 54
+        },
+        "four-winds": {
+          "appearances": 16,
+          "wins": 16
+        },
+        "eye": {
+          "appearances": 353,
+          "wins": 20
+        },
+        "pung": {
+          "appearances": 136,
+          "wins": 81
+        },
+        "high-card": {
+          "appearances": 182,
+          "wins": 12
+        },
+        "three-winds": {
+          "appearances": 81,
+          "wins": 39
+        },
+        "kong": {
+          "appearances": 6,
+          "wins": 6
+        }
+      },
+      "variantViolations": []
+    },
+    "first40": {
+      "games": 40,
+      "hands": 640,
+      "showdowns": 255,
+      "showdownPercent": 39.84375,
+      "showdownTiePercent": 3.9215686274509802,
+      "allInPercent": 8.75,
+      "finalStreetPercent": 43.90625,
+      "bettingActionsPerHand": 8.809375,
+      "fishPerHand": 5.6515625,
+      "foldActionPercent": 24.33487052146151,
+      "highCardShowdownPercent": 11.955168119551681,
+      "visibleWinningCombinationPercent": 59.9009900990099,
+      "riichiWonPercent": 83.70044052863436,
+      "riichiDeclarations": 227,
+      "eliminatedPlayers": 0,
+      "loans": 13,
+      "seatWins": {
+        "p4": 7.5,
+        "p3": 7,
+        "p1": 9.5,
+        "p2": 16
+      },
+      "showdownKinds": {
+        "two-eyes": {
+          "appearances": 155,
+          "wins": 59
+        },
+        "three-dragons": {
+          "appearances": 32,
+          "wins": 31
+        },
+        "long-chow": {
+          "appearances": 89,
+          "wins": 65
+        },
+        "chow": {
+          "appearances": 146,
+          "wins": 27
+        },
+        "four-winds": {
+          "appearances": 7,
+          "wins": 7
+        },
+        "eye": {
+          "appearances": 169,
+          "wins": 10
+        },
+        "pung": {
+          "appearances": 62,
+          "wins": 35
+        },
+        "high-card": {
+          "appearances": 96,
+          "wins": 5
+        },
+        "three-winds": {
+          "appearances": 44,
+          "wins": 23
+        },
+        "kong": {
+          "appearances": 3,
+          "wins": 3
+        }
+      },
+      "variantViolations": []
+    }
+  }
+]

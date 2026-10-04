@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import { GameEngine } from "../src/game/engine"
 import { stepHeuristic } from "../src/game/automation"
 import { chooseHeuristicAction, defaultBotPolicy } from "../src/game/heuristic"
-import { numberedFace, createDeck } from "../src/game/cards"
+import { createDeck } from "../src/game/cards"
 
 function fixture(mode: "basic" | "riichi") {
   const game = GameEngine.create(
@@ -65,13 +65,22 @@ describe("shared Check/Call fishing", () => {
       expect(game.state.deck.length).toBe(before)
     }
   })
-  it("values a free Call followed by a paid dig for Twin Lotus", () => {
+  it("values a free Call followed by a paid dig for Kong", () => {
     const { game, player } = fixture("riichi")
-    const cards = createDeck("riichi"),
-      flowers = cards.filter((c) => c.kind === "flower")
-    player.privateCards = [flowers[0]!, ...cards.filter((c) => c.kind === "numbered").slice(0, 6)]
+    const cards = createDeck("riichi")
+    player.privateCards = [
+      "bamboo-8-1",
+      "bamboo-8-2",
+      "bamboo-8-3",
+      "dots-1-1",
+      "characters-4-1",
+      "dots-6-1",
+    ].map((id) => cards.find((c) => c.id === id)!)
     player.publicCards = []
-    game.state.discardA = [flowers[1]!, cards.find((c) => c.kind === "wind")!]
+    game.state.discardA = [
+      cards.find((c) => c.id === "joker-green")!,
+      cards.find((c) => c.kind === "wind")!,
+    ]
     game.state.discardB = []
     game.state.pot = 1000
     game.state.currentWager = 5
@@ -80,7 +89,6 @@ describe("shared Check/Call fishing", () => {
       betEquityFloor: 2,
       raiseEquityFloor: 2,
       bluffFrequency: 0,
-      lotusBluffFrequency: 0,
     })
     const paid = decision.evaluations.find(
       (e) => e.action.type === "call" && e.action.useRiichiStick,
@@ -195,8 +203,15 @@ it("lets a last-hand trailer consider the necessary shove even below normal aggr
 
 it("does not invent substantial fold equity for a five-chip raise into a thousand-chip pot", () => {
   const { game, player } = fixture("riichi")
-  const flowers = createDeck("riichi").filter((c) => c.kind === "flower")
-  player.privateCards.splice(0, 2, ...flowers)
+  const deck = createDeck("riichi")
+  player.privateCards = [
+    "wind-east-1",
+    "wind-south-1",
+    "wind-west-1",
+    "wind-north-1",
+    "dots-1-1",
+    "bamboo-9-1",
+  ].map((id) => deck.find((c) => c.id === id)!)
   game.state.currentWager = 100
   game.state.pot = 1000
   player.roundCommitted = 100
@@ -252,12 +267,12 @@ it("banks a guaranteed Basic tournament win early, reserving every remaining ant
   expect(chooseHeuristicAction(game.state, player.id, 24).rationale).not.toContain("guarantees")
 })
 
-it("reserves the possible Single Lotus fee before guaranteeing a final Riichi lead", () => {
+it("protects a final Riichi lead without reserving a removed Lotus fee", () => {
   const { game, player } = fixture("riichi")
   game.state.dealerSteps = game.state.maxHands - 1
   player.privateCards = createDeck("riichi")
     .filter((c) => c.kind === "numbered")
-    .slice(0, 7)
+    .slice(0, 6)
   player.publicCards = []
   player.chips = 410
   game.state.pot = 30
@@ -266,25 +281,27 @@ it("reserves the possible Single Lotus fee before guaranteeing a final Riichi le
     p.chips = i === 0 ? 360 : 0
     p.folded = i > 0
   })
-  expect(chooseHeuristicAction(game.state, player.id, 24).rationale).not.toContain("guarantees")
+  expect(chooseHeuristicAction(game.state, player.id, 24).rationale).toContain("guarantees")
   player.chips = 420
   others[0]!.chips = 350
   expect(chooseHeuristicAction(game.state, player.id, 24).rationale).toContain("guarantees")
 })
 
-it("does not consider known Twin Lotus unbeatable", () => {
+it("recognizes a publicly unbeatable Riichi hand without imaginary Lotus outs", () => {
   const { game, player } = fixture("riichi")
-  player.privateCards = [1, 2, 3, 4, 5, 6, 7].map((rank) => ({
-    id: `long-${rank}`,
-    ...numberedFace("dots", rank as 1 | 2 | 3 | 4 | 5 | 6 | 7),
-  }))
+  const deck = createDeck("riichi")
+  player.privateCards = [
+    "dots-1-1",
+    "dots-3-1",
+    "dots-5-1",
+    "characters-2-1",
+    "characters-6-1",
+    "characters-9-1",
+  ].map((id) => deck.find((c) => c.id === id)!)
   player.publicCards = []
   const opponent = game.state.players.find((p) => p !== player)!
-  opponent.publicCards = createDeck("riichi").filter((c) => c.kind === "flower")
-  game.state.currentWager = 5
-  game.state.pot = 1000
-  game.state.allInPlayerIds = []
-  const decision = chooseHeuristicAction(game.state, player.id, 24)
-  expect(decision.rationale).not.toContain("cannot be beaten or outdrawn")
-  expect(decision.evaluations.some((e) => e.estimatedWinRate > 0)).toBe(true)
+  opponent.publicCards = ["wind-east-1", "wind-east-2", "wind-east-3", "joker-black"].map((id) =>
+    deck.find((c) => c.id === id)!,
+  )
+  expect(analyzePokerMath(game.state, player.id, 24).showdownEquity).toBe(0)
 })

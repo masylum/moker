@@ -1,5 +1,5 @@
-import { createDeck, dragonFace, flowerFace, faceKey, numberedFace, windFace } from "./cards"
-import { HAND_RANKS, handRank } from "./hand-ranks"
+import { createDeck, dragonFace, faceKey, numberedFace, windFace } from "./cards"
+import { HAND_RANKS, handRank, isHandEnabled } from "./hand-ranks"
 import { scoreHand } from "./scoring"
 import {
   DRAGONS,
@@ -44,19 +44,15 @@ const chowAlternatives = SUITS.flatMap((suit) =>
   Array.from({ length: 7 }, (_, index) => chowRequirements(suit, index + 1)),
 )
 const definitions: HandDefinition[] = [
-  exactDefinition("twin-lotus", "Twin Lotus", 2, [
-    [requirement(flowerFace("white-lotus"), true), requirement(flowerFace("black-lotus"), true)],
-  ]),
   exactDefinition(
     "long-chow",
     "Long Chow",
-    5,
-    SUITS.flatMap((suit) => Array.from({ length: 5 }, (_, i) => runRequirements(suit, i + 1, 5))),
+    4,
+    SUITS.flatMap((suit) => Array.from({ length: 6 }, (_, i) => runRequirements(suit, i + 1, 4))),
   ),
   exactDefinition("eye", "Eye", 2, eyeAlternatives),
   exactDefinition("chow", "Chow", 3, chowAlternatives),
   exactDefinition("two-eyes", "Two Eyes", 4, twoEyeAlternatives()),
-  exactDefinition("chow-eye", "Chow + Eye", 5, [...compoundAlternatives(chowAlternatives, true)]),
   exactDefinition(
     "pung",
     "Pung",
@@ -66,7 +62,6 @@ const definitions: HandDefinition[] = [
   exactDefinition("three-dragons", "Three Dragons", 3, [
     DRAGONS.map((dragon) => requirement(dragonFace(dragon), false)),
   ]),
-  exactDefinition("pung-eye", "Pung + Eye", 5, pungEyeAlternatives()),
   exactDefinition("three-winds", "Three Winds", 3, threeWindsAlternatives()),
   exactDefinition("four-winds", "Four Winds", 4, [
     WINDS.map((wind) => requirement(windFace(wind), false)),
@@ -76,15 +71,6 @@ const definitions: HandDefinition[] = [
     "Kong",
     4,
     naturalFaces.map((face) => repeat(face, 4, false)),
-  ),
-  exactDefinition(
-    "three-dragons-eye",
-    "Three Dragons + Eye",
-    5,
-    naturalFaces.map((face) => [
-      ...DRAGONS.map((dragon) => requirement(dragonFace(dragon), false)),
-      ...repeat(face, 2, true),
-    ]),
   ),
 ]
 
@@ -108,11 +94,7 @@ export function analyzeHandProgress(
 
   const prepared = prepareCards(cards)
   for (const definition of definitions) {
-    if (
-      mode === "basic" &&
-      ["pung-eye", "three-dragons-eye", "kong", "long-chow", "twin-lotus"].includes(definition.kind)
-    )
-      continue
+    if (!isHandEnabled(definition.kind, mode)) continue
     const match = bestAlternativeMatch(prepared, definition.alternatives)
     evaluations.push({
       kind: definition.kind,
@@ -137,11 +119,7 @@ export function nextHandPotential(
   let nextRank: number | null = null
   let nextMissing: number | null = null
   for (const definition of definitions) {
-    if (
-      mode === "basic" &&
-      ["pung-eye", "three-dragons-eye", "kong", "long-chow", "twin-lotus"].includes(definition.kind)
-    )
-      continue
+    if (!isHandEnabled(definition.kind, mode)) continue
     const rank = handRank(definition.kind, mode)
     if (rank <= currentRank) continue
     let matched = 0
@@ -245,27 +223,6 @@ function twoEyeAlternatives(): Requirement[][] {
       .map((right) => [...repeat(left, 2, true), ...repeat(right, 2, true)]),
   )
   return normal
-}
-
-function compoundAlternatives(
-  mainAlternatives: readonly Requirement[][],
-  allowSameFace: boolean,
-): Requirement[][] {
-  return mainAlternatives.flatMap((main) =>
-    naturalFaces
-      .filter(
-        (face) => allowSameFace || !main.some((target) => faceKey(target.face) === faceKey(face)),
-      )
-      .map((face) => [...main, ...repeat(face, 2, true)]),
-  )
-}
-
-function pungEyeAlternatives(): Requirement[][] {
-  return naturalFaces.flatMap((pung) =>
-    naturalFaces
-      .filter((eye) => faceKey(eye) !== faceKey(pung))
-      .map((eye) => [...repeat(pung, 3, false), ...repeat(eye, 2, true)]),
-  )
 }
 
 function threeWindsAlternatives(): Requirement[][] {

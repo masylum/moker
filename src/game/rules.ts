@@ -1,6 +1,6 @@
 import type { GameConfig, GameState, PlayerState } from "./types"
 
-export const STREET_COUNT = 4
+export const STREET_COUNT = 3
 const STARTING_CHIPS = 200
 export const STARTING_RIICHI_STICKS = 2
 export const RIICHI_WIN_STICKS = 2
@@ -22,9 +22,10 @@ export function canTakeLoan(
     player.loans < MAX_LOANS
   )
 }
-export const OPENING_PRIVATE_CARD_COUNT = 7
+export const OPENING_PRIVATE_CARD_COUNT = 6
 export const CHARLESTON_PASS_COUNT = 2
-export const STREET_REVEAL_COUNTS = [3, 1, 1, 0] as const
+/** Cards exposed after each street: betting sees 0, 2, then 4 public cards. */
+export const STREET_REVEAL_COUNTS = [2, 2, 0] as const
 export const CHIP_UNIT = 5
 
 export function toChipUnit(amount: number): number {

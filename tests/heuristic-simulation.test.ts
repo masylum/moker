@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { flowerFace, numberedFace } from "../src/game/cards"
+import { blankFace, numberedFace, windFace } from "../src/game/cards"
 import { stepHeuristic } from "../src/game/automation"
 import { GameEngine } from "../src/game/engine"
 import {
@@ -41,7 +41,7 @@ describe("rules-v5 bot intelligence", () => {
     expect(game.state.charlestonHistory).toHaveLength(4)
   })
 
-  it("selects exactly the scheduled reveal count and keeps a lone Lotus flexible", () => {
+  it("selects exactly the scheduled reveal count and keeps a Blank available for exchange", () => {
     const game = engine("bot-reveal")
     finishCharleston(game)
     while (game.state.phase === "betting") {
@@ -57,14 +57,13 @@ describe("rules-v5 bot intelligence", () => {
     const player = game.state.players.find(
       (candidate) => candidate.id === game.state.actingPlayerId,
     )!
-    player.privateCards = player.privateCards.filter((card) => card.kind !== "flower")
-    player.privateCards[0] = { ...flowerFace("white-lotus"), id: "forced-lone-lotus" }
+    player.privateCards[0] = { ...blankFace(), id: "forced-blank" }
     const choice = chooseHeuristicExposure(game.state, player.id)
-    expect(choice.cardIds).toHaveLength(3)
-    expect(choice.cardIds).not.toContain("forced-lone-lotus")
+    expect(choice.cardIds).toHaveLength(2)
+    expect(choice.cardIds).not.toContain("forced-blank")
   })
 
-  it("accounts for all seven cards and only public opponent information in equity", () => {
+  it("accounts for all six cards and only public opponent information in equity", () => {
     const game = engine("bot-equity")
     finishCharleston(game)
     const actor = game.state.actingPlayerId!
@@ -122,10 +121,14 @@ describe("rules-v5 bot intelligence", () => {
     finishCharleston(game)
     const actor = game.state.actingPlayerId!
     const player = game.state.players.find((candidate) => candidate.id === actor)!
-    player.privateCards = [7, 7, 7, 8, 8, 2, 4].map((rank, index) => ({
-      ...numberedFace("bamboo", rank as 1 | 2 | 3 | 4 | 5 | 7 | 9),
-      id: `strong-${index}`,
-    }))
+    player.privateCards = [
+      ...(["east", "south", "west", "north"] as const).map((wind) => ({
+        ...windFace(wind),
+        id: wind,
+      })),
+      { ...numberedFace("dots", 1), id: "d1" },
+      { ...numberedFace("bamboo", 9), id: "b9" },
+    ]
     const policy = {
       ...DEFAULT_BOT_POLICY,
       betEquityFloor: 0,
@@ -190,7 +193,7 @@ describe("rules-v5 bot intelligence", () => {
     }
   })
 
-  it("produces diverse winners and valid 5-public/2-concealed showdowns in a batch", () => {
+  it("produces diverse winners and valid 4-public/2-concealed showdowns in a batch", () => {
     const results = simulateMany(6, { seedPrefix: "health-smoke-v3", heuristicSamples: 2 })
     const winners = new Set(
       results.map(
@@ -202,8 +205,8 @@ describe("rules-v5 bot intelligence", () => {
       .flatMap((result) => result.state.handResults)
       .filter((candidateHand) => candidateHand.reason === "showdown")) {
       for (const player of resultHand.players.filter((candidate) => !candidate.folded)) {
-        expect(player.cards).toHaveLength(7)
-        expect(resultHand.allInPlayerIds.length > 0 || player.publicCards.length === 5).toBe(true)
+        expect(player.cards).toHaveLength(6)
+        expect(resultHand.allInPlayerIds.length > 0 || player.publicCards.length === 4).toBe(true)
       }
     }
   }, 30_000)

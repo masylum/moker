@@ -24,7 +24,7 @@ const { values, positionals } = parseArgs({
   },
 })
 if (values.help) {
-  console.log(`Usage: npm run simulate -- [count=10] [seed=moker-v6] [options]
+  console.log(`Usage: npm run simulate -- [count=10] [seed=moker-v7] [options]
   --workers auto|N  Concurrent CPU processes (auto: all available cores)
   --samples N       Equity trials, default 24; unchanged by parallelism
   --orbits N        Dealer orbits per game, default 4 (1–4)
@@ -46,7 +46,7 @@ const integer = (value: string, minimum = 1) => {
   return n
 }
 const count = integer(positionals[0] ?? "10")
-const seedPrefix = positionals[1] ?? "moker-v6"
+const seedPrefix = positionals[1] ?? "moker-v7"
 const samples = integer(values.samples!)
 const workers = Math.min(
   count,
@@ -71,7 +71,7 @@ let completed = 0,
   hands = 0,
   showdowns = 0,
   allIns = 0,
-  street4 = 0,
+  street3 = 0,
   eliminated = 0,
   loans = 0,
   riichies = 0,
@@ -166,7 +166,7 @@ try {
       for (const hand of state.handResults) {
         hands++
         if (hand.allInPlayerIds.length) allIns++
-        if (hand.bettingHistory.some((a) => a.street === 4)) street4++
+        if (hand.bettingHistory.some((a) => a.street === 3)) street3++
         if (hand.lotusBluff) lotusBonuses++
         for (const action of hand.bettingHistory)
           actions[action.type] = (actions[action.type] ?? 0) + 1
@@ -197,7 +197,7 @@ try {
 const seconds = (performance.now() - started) / 1000
 const pct = (n: number) => `${n} (${hands ? ((100 * n) / hands).toFixed(1) : "0"}%)`
 const report = [
-  `# Moker rules-v6 simulation — ${config.mode}`,
+  `# Moker rules-v7 simulation — ${config.mode}`,
   "",
   `${count} runs × ${config.tournamentGames} games, ${config.orbits} orbits per game, ${hands} hands, ${config.startingChips} starting chips.`,
   `Seeds ${seedPrefix}-${offset} through ${seedPrefix}-${offset + count - 1}; ${samples} joint equity trials per projection (up to four opponent completions within a trial).`,
@@ -208,7 +208,7 @@ const report = [
   `| Invariant violations | ${violations.length} |`,
   `| Showdowns | ${pct(showdowns)} |`,
   `| All-in hands | ${pct(allIns)} |`,
-  `| Street 4 hands | ${pct(street4)} |`,
+  `| Street 3 hands | ${pct(street3)} |`,
   `| Eliminated players | ${eliminated}/${count * 4 * config.tournamentGames} |`,
   `| Checks / calls / bets / folds | ${["check", "call", "bet", "fold"].map((type) => actions[type]).join(" / ")} |`,
   `| Loans taken | ${loans} |`,

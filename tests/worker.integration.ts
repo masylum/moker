@@ -99,7 +99,7 @@ describe("Cloudflare Worker and Durable Object persistence", () => {
       analyses: unknown[]
     }>()
     expect(debug.status).toBe(200)
-    expect(debugBody.state.players.every((player) => player.privateCards.length === 7)).toBe(true)
+    expect(debugBody.state.players.every((player) => player.privateCards.length === 6)).toBe(true)
     expect(debugBody.analyses).toHaveLength(4)
   })
   it("runs and reports simulation batches at the app's 24-sample budget", async () => {

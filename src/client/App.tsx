@@ -45,8 +45,8 @@ const BASIC_LADDER = [
   ["Eyes", "Two identical cards"],
   ["Chow", "Three consecutive, one suit"],
   ["Two Eyes", "Two pairs"],
-  ["Chow and Eyes", "A Chow + a pair"],
   ["Three Winds", "Three different Winds"],
+  ["Long Chow", "Four consecutive cards of one suit"],
   ["Pung", "Three identical cards"],
   ["Three Dragons", "One of each Dragon"],
   ["Four Winds", "One of each Wind"],
@@ -55,12 +55,7 @@ const ADVANCED_LADDER = [
   ...BASIC_LADDER.slice(0, 5),
   BASIC_LADDER[6]!,
   BASIC_LADDER[5]!,
-  ["Pung and Eyes", "A Pung + a pair"],
-  BASIC_LADDER[7]!,
-  ["Twin Lotus", "Both Lotuses"],
-  ["Long Chow", "Five consecutive cards of the same suit"],
-  ["Three Dragons and Eyes", "Three Dragons + a pair"],
-  BASIC_LADDER[8]!,
+  ...BASIC_LADDER.slice(7),
   ["Kong", "Four identical cards"],
 ]
 
@@ -72,7 +67,7 @@ export function App() {
   onCleanup(() => audio.dispose())
   const [musicOn, setMusicOn] = createSignal(audio.musicEnabled())
   const [effectsOn, setEffectsOn] = createSignal(audio.effectsEnabled())
-  const [session, setSession] = createSignal(localStorage.getItem("moker-v6-session") ?? "")
+  const [session, setSession] = createSignal(localStorage.getItem("moker-v7-session") ?? "")
   const [state, setState] = createSignal<PublicGameState>()
   const savedName = localStorage.getItem("moker-name")?.trim()
   const [name, setName] = createSignal(
@@ -375,7 +370,7 @@ export function App() {
       )
       setViewer(undefined)
       setSession(result.sessionId)
-      localStorage.setItem("moker-v6-session", result.sessionId)
+      localStorage.setItem("moker-v7-session", result.sessionId)
       setAuto(true)
       setCopied(false)
       if (result.state.room) window.history.pushState(null, "", `/rooms/${result.sessionId}`)
@@ -809,7 +804,7 @@ export function App() {
                   )}
                   total={game().players.length}
                 />
-                <CycleBars label="Street" current={game().street} total={4} />
+                <CycleBars label="Street" current={game().street} total={3} />
                 <div class="ante-stat">
                   <span>Ante</span>
                   <span class="chip chip-5">{game().orbitValue}</span>
@@ -1640,9 +1635,6 @@ export function App() {
                               .join(" & ")}{" "}
                             {result().winnerIds.length === 1 ? "wins." : "win."}
                           </h2>
-                          <Show when={result().lotusBluff}>
-                            <p>Lotus bonus: +{result().lotusBluff?.total} chips.</p>
-                          </Show>
                           <div class="result-hands">
                             <For each={result().players.filter((p) => !p.eliminated)}>
                               {(p) => (
@@ -1661,11 +1653,9 @@ export function App() {
                                     <span>
                                       {p.folded
                                         ? "Folded"
-                                        : p.lotusDisqualified
-                                          ? "One Lotus · loses showdown"
-                                          : p.score.total === 0
-                                            ? "Hand kept hidden"
-                                            : `${p.score.total} - ${p.score.combinations[0]?.label ?? "High Card"}`}
+                                        : p.score.total === 0
+                                          ? "Hand kept hidden"
+                                          : `${p.score.total} - ${p.score.combinations[0]?.label ?? "High Card"}`}
                                     </span>
                                     <small class="result-committed">
                                       <strong>
@@ -2225,15 +2215,9 @@ function FrontpageDecor(props: { special?: boolean; visible?: boolean } = {}) {
     const direction = props.special ? -1 : 1
     return {
       image: props.special
-        ? [
-            "blank.svg",
-            "windj.svg",
-            "lotusb.svg",
-            "crakj.svg",
-            "lotusw.svg",
-            "bamj.png",
-            "dotj.svg",
-          ][index]!
+        ? ["blank.svg", "windj.svg", "dotj.svg", "crakj.svg", "windj.svg", "bamj.png", "dotj.svg"][
+            index
+          ]!
         : pool.splice(Math.floor(Math.random() * pool.length), 1)[0]!,
       // Shared geometry; only horizontal positions and angles are mirrored.
       offset: `${direction * ((position - 3) * 13 + (backRow ? 6 : 0))}%`,

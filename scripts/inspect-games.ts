@@ -94,7 +94,7 @@ function renderHand(hand: HandResult): void {
     .filter((player) => hand.winnerIds.includes(player.playerId))
     .map((player) => `${player.playerId} ${player.score.combinations[0]?.label ?? "High Card"}`)
     .join(", ")
-  const actions = ([1, 2, 3, 4] as const)
+  const actions = ([1, 2, 3] as const)
     .map((street) => {
       const records = hand.bettingHistory.filter((record) => record.street === street)
       return records.length > 0 ? `S${street} ${records.map(formatAction).join(" ")}` : ""

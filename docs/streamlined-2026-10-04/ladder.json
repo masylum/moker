@@ -1,0 +1,201 @@
+{
+  "seconds": 136.27267916600002,
+  "results": [
+    {
+      "mode": "basic",
+      "deckSize": 102,
+      "samples": 1000000,
+      "seed": "streamlined-ladder-confirm:basic",
+      "jokerHands": 0,
+      "rows": [
+        {
+          "kind": "high-card",
+          "rank": 1,
+          "contains": 669953,
+          "best": 669953,
+          "jokerDependent": 0,
+          "usingJoker": {}
+        },
+        {
+          "kind": "eye",
+          "rank": 2,
+          "contains": 271635,
+          "best": 240270,
+          "jokerDependent": 0,
+          "usingJoker": {}
+        },
+        {
+          "kind": "chow",
+          "rank": 3,
+          "contains": 55483,
+          "best": 50795,
+          "jokerDependent": 0,
+          "usingJoker": {}
+        },
+        {
+          "kind": "two-eyes",
+          "rank": 4,
+          "contains": 17117,
+          "best": 16810,
+          "jokerDependent": 0,
+          "usingJoker": {}
+        },
+        {
+          "kind": "three-winds",
+          "rank": 5,
+          "contains": 10785,
+          "best": 10508,
+          "jokerDependent": 0,
+          "usingJoker": {}
+        },
+        {
+          "kind": "long-chow",
+          "rank": 6,
+          "contains": 4359,
+          "best": 4357,
+          "jokerDependent": 0,
+          "usingJoker": {}
+        },
+        {
+          "kind": "pung",
+          "rank": 7,
+          "contains": 4057,
+          "best": 4053,
+          "jokerDependent": 0,
+          "usingJoker": {}
+        },
+        {
+          "kind": "three-dragons",
+          "rank": 8,
+          "contains": 2987,
+          "best": 2987,
+          "jokerDependent": 0,
+          "usingJoker": {}
+        },
+        {
+          "kind": "four-winds",
+          "rank": 9,
+          "contains": 267,
+          "best": 267,
+          "jokerDependent": 0,
+          "usingJoker": {}
+        }
+      ]
+    },
+    {
+      "mode": "riichi",
+      "deckSize": 110,
+      "samples": 1000000,
+      "seed": "streamlined-ladder-confirm:riichi",
+      "jokerHands": 203297,
+      "rows": [
+        {
+          "kind": "high-card",
+          "rank": 1,
+          "contains": 686119,
+          "best": 686119,
+          "jokerDependent": 0,
+          "usingJoker": {}
+        },
+        {
+          "kind": "eye",
+          "rank": 2,
+          "contains": 235956,
+          "best": 202654,
+          "jokerDependent": 0,
+          "usingJoker": {}
+        },
+        {
+          "kind": "chow",
+          "rank": 3,
+          "contains": 72127,
+          "best": 63081,
+          "jokerDependent": 27741,
+          "usingJoker": {
+            "blue": 9887,
+            "green": 9638,
+            "red": 9616
+          }
+        },
+        {
+          "kind": "two-eyes",
+          "rank": 4,
+          "contains": 12704,
+          "best": 12047,
+          "jokerDependent": 0,
+          "usingJoker": {}
+        },
+        {
+          "kind": "three-winds",
+          "rank": 5,
+          "contains": 12547,
+          "best": 11825,
+          "jokerDependent": 3939,
+          "usingJoker": {
+            "black": 4196
+          }
+        },
+        {
+          "kind": "pung",
+          "rank": 6,
+          "contains": 12250,
+          "best": 11888,
+          "jokerDependent": 9109,
+          "usingJoker": {
+            "green": 2772,
+            "blue": 2686,
+            "red": 2673,
+            "black": 1062
+          }
+        },
+        {
+          "kind": "long-chow",
+          "rank": 7,
+          "contains": 6622,
+          "best": 6609,
+          "jokerDependent": 3299,
+          "usingJoker": {
+            "red": 1110,
+            "blue": 1171,
+            "green": 1076
+          }
+        },
+        {
+          "kind": "three-dragons",
+          "rank": 8,
+          "contains": 5229,
+          "best": 5229,
+          "jokerDependent": 2911,
+          "usingJoker": {
+            "green": 1393,
+            "red": 1344,
+            "blue": 1317
+          }
+        },
+        {
+          "kind": "four-winds",
+          "rank": 9,
+          "contains": 469,
+          "best": 469,
+          "jokerDependent": 255,
+          "usingJoker": {
+            "black": 257
+          }
+        },
+        {
+          "kind": "kong",
+          "rank": 10,
+          "contains": 79,
+          "best": 79,
+          "jokerDependent": 79,
+          "usingJoker": {
+            "blue": 19,
+            "black": 9,
+            "red": 24,
+            "green": 27
+          }
+        }
+      ]
+    }
+  ]
+}
