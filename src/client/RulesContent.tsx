@@ -174,10 +174,10 @@ export function RulesContent() {
           </p>
           <p>
             From now on, nobody may bet or raise. Continue clockwise: players who have paid less
-            must call or fold. Each call includes one fishing action unless the caller has declared
-            Riichi. Callers may also spend one Riichi stick under the usual per-turn limit, even if
-            the call uses their last chips. If someone calls with their last chips and pays less
-            again, lower everyone’s payment to that amount and return the difference.
+            must call or fold. Each call includes one fishing action with no hand-lock restriction.
+            Callers may also spend one fishing stick under the usual per-turn limit, even if the
+            call uses their last chips. If someone calls with their last chips and pays less again,
+            lower everyone’s payment to that amount and return the difference.
           </p>
           <p>
             Once payments and the final fishing action are settled, everyone still in reveals all
@@ -269,21 +269,21 @@ export function RulesContent() {
         </section>
       </div>
       <div class="rules-chapter" role="region" aria-labelledby="riichi-rules">
-        <h3 id="riichi-rules">Riichi expansion</h3>
+        <h3 id="riichi-rules">Fishing expansion</h3>
         <p>Add these rules to the Basic Game for more ways to improve your hand and bluff.</p>
         <section>
           <h4>Setup</h4>
-          <RuleIllustration name="riichi-sticks" description="Riichi sticks" />
+          <RuleIllustration name="riichi-sticks" description="fishing sticks" />
           <ul>
             <li>
               Add the 4 <em>Jokers</em> and 4 <em>Blanks</em> to the deck (110 cards total).
             </li>
             <li>
-              Give each player{" "}
+              At the start of every round, give each player{" "}
               <strong>
-                2 <em>riichi sticks.</em>
+                4 more <em>fishing sticks.</em>
               </strong>{" "}
-              Keep the remaining Riichi sticks and all loan sticks in the supply.
+              Keep the remaining fishing sticks and all loan sticks in the supply.
             </li>
             <li>
               Use the <strong>Advanced hand ladder.</strong>
@@ -380,10 +380,10 @@ export function RulesContent() {
           </p>
         </section>
         <section>
-          <h4>Spend Riichi sticks</h4>
+          <h4>Spend fishing sticks</h4>
           <p>
-            Once per turn, after checking, calling or betting, you may return 1 Riichi stick to the
-            supply to fish once more.
+            Once per turn, before betting or after checking, calling or betting, you may return 1
+            fishing stick to the supply to fish once more.
           </p>
           <ul>
             <li>
@@ -398,43 +398,13 @@ export function RulesContent() {
             take a card uncovered by the first.
           </p>
           <p>
-            You cannot spend sticks after folding or while in Riichi. Calling an all-in still allows
-            a stick, even if the call uses your last chips. An all-in Bet gives no fishing.
+            You cannot spend sticks after folding. Calling an all-in still allows a stick, even if
+            the call uses your last chips. An all-in Bet gives no fishing.
           </p>
           <p>
-            In a tournament, keep your remaining Riichi sticks between games. Before the next game,
-            each player receives 2 more sticks, added to those they kept.
-          </p>
-          <h5>Declare Riichi</h5>
-          <RuleIllustration
-            name="declare-riichi"
-            description="Win after declaring Riichi to earn 2 sticks."
-          />
-          <p>
-            On streets 1 or 2, immediately after you bet, you may declare Riichi if nobody else is
-            in Riichi. Declare before fishing or spending a stick. Calling does not qualify.
-          </p>
-          <p>
-            Take 2 Riichi sticks from the supply and place them on your hidden cards. You earn them
-            only if you win the pot alone.
-          </p>
-          <p>
-            Your hand is locked: you cannot fish, swap blanks or spend sticks. Reveal cards as
-            usual. You may still check, call, bet or fold.
-          </p>
-          <ul>
-            <li>
-              <strong>Win the pot alone:</strong> Keep the reward sticks, including if everyone else{" "}
-              <em>folds.</em>
-            </li>
-            <li>
-              <strong>Lose, tie or Fold:</strong> Return them to the supply.
-            </li>
-          </ul>
-          <p>If you Fold, another player may declare Riichi after a later Bet.</p>
-          <p>
-            If your Bet uses your last chips, you may declare Riichi before anyone responds to your
-            all-in.
+            Keep unused sticks between rounds and tournament games. Add 4 more at the start of each
+            round. You may save them for the higher-ante tournament games; they do not add to your
+            final score.
           </p>
         </section>
       </div>

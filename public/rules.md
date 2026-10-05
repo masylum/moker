@@ -1,4 +1,4 @@
-# Moker streamlined rules (v7)
+# Moker streamlined rules (v8)
 
 For **2 to 6 players**.
 
@@ -8,7 +8,7 @@ Build a six-card hand by fishing, choosing cards to reveal, and betting. Win eac
 
 After each round, pass the dealer stick clockwise, skipping eliminated players. The game ends when the stick returns to the starting dealer or passes that player's original seat if they were eliminated. It also ends if only one player remains in the game.
 
-In the Basic Game, the player with the most chips wins. Equal totals share the win. The Riichi Expansion adjusts final scores for loans.
+In the Basic Game, the player with the most chips wins. Equal totals share the win. The Fishing Expansion adjusts final scores for loans.
 
 ## 2. Basic setup
 
@@ -71,7 +71,7 @@ Revealed cards still belong to their owner but cannot be exchanged or discarded.
 | Bet    | Set the first bet or increase the current bet.           | None                     |
 | Fold   | Leave the round and forfeit chips already paid.          | None                     |
 
-**Check and Call each give one free fish in both modes. Bet/Raise gives no free fish.** Declared Riichi stops fishing. All-in Calls retain their fishing allowance; an all-in Bet gives no fishing. Expansion Riichi sticks can buy additional fishing as described below.
+**Check and Call each give one free fish in both modes. Bet/Raise gives no free fish.** All-in Calls retain their fishing allowance; an all-in Bet gives no fishing. Expansion fishing sticks can buy additional fishing as described below.
 
 A folded player can participate in the next round if they can pay its ante, subject to the expansion's loan rule.
 
@@ -109,9 +109,9 @@ Whenever a player pays their last chips, they announce **All-in**.
 1. That player's total payment for the current street becomes the maximum street payment.
 2. Anyone who paid more takes back the excess. Payments from earlier streets stay in the pot.
 3. No further bets or raises are allowed.
-4. Continue in turn order. Anyone below the maximum must Call or Fold. Each Call includes one normal fish and may use one Riichi stick under the usual per-turn limit, unless the caller has declared Riichi. This applies even when the Call uses the caller’s last chips.
+4. Continue in turn order. Anyone below the maximum must Call or Fold. Each Call includes one normal fish and may use one fishing stick under the usual per-turn limit. This applies even when the Call uses the caller’s last chips.
 5. If a player calls with their last chips but still cannot match the maximum, lower the maximum to their total and return excess payments again.
-6. Once payments, all fishing, and any optional Riichi stick decisions are settled, all remaining players reveal their cards and compare hands immediately. Skip the remaining streets.
+6. Once payments, all fishing, and any optional fishing stick decisions are settled, all remaining players reveal their cards and compare hands immediately. Skip the remaining streets.
 
 If the ante itself uses someone's last chips, finish round setup and go directly to comparing hands, without betting or fishing.
 
@@ -167,15 +167,15 @@ For example, a player finishing Game 1 with 260 chips records 260, returns those
 
 At the end of the tournament, add each player's game scores. The highest total wins; equal totals share the win.
 
-## 11. Riichi Expansion
+## 11. Fishing Expansion
 
 Use the Basic Game rules with the following additions and changes.
 
 ### Expansion setup
 
 - Add **four Jokers and four Blanks** to the basic deck, for **110 cards** in total.
-- Give each player **two Riichi sticks**.
-- Keep remaining Riichi sticks and all loan sticks in the supply.
+- At the start of every round, give each participating player **four additional fishing sticks**. Keep unused sticks across rounds and tournament games; they do not add to the final score.
+- Keep remaining fishing sticks and all loan sticks in the supply.
 - Use the **Advanced Hand Ladder**.
 
 ### Loans
@@ -194,7 +194,7 @@ score = remaining chips - (250 × loan sticks)
 
 Scores may be negative. The highest score wins; tied players share the win.
 
-In a tournament, record the adjusted score for each game. Keep unused Riichi sticks and add two more per player at the start of each subsequent game, alongside fresh chips. Sum the recorded scores; loan penalties are already included and are not deducted again.
+In a tournament, record the adjusted score for each game. Keep saved fishing sticks and add four more at the start of each round. Sum the recorded scores; loan penalties are already included and are not deducted again.
 
 ### Jokers
 
@@ -221,9 +221,9 @@ After dealing, each player secretly chooses **two cards** and passes them face-d
 
 Do this once at the start of each round, before betting.
 
-### Spending Riichi sticks
+### Spending fishing sticks
 
-Once per turn, after acting, a player may return **one Riichi stick** to the supply to fish once.
+Once per turn, before betting or after acting, a player may return **one fishing stick** to the supply to fish once.
 
 | Preceding action | Fishing available                                  |
 | ---------------- | -------------------------------------------------- |
@@ -233,27 +233,7 @@ Once per turn, after acting, a player may return **one Riichi stick** to the sup
 
 Finish each fishing action before starting another. A second fishing action may take a card uncovered by the first.
 
-Sticks cannot be spent after folding or while in Riichi. Calling an all-in still allows a stick, even if the Call uses your last chips. An all-in Bet gives no fishing.
-
-### Declaring Riichi
-
-On **Street 1 or 2**, immediately after Betting, a player may declare Riichi if nobody else is currently in Riichi. Calling does not qualify.
-
-Place **two Riichi sticks from the supply** on the player's hidden cards as a potential reward. These sticks cannot be spent yet. The reward is always **two sticks**, regardless of the street on which Riichi is declared.
-
-The player's hand locks immediately:
-
-- No fishing.
-- No Blank exchanges.
-- No spending Riichi sticks.
-- Scheduled reveals continue normally.
-- The player may still Check, Call, Bet, or Fold.
-
-If the player wins the pot alone, they keep the reward sticks, including when all opponents fold. If they lose, tie, or fold, return the reward sticks to the supply.
-
-Folding releases Riichi exclusivity: another player may declare after a later Bet.
-
-If a player's Bet uses their last chips, they may declare Riichi before anyone responds to that all-in.
+Sticks cannot be spent after folding. Calling an all-in still allows a stick, even if the Call uses your last chips. An all-in Bet gives no fishing.
 
 ## 12. Advanced Hand Ladder
 

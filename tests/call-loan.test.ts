@@ -103,7 +103,7 @@ describe("one loan per game", () => {
 })
 
 describe("Call equity and continuation", () => {
-  it("conditions on raise size and Riichi signals without reading opposing hidden cards", () => {
+  it("conditions on raise size without reading opposing hidden cards", () => {
     const { game, player } = fixture()
     const other = game.state.players.find((p) => p !== player)!
     const deck = createDeck("riichi")
@@ -126,7 +126,7 @@ describe("Call equity and continuation", () => {
     }
     game.state.bettingHistory = [base]
     const small = analyzePokerMath(game.state, player.id, 24)
-    game.state.bettingHistory = [{ ...base, amount: 150, cost: 150, riichi: true }]
+    game.state.bettingHistory = [{ ...base, amount: 150, cost: 150 }]
     const strong = analyzePokerMath(game.state, player.id, 24)
     expect(strong.showdownEquity).toBeLessThan(small.showdownEquity)
     const hidden = structuredClone(game.state)

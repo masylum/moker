@@ -100,10 +100,10 @@ async function playBettingTurn(game: GameEngine): Promise<void> {
   const selected = await choose("Your action", labels)
   const action = legal[selected]!
   if (action.type === "check" || action.type === "call") {
-    const fishing = !player.riichi && (action.type === "call" || !game.state.allInPlayerIds.length)
+    const fishing = action.type === "call" || !game.state.allInPlayerIds.length
     const useRiichiStick =
       action.canUseRiichiStick &&
-      (await choose("Spend one Riichi stick for a second fish?", ["No", "Yes"])) === 1
+      (await choose("Spend one fishing stick for a second fish?", ["No", "Yes"])) === 1
     const draw = fishing || useRiichiStick ? await chooseDraw(game) : undefined
     game.act("p1", {
       type: action.type,
@@ -114,22 +114,14 @@ async function playBettingTurn(game: GameEngine): Promise<void> {
   }
   if (action.type === "bet") {
     const amount = await askInteger("Bet target", action.minimum!, action.maximum!, CHIP_UNIT)
-    const riichi = action.canRiichi
-      ? (await choose("Declare Riichi?", [
-          "No",
-          "Yes — lock the hand and play for two more Riichi sticks",
-        ])) === 1
-      : false
     const wager: BettingAction = {
       type: "bet",
       amount,
-      ...(riichi ? { riichi: true } : {}),
     }
     if (
-      !riichi &&
       player.riichiSticks > 0 &&
       amount < (action.maximum ?? 0) &&
-      (await choose("Spend a Riichi stick to Draw & Discard after Betting?", ["No", "Yes"])) === 1
+      (await choose("Spend a fishing stick to Draw & Discard after Betting?", ["No", "Yes"])) === 1
     ) {
       const draw = await chooseDraw(game)
       Object.assign(wager, {

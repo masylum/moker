@@ -29,8 +29,6 @@ interface MatchMetrics {
 const PARAMETERS: readonly ParameterSpec[] = [
   { key: "betEquityFloor", minimum: 0.35, maximum: 0.72, sigma: 0.045 },
   { key: "raiseEquityFloor", minimum: 0.45, maximum: 0.88, sigma: 0.05 },
-  { key: "riichiEquityFloor", minimum: 0.45, maximum: 0.88, sigma: 0.055 },
-  { key: "riichiRewardDiscount", minimum: 0, maximum: 0.18, sigma: 0.025 },
   { key: "potWagerFraction", minimum: 0.3, maximum: 1, sigma: 0.11 },
   { key: "maxStackRisk", minimum: 0.35, maximum: 1, sigma: 0.1 },
   { key: "allInEquityFloor", minimum: 0.55, maximum: 0.95, sigma: 0.055 },

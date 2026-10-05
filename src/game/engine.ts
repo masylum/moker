@@ -9,8 +9,7 @@ import {
   LOAN_VALUE,
   MAX_LOANS,
   OPENING_PRIVATE_CARD_COUNT,
-  RIICHI_WIN_STICKS,
-  STARTING_RIICHI_STICKS,
+  STICKS_PER_ROUND,
   STREET_COUNT,
   STREET_REVEAL_COUNTS,
   createConfig,
@@ -63,7 +62,7 @@ export class GameEngine {
     const config = createConfig({ ...partial, playerCount: players.length })
     const random = new SeededRandom(config.seed)
     const state: GameState = {
-      rulesVersion: 7,
+      rulesVersion: 8,
       id: `game-${config.seed}`,
       config,
       rngState: random.state,
@@ -84,7 +83,7 @@ export class GameEngine {
         controller: player.controller,
         chips: config.startingChips,
         loans: 0,
-        riichiSticks: config.mode === "riichi" ? STARTING_RIICHI_STICKS : 0,
+        riichiSticks: 0,
         curses: 0,
         eliminated: false,
         privateCards: [],
@@ -138,8 +137,8 @@ export class GameEngine {
   }
 
   static restore(state: GameState, events: GameEvent[] = []): GameEngine {
-    if (state.rulesVersion !== 7) {
-      throw new Error("This saved game uses obsolete rules. Start a new table for Moker rules v7.")
+    if (state.rulesVersion !== 8) {
+      throw new Error("This saved game uses obsolete rules. Start a new table for Moker rules v8.")
     }
     const restored = structuredClone(state)
     restored.config = createConfig(restored.config)
@@ -162,8 +161,6 @@ export class GameEngine {
         player.chips = 100 + this.state.gameNumber * 100
         player.loans = 0
         player.eliminated = false
-        player.riichiSticks =
-          this.state.config.mode === "riichi" ? player.riichiSticks + STARTING_RIICHI_STICKS : 0
       }
     }
 
@@ -248,6 +245,16 @@ export class GameEngine {
     const dealOrder = this.orderedActiveAfter(this.state.dealerIndex)
     for (let cardIndex = 0; cardIndex < OPENING_PRIVATE_CARD_COUNT; cardIndex += 1) {
       for (const player of dealOrder) player.privateCards.push(this.drawDeck())
+    }
+    if (this.state.config.mode === "riichi") {
+      for (const player of dealOrder) {
+        player.riichiSticks += STICKS_PER_ROUND
+        this.emit(
+          "fishing-sticks-granted",
+          { amount: STICKS_PER_ROUND, total: player.riichiSticks },
+          player.id,
+        )
+      }
     }
     this.state.openingPrivateCards = Object.fromEntries(
       dealOrder.map((player) => [player.id, structuredClone(player.privateCards)]),
@@ -370,7 +377,7 @@ export class GameEngine {
         type: "bet",
         minimum,
         maximum,
-        canRiichi: this.canDeclareRiichi(player),
+        canRiichi: false,
         canUseRiichiStick: this.canSpendStick(playerId),
       })
     return actions
@@ -410,10 +417,6 @@ export class GameEngine {
     if (action.type !== "fold" && (action.curseTargetId || action.removeCurse)) {
       throw new Error("Curses are not supported by the current rules")
     }
-    if (action.type === "bet" && action.riichi && action.useRiichiStick) {
-      throw new Error("Declaring Riichi locks the hand before a stick can be spent")
-    }
-
     const pendingBefore = [...this.state.pendingPlayerIds]
     const potBefore = this.state.pot
     const actorChipsBefore = player.chips
@@ -444,7 +447,6 @@ export class GameEngine {
       this.state.currentWager = action.amount
       this.state.currentAllInBettorId = player.chips === 0 ? player.id : null
       if (fullRaise) this.state.minimumRaise = raiseSize
-      if (action.riichi) this.declareRiichi(player)
       aggressive = true
       this.state.lastAggressorId = playerId
     } else if (action.type === "fold") {
@@ -486,7 +488,6 @@ export class GameEngine {
     return (
       this.state.config.mode === "riichi" &&
       !this.state.stickSpentThisTurn &&
-      !player.riichi &&
       !player.folded &&
       !player.eliminated &&
       player.riichiSticks > 0 &&
@@ -716,7 +717,7 @@ export class GameEngine {
   }
 
   private drawInstructions(player: PlayerState, action: BettingAction): DrawInstruction[] {
-    if (action.type === "fold" || player.riichi) return []
+    if (action.type === "fold") return []
     if (this.state.allInPlayerIds.length > 0 && action.type !== "call") return []
     const instructions: DrawInstruction[] = []
     const free = hasFreeFishing(this.state.config.mode, action.type)
@@ -778,7 +779,6 @@ export class GameEngine {
   }
 
   private beginDraw(player: PlayerState, source: CardSource): void {
-    if (player.riichi) throw new Error("Riichi locks Draw & Discard")
     const drawn =
       source === "deck"
         ? this.state.deck.pop()
@@ -798,7 +798,6 @@ export class GameEngine {
     exchange: BlankExchange,
     reason: DrawContext["reason"],
   ): void {
-    if (player.riichi) throw new Error("Riichi locks Blank use")
     const blankIndex = player.privateCards.findIndex((card) => card.id === exchange.blankCardId)
     const blank = player.privateCards[blankIndex]
     if (!blank || blank.kind !== "blank")
@@ -891,18 +890,8 @@ export class GameEngine {
       .map((player) => player.id)
   }
 
-  private declareRiichi(player: PlayerState): void {
-    player.riichi = true
-    this.emit("riichi-declared", { street: this.state.street }, player.id)
-  }
-
   private fold(player: PlayerState): void {
-    const wasRiichi = player.riichi
     player.folded = true
-    if (wasRiichi) {
-      player.riichi = false
-      this.emit("riichi-withdrawn", {}, player.id)
-    }
     this.state.foldedPrivateCards[player.id] = structuredClone(player.privateCards)
     this.state.removedCards.push(...player.privateCards)
     player.privateCards = []
@@ -918,7 +907,7 @@ export class GameEngine {
     this.state.handWinners = contenders
       .filter((player) => winnerIds.has(player.id))
       .map((player) => player.id)
-    const settlement = this.resolveRiichi(this.state.handWinners)
+    const settlement = { declaredPlayerId: null, won: false, sticksAwarded: 0 }
     this.emit("showdown", { winners: this.state.handWinners })
     this.recordHandResult("showdown", pot, payouts, pots, null, settlement)
     this.endHand()
@@ -930,7 +919,7 @@ export class GameEngine {
     this.state.pot = 0
     const lotusBluff = null
     this.state.handWinners = [winner.id]
-    const settlement = this.resolveRiichi([winner.id])
+    const settlement = { declaredPlayerId: null, won: false, sticksAwarded: 0 }
     const pots: PotResult[] = [
       {
         amount: pot,
@@ -942,26 +931,6 @@ export class GameEngine {
     this.emit("uncontested-win", { winnerId: winner.id, pot, lotusBluff })
     this.recordHandResult("uncontested", pot, { [winner.id]: pot }, pots, lotusBluff, settlement)
     this.endHand()
-  }
-
-  private resolveRiichi(winnerIds: readonly string[]): RiichiSettlement {
-    const declared = this.state.players.find(
-      (player) => player.riichi && !player.folded && !player.eliminated,
-    )
-    const won = Boolean(declared && winnerIds.length === 1 && winnerIds.includes(declared.id))
-    if (declared && won) {
-      declared.riichiSticks += RIICHI_WIN_STICKS
-      this.emit(
-        "riichi-sticks-awarded",
-        { amount: RIICHI_WIN_STICKS, total: declared.riichiSticks },
-        declared.id,
-      )
-    }
-    return {
-      declaredPlayerId: declared?.id ?? null,
-      won,
-      sticksAwarded: won ? RIICHI_WIN_STICKS : 0,
-    }
   }
 
   private splitPots(contenders: PlayerState[]): {
@@ -1107,15 +1076,6 @@ export class GameEngine {
     )
     this.state.phase = "finished"
     this.emit("game-finished", { finalScores: this.state.finalScores })
-  }
-
-  private canDeclareRiichi(player: PlayerState): boolean {
-    return (
-      this.state.config.mode === "riichi" &&
-      this.state.street < STREET_COUNT &&
-      !player.riichi &&
-      !this.state.players.some((candidate) => candidate.riichi && !candidate.folded)
-    )
   }
 
   private payToPot(

@@ -17,7 +17,7 @@ const reports = paths.map((path) => {
     const contenders = showdowns.flatMap((h) => h.players.filter((p) => !p.folded && !p.eliminated))
     const actions = hands.flatMap((h) => h.bettingHistory)
     const events = selected.flatMap((g) => g.events)
-    const finalStreet = selected[0]!.state.rulesVersion === 7 ? 3 : 4
+    const finalStreet = selected[0]!.state.rulesVersion >= 7 ? 3 : 4
     const seatWins: Record<string, number> = {}
     for (const { state } of selected) {
       const best = Math.max(...Object.values(state.finalScores!))
@@ -34,7 +34,7 @@ const reports = paths.map((path) => {
       }
     }
     const violations: string[] = []
-    for (const { state, seed } of selected.filter((g) => g.state.rulesVersion === 7)) {
+    for (const { state, seed } of selected.filter((g) => g.state.rulesVersion >= 7)) {
       for (const h of state.handResults) {
         if (h.bettingHistory.some((a) => a.street > 3)) violations.push(`${seed}: extra street`)
         const participants = h.players.filter((p) => !p.eliminated)

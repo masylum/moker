@@ -64,7 +64,7 @@ describe("streamlined complete games", () => {
     )
   }
 
-  it("allows Riichi on streets one and two, and rejects it atomically on the final street", () => {
+  it("rejects Riichi declarations on every street", () => {
     const game = GameEngine.create(
       ["a", "b"].map((id) => ({ id, name: id, controller: "human" as const })),
       { seed: "riichi-deadline", mode: "riichi" },
@@ -91,7 +91,12 @@ describe("streamlined complete games", () => {
       expect(game.state.street).toBe(street)
       expect(
         game.legalActions(game.state.actingPlayerId!).find((a) => a.type === "bet")?.canRiichi,
-      ).toBe(true)
+      ).toBe(false)
+      const before = structuredClone(game.state)
+      expect(() =>
+        game.act(game.state.actingPlayerId!, { type: "bet", amount: 5, riichi: true }),
+      ).toThrow("Riichi is not available")
+      expect(game.state).toEqual(before)
       advanceStreet()
     }
     expect(game.state.street).toBe(3)

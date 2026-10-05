@@ -200,14 +200,14 @@ describe("bot utility and fishing regressions", () => {
       })
     expect(chooseHeuristicAction(changed, player.id, 24)).toEqual(before)
   })
-  it("can declare Riichi with Kong without guaranteed equity", () => {
+  it("bets a strong Kong without offering removed declarations", () => {
     const { game, player, deck } = fixture()
     player.privateCards[3] = deck.find((c) => c.id === "joker-green")!
     const decision = chooseHeuristicAction(game.state, player.id, 24)
-    expect(decision.action).toMatchObject({ type: "bet", riichi: true })
+    expect(decision.action.type).toBe("bet")
+    expect(decision.evaluations.some((e) => e.action.type === "bet" && e.action.riichi)).toBe(false)
     expect(
-      decision.evaluations.find((e) => e.action.type === "bet" && e.action.riichi)
-        ?.estimatedWinRate,
+      decision.evaluations.find((e) => e.action.type === "bet")?.estimatedWinRate,
     ).toBeLessThan(1)
   })
 })

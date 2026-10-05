@@ -12,9 +12,16 @@ import { OpponentMove, type DrawNotice, sourcePosition } from "./OpponentMove"
 import { createGameAudio } from "./audio"
 import { knownHand } from "./known-hand"
 import { SpiritAvatar } from "./SpiritAvatar"
-import { RiichiSticks, RiichiDeclared } from "./RiichiSticks"
+import { RiichiSticks } from "./RiichiSticks"
 import { cardLabel, compareCards } from "../game/cards"
-import { canTakeLoan, CHIP_UNIT, LOAN_VALUE, LOAN_PENALTY } from "../game/rules"
+import {
+  canTakeLoan,
+  CHIP_UNIT,
+  LOAN_VALUE,
+  LOAN_PENALTY,
+  CHARLESTON_PASS_COUNT,
+  STREET_REVEAL_COUNTS,
+} from "../game/rules"
 import { scoreHand } from "../game/scoring"
 import type {
   BettingAction,
@@ -67,7 +74,7 @@ export function App() {
   onCleanup(() => audio.dispose())
   const [musicOn, setMusicOn] = createSignal(audio.musicEnabled())
   const [effectsOn, setEffectsOn] = createSignal(audio.effectsEnabled())
-  const [session, setSession] = createSignal(localStorage.getItem("moker-v7-session") ?? "")
+  const [session, setSession] = createSignal(localStorage.getItem("moker-v8-session") ?? "")
   const [state, setState] = createSignal<PublicGameState>()
   const savedName = localStorage.getItem("moker-name")?.trim()
   const [name, setName] = createSignal(
@@ -252,11 +259,13 @@ export function App() {
       maximum(),
       Math.ceil(((state()?.currentWager ?? 0) + CHIP_UNIT) / CHIP_UNIT) * CHIP_UNIT,
     )
-  const required = () => (state()?.phase === "charleston" ? 2 : state()?.street === 1 ? 3 : 1)
+  const required = () =>
+    state()?.phase === "charleston"
+      ? CHARLESTON_PASS_COUNT
+      : (STREET_REVEAL_COUNTS[(state()?.street ?? 0) - 1] ?? 0)
   const choosing = () =>
     myTurn() && ["charleston", "exposing", "discarding"].includes(state()?.phase ?? "")
-  const canFish = () => !allIn() && !human()?.riichi
-  const canFishOnCall = () => !human()?.riichi
+  const canFish = () => !allIn()
   const ladder = () =>
     (state()?.config.mode ?? mode()) === "riichi" ? ADVANCED_LADDER : BASIC_LADDER
   const currentHand = () =>
@@ -370,7 +379,7 @@ export function App() {
       )
       setViewer(undefined)
       setSession(result.sessionId)
-      localStorage.setItem("moker-v7-session", result.sessionId)
+      localStorage.setItem("moker-v8-session", result.sessionId)
       setAuto(true)
       setCopied(false)
       if (result.state.room) window.history.pushState(null, "", `/rooms/${result.sessionId}`)
@@ -413,7 +422,6 @@ export function App() {
   const canSpendStick = () =>
     state()?.config.mode === "riichi" &&
     !state()?.stickSpentThisTurn &&
-    !human()?.riichi &&
     (!allIn() || callCost() > 0 || state()?.stickWindow?.playerId === viewer()) &&
     (human()?.riichiSticks ?? 0) > 0 &&
     ((human()?.chips ?? 0) > 0 || state()?.stickWindow?.playerId === viewer()) &&
@@ -445,7 +453,7 @@ export function App() {
     setError("")
     setBlankPick(undefined)
     setPickingFish(false)
-    if ((kind === "check" && canFish()) || (kind === "call" && canFishOnCall())) {
+    if ((kind === "check" && canFish()) || kind === "call") {
       setPickingFish(true)
       requestAnimationFrame(() =>
         fishingTable?.scrollIntoView({
@@ -455,7 +463,7 @@ export function App() {
             : "smooth",
         }),
       )
-    } else if (kind === "check" || kind === "call") {
+    } else if (kind === "check") {
       void act({ type: kind })
     } else setActionDialog(kind)
   }
@@ -711,13 +719,13 @@ export function App() {
                   aria-pressed={mode() === "riichi"}
                   onClick={() => setMode("riichi")}
                 >
-                  Riichi expansion
+                  Fishing expansion
                 </Button>
               </div>
               <p class="mode-description">
                 {mode() === "basic"
                   ? "102 cards. Nine hand ranks."
-                  : "Special cards and Riichi sticks."}
+                  : "6 cards · 3 streets · 4 extra fishing sticks each round. Save unused sticks."}
               </p>
             </div>
             <div class="setup-field seat-setup">
@@ -1153,9 +1161,6 @@ export function App() {
                       </div>
                     </div>
                     <div class="hand-cards">
-                      <Show when={human()?.riichi}>
-                        <RiichiDeclared />
-                      </Show>
                       <For
                         each={sortHand(
                           [...cards(), ...(human()?.publicCards ?? [])],
@@ -1244,7 +1249,7 @@ export function App() {
                         <div class="button-row main-actions">
                           <span>
                             {pickingStick()
-                              ? "Spend a Riichi stick: choose a card from the deck or a discard lane."
+                              ? "Spend a fishing stick: choose a card from the deck or a discard lane."
                               : blankPick()
                                 ? "Choose any card in either discard lane to swap with your Blank."
                                 : cards().some((card) => card.kind === "blank")
@@ -1252,7 +1257,7 @@ export function App() {
                                   : "Choose a card from the deck or a discard lane."}
                           </span>
                           <Button disabled={busy()} onClick={cancelFishing}>
-                            {pickingStick() ? "Cancel Riichi stick" : "Cancel fishing"}
+                            {pickingStick() ? "Cancel fishing stick" : "Cancel fishing"}
                           </Button>
                         </div>
                       </Show>
@@ -1303,7 +1308,7 @@ export function App() {
                       >
                         <div class="button-row main-actions">
                           <Button disabled={busy() || pickingFish()} onClick={chooseStick}>
-                            Spend Riichi stick
+                            Spend fishing stick
                           </Button>
                           <Button class="primary" disabled={busy()} onClick={() => resolveStick()}>
                             End turn
@@ -1328,14 +1333,14 @@ export function App() {
                             onClick={() => openAction(callCost() ? "call" : "check")}
                           >
                             {callCost()
-                              ? `Call ${format(Math.min(callCost(), human()?.chips ?? 0))}${canFishOnCall() ? " + Fish" : ""}`
+                              ? `Call ${format(Math.min(callCost(), human()?.chips ?? 0))} + Fish`
                               : canFish()
                                 ? "Check + Fish"
                                 : "Check"}
                           </Button>
                           <Show when={canSpendStick()}>
                             <Button disabled={busy() || pickingFish()} onClick={chooseStick}>
-                              Spend Riichi stick
+                              Spend fishing stick
                             </Button>
                           </Show>
                           <Show when={!allIn() && maximum() > game().currentWager}>
@@ -1423,28 +1428,6 @@ export function App() {
                                 >
                                   Bet {format(wager())}
                                 </Button>
-                                <Show
-                                  when={
-                                    game().config.mode === "riichi" &&
-                                    !human()?.riichi &&
-                                    game().street <= 3 &&
-                                    !game().players.some((p) => p.riichi && !p.folded)
-                                  }
-                                >
-                                  <Button
-                                    disabled={
-                                      busy() ||
-                                      wager() < minimum() ||
-                                      wager() > maximum() ||
-                                      (wager() % CHIP_UNIT !== 0 && wager() !== maximum())
-                                    }
-                                    onClick={() =>
-                                      act({ type: "bet", amount: wager(), riichi: true })
-                                    }
-                                  >
-                                    Bet {format(wager())} + Declare Riichi
-                                  </Button>
-                                </Show>
                               </Show>
                             </div>
                           </Modal>
@@ -1563,8 +1546,8 @@ export function App() {
                             </p>
                             <Show when={game().config.mode === "riichi"}>
                               <p>
-                                Loans are cleared. Keep your unused Riichi sticks and receive 2
-                                more.
+                                Loans are cleared. Keep your saved fishing sticks and receive 4 more
+                                at the start of each round.
                               </p>
                             </Show>
                           </Show>
@@ -2042,9 +2025,6 @@ function PlayerSeat(props: {
         </div>
       </div>
       <div class="opponent-cards">
-        <Show when={props.player.riichi}>
-          <RiichiDeclared />
-        </Show>
         <For each={[...props.player.publicCards].sort(compareCards)}>
           {(c) => <PlayingCard card={c} compact />}
         </For>
@@ -2089,11 +2069,9 @@ function PlayerSeat(props: {
                     : props.betting
                       ? "Betting…"
                       : "Choosing cards…"
-                  : props.player.riichi
-                    ? "Riichi"
-                    : props.player.roundCommitted > 0
-                      ? ""
-                      : "In the round"}
+                  : props.player.roundCommitted > 0
+                    ? ""
+                    : "In the round"}
         </span>
         <BetIndicator amount={props.player.roundCommitted} playerId={props.player.id} />
       </div>

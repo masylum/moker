@@ -1,6 +1,5 @@
 import { hasFreeFishing } from "./rules"
 import { GameEngine } from "./engine"
-import { HAND_RANKS } from "./hand-ranks"
 import { createDeck } from "./cards"
 import { nextHandPotential, summarizeHandProgress } from "./hand-progress"
 import { publicKnownPrivateCards } from "./information"
@@ -37,8 +36,6 @@ import type {
 export interface BotPolicy {
   betEquityFloor: number
   raiseEquityFloor: number
-  riichiEquityFloor: number
-  riichiRewardDiscount: number
   potWagerFraction: number
   maxStackRisk: number
   allInEquityFloor: number
@@ -55,8 +52,6 @@ export interface BotPolicy {
 const TRAINED_POLICY: BotPolicy = {
   betEquityFloor: 0.34,
   raiseEquityFloor: 0.46,
-  riichiEquityFloor: 0.42,
-  riichiRewardDiscount: 0.04,
   potWagerFraction: 0.9,
   maxStackRisk: 0.7,
   allInEquityFloor: 0.95,
@@ -283,7 +278,7 @@ export function chooseHeuristicAction(
       ? sampledEquity * (policy.equityCalibration + (1 - policy.equityCalibration) * sampledEquity)
       : sampledEquity
   const doublePlan =
-    player.riichiSticks > 0 && !player.riichi && !state.stickSpentThisTurn
+    player.riichiSticks > 0 && !state.stickSpentThisTurn
       ? chooseDoubleDrawPlan(state, player, plan)
       : plan
   const fishingEquity = (drawPlan: DrawPlan) => {
@@ -307,8 +302,7 @@ export function chooseHeuristicAction(
       ? adjusted * (policy.equityCalibration + (1 - policy.equityCalibration) * adjusted)
       : adjusted
   }
-  const canForecastFishing =
-    !player.riichi && (state.allInPlayerIds.length === 0 || math.toCall > 0)
+  const canForecastFishing = state.allInPlayerIds.length === 0 || math.toCall > 0
   const singleFishingEquity = canForecastFishing && drawGain > 0 ? fishingEquity(plan) : undefined
   const doubleFishingEquity =
     canForecastFishing && doublePlan.second ? fishingEquity(doublePlan) : undefined
@@ -323,9 +317,7 @@ export function chooseHeuristicAction(
     const wager = aggressive ? action.amount : player.roundCommitted + cost
     const canFish =
       action.type !== "fold" &&
-      !player.riichi &&
-      (action.type === "call" || (state.allInPlayerIds.length === 0 && cost < player.chips)) &&
-      !(action.type === "bet" && action.riichi)
+      (action.type === "call" || (state.allInPlayerIds.length === 0 && cost < player.chips))
     const freeFish = hasFreeFishing(state.config.mode, action.type)
     const usesFish = canFish && (freeFish || action.useRiichiStick)
     const visibleEquity = usesFish
@@ -362,11 +354,6 @@ export function chooseHeuristicAction(
         : 0
     const stickUtility =
       action.type !== "fold" && action.useRiichiStick ? -stickShadowValue(state, player) : 0
-    const riichiUtility =
-      action.type === "bet" && action.riichi
-        ? (allFold + (1 - allFold) * callerEquity) * 2 * stickShadowValue(state, player) -
-          futureDevelopmentCost(state, drawGain)
-        : 0
     const riskPenalty =
       action.type === "fold"
         ? 0
@@ -398,7 +385,6 @@ export function chooseHeuristicAction(
           expectedChipDelta * 0.0001
         : expectedChipDelta +
           (drawUtility + stickUtility) * (aggressive ? 1 - allFold : 1) +
-          riichiUtility +
           standing * cost -
           riskPenalty -
           continuationPenalty,
@@ -458,9 +444,6 @@ export function chooseHeuristicAction(
         if (bet.canUseRiichiStick && amount - player.roundCommitted < player.chips) {
           evaluations.push(evaluate({ ...base, useRiichiStick: true, ...drawFields(plan) }))
         }
-        if (bet.canRiichi && shouldRiichi(state, player, equity, drawGain, policy)) {
-          evaluations.push(evaluate({ ...base, riichi: true }))
-        }
       }
     }
   }
@@ -514,36 +497,17 @@ function legalActions(state: GameState, player: PlayerState) {
   return GameEngine.restore(state).legalActions(player.id)
 }
 
-function shouldRiichi(
-  state: GameState,
-  player: PlayerState,
-  equity: number,
-  drawGain: number,
-  policy: Readonly<BotPolicy>,
-): boolean {
-  const cards = [...player.privateCards, ...player.publicCards]
-  const rank = scoreHandStrength(cards, state.config.mode).total
-  return (
-    equity >= policy.riichiEquityFloor &&
-    (rank >= HAND_RANKS["pung"] || state.street >= STREET_COUNT - 1) &&
-    (drawGain < 120 || state.street === STREET_COUNT - 1) &&
-    futureDevelopmentCost(state, drawGain) <= equity * 3 * stickShadowValue(state, player)
-  )
-}
-
-function futureDevelopmentCost(state: GameState, drawGain: number): number {
-  return Math.max(0, STREET_COUNT - state.street) * developmentValue(drawGain) * 0.45
-}
-
 function developmentValue(drawGain: number): number {
   return Math.min(90, drawGain / 4)
 }
 
-function stickShadowValue(state: GameState, player?: PlayerState): number {
-  return (
-    (player ? 12 / Math.max(1, player.riichiSticks) : 12) +
-    Math.min(8, Math.max(0, state.maxHands - state.handNumber))
-  )
+function stickShadowValue(state: GameState, player: PlayerState): number {
+  // Saved sticks survive into higher-ante tournament games. Keep a modest
+  // reserve value, falling as the bank grows; the final street of the final
+  // hand has no future use for a stick.
+  if (state.street === STREET_COUNT && isFinalTournamentHand(state)) return 0
+  const nextGame = Math.min(state.config.tournamentGames, state.gameNumber + 1)
+  return (12 / Math.max(1, player.riichiSticks)) * (nextGame / state.gameNumber)
 }
 
 function standingAdjustment(
@@ -1000,17 +964,13 @@ function analyzeCurrentEquity(
           (2 * (record.cost ?? 0)) / Math.max(CHIP_UNIT, record.actorChipsBefore ?? Infinity),
       ),
     )
-    const declared = opponent.riichi || bets.some((record) => record.riichi)
     const draws = state.drawDiscardHistory.filter(
       (record) => record.playerId === opponent.id,
     ).length
     const passed = state.charlestonHistory.some((record) => record.toPlayerId === opponent.id)
     return Math.min(
       8,
-      bets.length * 0.75 +
-        investment * 1.5 +
-        Number(declared) * 2 +
-        Math.min(2, draws * 0.25 + Number(passed) * 0.5),
+      bets.length * 0.75 + investment * 1.5 + Math.min(2, draws * 0.25 + Number(passed) * 0.5),
     )
   })
   let weightedEquity = 0,

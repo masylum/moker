@@ -3,7 +3,7 @@ import { availableParallelism } from "node:os"
 import { parseArgs } from "node:util"
 import { resolve } from "node:path"
 import { simulateParallel } from "./lib/simulation-pool"
-import { createConfig, LOAN_VALUE, MAX_LOANS, STARTING_RIICHI_STICKS } from "../src/game/rules"
+import { createConfig, LOAN_VALUE, MAX_LOANS, STICKS_PER_ROUND } from "../src/game/rules"
 import type { SimulationResult } from "../src/game/types"
 
 const { values, positionals } = parseArgs({
@@ -24,7 +24,7 @@ const { values, positionals } = parseArgs({
   },
 })
 if (values.help) {
-  console.log(`Usage: npm run simulate -- [count=10] [seed=moker-v7] [options]
+  console.log(`Usage: npm run simulate -- [count=10] [seed=moker-v8] [options]
   --workers auto|N  Concurrent CPU processes (auto: all available cores)
   --samples N       Equity trials, default 24; unchanged by parallelism
   --orbits N        Dealer orbits per game, default 4 (1–4)
@@ -46,7 +46,7 @@ const integer = (value: string, minimum = 1) => {
   return n
 }
 const count = integer(positionals[0] ?? "10")
-const seedPrefix = positionals[1] ?? "moker-v7"
+const seedPrefix = positionals[1] ?? "moker-v8"
 const samples = integer(values.samples!)
 const workers = Math.min(
   count,
@@ -138,22 +138,25 @@ try {
       )
         violations.push(`${seed}: invalid cash/loan count`)
       const eventCount = (type: string) => events.filter((e) => e.type === type).length
-      const awarded = events
-        .filter((e) => e.type === "riichi-sticks-awarded")
+      const granted = events
+        .filter((e) => e.type === "fishing-sticks-granted")
         .reduce((sum, e) => sum + (e.payload as { amount: number }).amount, 0)
-      const spent =
-        eventCount("riichi-stick-spent") + eventCount("curse-placed") + eventCount("curse-removed")
-      const initial =
-        config.mode === "riichi"
-          ? state.players.length * STARTING_RIICHI_STICKS * config.tournamentGames
-          : 0
+      const spent = eventCount("riichi-stick-spent")
       if (
-        result
-          .gameSummaries!.flatMap((g) => g.players)
-          .reduce((sum, p) => sum + p.riichiSticks, 0) !==
-        initial - spent + awarded
+        state.players.reduce((sum, p) => sum + p.riichiSticks, 0) !== granted - spent ||
+        state.players.some((p) => !Number.isInteger(p.riichiSticks) || p.riichiSticks < 0)
       )
         violations.push(`${seed}: stick conservation`)
+      if (
+        events.some(
+          (e) =>
+            e.type === "fishing-sticks-granted" &&
+            (e.payload as { amount: number }).amount !== STICKS_PER_ROUND,
+        )
+      )
+        violations.push(`${seed}: incorrect round grant`)
+      if (eventCount("riichi-declared") || eventCount("riichi-sticks-awarded"))
+        violations.push(`${seed}: retired Riichi declaration`)
       loans += eventCount("loan-taken")
       riichies += eventCount("riichi-declared")
       eliminated += result
@@ -197,7 +200,7 @@ try {
 const seconds = (performance.now() - started) / 1000
 const pct = (n: number) => `${n} (${hands ? ((100 * n) / hands).toFixed(1) : "0"}%)`
 const report = [
-  `# Moker rules-v7 simulation — ${config.mode}`,
+  `# Moker rules-v8 simulation — ${config.mode}`,
   "",
   `${count} runs × ${config.tournamentGames} games, ${config.orbits} orbits per game, ${hands} hands, ${config.startingChips} starting chips.`,
   `Seeds ${seedPrefix}-${offset} through ${seedPrefix}-${offset + count - 1}; ${samples} joint equity trials per projection (up to four opponent completions within a trial).`,

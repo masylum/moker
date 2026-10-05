@@ -116,7 +116,7 @@ describe("rules-v5 bot intelligence", () => {
     expect(callDrawsAreValid.every(Boolean)).toBe(true)
   })
 
-  it("declares Riichi with a strong locked hand when development value is low", () => {
+  it("never declares Riichi even with a strong made hand", () => {
     const game = engine("bot-riichi")
     finishCharleston(game)
     const actor = game.state.actingPlayerId!
@@ -132,7 +132,6 @@ describe("rules-v5 bot intelligence", () => {
     const policy = {
       ...DEFAULT_BOT_POLICY,
       betEquityFloor: 0,
-      riichiEquityFloor: 0,
       survivalRiskPenalty: 0,
     }
     const decision = chooseHeuristicAction(game.state, actor, 32, policy)
@@ -140,7 +139,7 @@ describe("rules-v5 bot intelligence", () => {
       decision.evaluations.some(
         (evaluation) => evaluation.action.type === "bet" && evaluation.action.riichi,
       ),
-    ).toBe(true)
+    ).toBe(false)
   })
 
   it("does not borrow to face an all-in", () => {

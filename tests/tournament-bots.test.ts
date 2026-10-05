@@ -54,12 +54,10 @@ describe("shared Check/Call fishing", () => {
     expect(game.state.deck.length).toBe(before - 1)
     expect(game.state.drawContext?.remaining).toHaveLength(0)
   })
-  it("all-in and declared-Riichi locks remain in force", () => {
-    for (const lock of ["all-in", "riichi"]) {
+  it("all-in betting still stops free fishing", () => {
+    {
       const { game, player } = fixture("riichi")
-      if (lock === "all-in")
-        game.state.allInPlayerIds = [game.state.players.find((p) => p !== player)!.id]
-      else player.riichi = true
+      game.state.allInPlayerIds = [game.state.players.find((p) => p !== player)!.id]
       const before = game.state.deck.length
       game.act(player.id, { type: "check", drawSource: "deck" })
       expect(game.state.deck.length).toBe(before)

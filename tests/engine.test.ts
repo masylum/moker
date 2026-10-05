@@ -77,7 +77,7 @@ function highHand(prefix: string, wind: "east" | "north"): Card[] {
   ]
 }
 
-describe("Moker v7 setup and streets", () => {
+describe("Moker v8 setup and streets", () => {
   it.each([2, 3, 4, 5, 6])(
     "sets up a %i-player Basic game with 102 cards, two seeded lanes and dealer first",
     (count) => {
@@ -106,7 +106,7 @@ describe("Moker v7 setup and streets", () => {
   it("passes two cards simultaneously only in Riichi", () => {
     const g = engine({ mode: "riichi" })
     expect(g.state.phase).toBe("charleston")
-    expect(g.state.players.every((p) => p.riichiSticks === 2)).toBe(true)
+    expect(g.state.players.every((p) => p.riichiSticks === 4)).toBe(true)
     const before = structuredClone(g.state.players)
     const p = actor(g)
     const ids = p.privateCards.slice(0, 2).map((c) => c.id)
@@ -211,7 +211,7 @@ describe("Riichi fishing and locks", () => {
       useRiichiStick: true,
       riichiDrawSource: "discard-a",
     })
-    expect(p.riichiSticks).toBe(1)
+    expect(p.riichiSticks).toBe(3)
     expect(g.state.discardA).toHaveLength(0)
     discardDrawn(g)
     expect(g.state.phase).toBe("discarding")
@@ -237,7 +237,7 @@ describe("Riichi fishing and locks", () => {
     expect(g.state.deck).toHaveLength(deck)
     expect(g.state.phase).toBe("betting")
   })
-  it("Call + stick fishes twice; a bet may declare Riichi but cannot also fish", () => {
+  it("Call + stick fishes twice; bets may fish but cannot declare Riichi", () => {
     const g = engine({ mode: "riichi" })
     finishPass(g)
     g.act(actor(g).id, { type: "bet", amount: 10 })
@@ -247,7 +247,7 @@ describe("Riichi fishing and locks", () => {
     discardDrawn(g)
     expect(g.state.phase).toBe("discarding")
     discardDrawn(g)
-    expect(p.riichiSticks).toBe(1)
+    expect(p.riichiSticks).toBe(3)
     const bettor = actor(g)
     expect(() =>
       g.act(bettor.id, {
@@ -258,16 +258,14 @@ describe("Riichi fishing and locks", () => {
         drawSource: "deck",
       }),
     ).toThrow(/./)
-    g.act(bettor.id, { type: "bet", amount: 20, riichi: true })
-    expect(bettor.riichi).toBe(true)
-    expect(g.legalActions(actor(g).id).find((a) => a.type === "bet")?.canRiichi).toBe(false)
+    g.act(bettor.id, { type: "bet", amount: 20, useRiichiStick: true })
+    finishFishing(g)
+    expect(bettor.riichi).toBe(false)
+    expect(bettor.riichiSticks).toBe(3)
     callStreet(g)
     reveal(g)
     expect(actor(g).id).toBe(bettor.id)
-    expect(g.legalActions(bettor.id).find((a) => a.type === "check")?.canUseRiichiStick).toBe(false)
-    g.act(bettor.id, { type: "fold" })
-    expect(bettor.riichi).toBe(false)
-    expect(g.legalActions(actor(g).id).find((a) => a.type === "bet")?.canRiichi).toBe(true)
+    expect(g.legalActions(bettor.id).find((a) => a.type === "check")?.canUseRiichiStick).toBe(true)
   })
   it("rejects curses and voluntary loans without changing the economy", () => {
     const g = engine({ mode: "riichi" })
@@ -337,51 +335,42 @@ describe("All-in and exact ties", () => {
     expect(g.state.players.reduce((sum, p) => sum + p.chips, 0)).toBe(800)
     expect(g.publicView().handResults[0]!.players.every((p) => p.cards.length === 0)).toBe(true)
   })
-  it("awards two Riichi supply sticks only for a sole pot win", () => {
+  it("awards no stick bonus for winning the pot", () => {
     const g = engine({ mode: "riichi" })
     finishPass(g)
     const p = actor(g)
-    g.act(p.id, { type: "bet", amount: 10, riichi: true })
+    g.act(p.id, { type: "bet", amount: 10 })
     foldToWinner(g)
     expect(p.riichiSticks).toBe(4)
-    const t = engine({ mode: "riichi" }, 2)
-    finishPass(t)
-    t.state.players.forEach((candidate, i) => (candidate.privateCards = highHand(`t${i}`, "east")))
-    const r = actor(t)
-    t.act(r.id, { type: "bet", amount: 10, riichi: true })
-    t.act(actor(t).id, { type: "call" })
-    finishFishing(t)
-    reveal(t)
-    for (let i = 0; i < 3; i++) {
-      checkStreet(t)
-      if (t.state.phase === "exposing") reveal(t)
-    }
-    expect(r.riichiSticks).toBe(2)
-    expect(t.state.handResults[0]?.riichiSettlement.won).toBe(false)
+    expect(g.state.handResults[0]?.riichiSettlement).toEqual({
+      declaredPlayerId: null,
+      won: false,
+      sticksAwarded: 0,
+    })
   })
 })
 
 describe("Game length, elimination and tournaments", () => {
-  it("starts with two sticks and adds two only when a new tournament game starts", () => {
+  it("adds four sticks each round and carries savings into higher-ante games", () => {
     const g = engine({ mode: "riichi", tournamentGames: 3 }, 2)
-    expect(g.state.players.map((p) => p.riichiSticks)).toEqual([2, 2])
-    // Represent one spent stick and a Riichi win before the next game.
-    g.state.players[0]!.riichiSticks = 1
-    g.state.players[1]!.riichiSticks = 4
-    for (let game = 1; game <= 2; game++) {
-      for (let hand = 0; hand < 2; hand++) {
-        finishPass(g)
-        foldToWinner(g)
-        g.startNextHand()
-        const additions = game - 1 + (hand === 1 ? 1 : 0)
-        expect(g.state.players.map((p) => p.riichiSticks)).toEqual([
-          1 + additions * 2,
-          4 + additions * 2,
-        ])
-      }
-      expect(g.state.gameNumber).toBe(game + 1)
-      expect(g.publicView(g.state.players[0]!.id).players[0]!.riichiSticks).toBe(1 + game * 2)
+    expect(g.state.players.map((p) => p.riichiSticks)).toEqual([4, 4])
+    finishPass(g)
+    const spender = actor(g)
+    g.spendRiichiStick(spender.id, "deck")
+    discardDrawn(g)
+    expect(spender.riichiSticks).toBe(3)
+    for (let round = 1; round <= 4; round++) {
+      finishPass(g)
+      foldToWinner(g)
+      const before = g.state.players.map((p) => p.riichiSticks)
+      g.startNextHand()
+      expect(g.state.players.map((p) => p.riichiSticks)).toEqual(before.map((n) => n + 4))
+      const restored = GameEngine.restore(g.state)
+      expect(restored.state.players.map((p) => p.riichiSticks)).toEqual(before.map((n) => n + 4))
     }
+    expect(g.state.gameNumber).toBe(3)
+    expect(g.state.orbitValue).toBe(15)
+    expect(spender.riichiSticks).toBe(19)
   })
   it.each([2, 3, 4])("plays %i complete dealer orbits without resetting chips", (orbits) => {
     const g = engine({ orbits }, 2)

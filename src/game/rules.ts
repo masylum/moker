@@ -2,8 +2,7 @@ import type { GameConfig, GameState, PlayerState } from "./types"
 
 export const STREET_COUNT = 3
 const STARTING_CHIPS = 200
-export const STARTING_RIICHI_STICKS = 2
-export const RIICHI_WIN_STICKS = 2
+export const STICKS_PER_ROUND = 4
 export const LOAN_VALUE = 200
 export const LOAN_PENALTY = 250
 export const MAX_LOANS = 1
@@ -57,7 +56,7 @@ export function createConfig(input: Partial<GameConfig> & Pick<GameConfig, "seed
 }
 
 /** Check and Call provide a free fish in both modes; bets need a Riichi stick.
- * All-in and declared-Riichi locks are enforced by the engine. */
+ * All-in restrictions are enforced by the engine. */
 export function hasFreeFishing(
   _mode: "basic" | "riichi",
   action: "fold" | "check" | "call" | "bet",
