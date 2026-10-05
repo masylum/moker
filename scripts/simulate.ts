@@ -3,7 +3,7 @@ import { availableParallelism } from "node:os"
 import { parseArgs } from "node:util"
 import { resolve } from "node:path"
 import { simulateParallel } from "./lib/simulation-pool"
-import { createConfig, LOAN_VALUE, MAX_LOANS, STICKS_PER_ROUND } from "../src/game/rules"
+import { createConfig, LOAN_VALUE, MAX_LOANS, STREAMLINED_STICKS_PER_GAME } from "../src/game/rules"
 import type { SimulationResult } from "../src/game/types"
 
 const { values, positionals } = parseArgs({
@@ -25,7 +25,7 @@ const { values, positionals } = parseArgs({
   },
 })
 if (values.help) {
-  console.log(`Usage: npm run simulate -- [count=10] [seed=moker-v9] [options]
+  console.log(`Usage: npm run simulate -- [count=10] [seed=moker-v10] [options]
   --workers auto|N  Concurrent CPU processes (auto: all available cores)
   --samples N       Equity trials, default 24; unchanged by parallelism
   --orbits N        Dealer orbits per game, default 4 (1–4)
@@ -48,7 +48,7 @@ const integer = (value: string, minimum = 1) => {
   return n
 }
 const count = integer(positionals[0] ?? "10")
-const seedPrefix = positionals[1] ?? "moker-v9"
+const seedPrefix = positionals[1] ?? "moker-v10"
 const samples = integer(values.samples!)
 const workers = Math.min(
   count,
@@ -143,6 +143,11 @@ try {
       const granted = events
         .filter((e) => e.type === "fishing-sticks-granted")
         .reduce((sum, e) => sum + (e.payload as { amount: number }).amount, 0)
+      if (
+        config.mode === "streamlined" &&
+        granted !== state.players.length * STREAMLINED_STICKS_PER_GAME * state.gameNumber
+      )
+        violations.push(`${seed}: grants must occur once per player per game`)
       const spent = eventCount("riichi-stick-spent")
       const classicGrants =
         config.mode === "riichi"
@@ -161,10 +166,10 @@ try {
         events.some(
           (e) =>
             e.type === "fishing-sticks-granted" &&
-            (e.payload as { amount: number }).amount !== STICKS_PER_ROUND,
+            (e.payload as { amount: number }).amount !== STREAMLINED_STICKS_PER_GAME,
         )
       )
-        violations.push(`${seed}: incorrect round grant`)
+        violations.push(`${seed}: incorrect game grant`)
       if (
         config.mode === "streamlined" &&
         (eventCount("riichi-declared") || eventCount("riichi-sticks-awarded"))
@@ -214,7 +219,7 @@ try {
 const seconds = (performance.now() - started) / 1000
 const pct = (n: number) => `${n} (${hands ? ((100 * n) / hands).toFixed(1) : "0"}%)`
 const report = [
-  `# Moker rules-v9 simulation — ${config.mode}`,
+  `# Moker rules-v10 simulation — ${config.mode}`,
   "",
   `${count} runs × ${config.tournamentGames} games, ${config.orbits} orbits per game, ${hands} hands, ${config.startingChips} starting chips.`,
   `Seeds ${seedPrefix}-${offset} through ${seedPrefix}-${offset + count - 1}; ${samples} joint equity trials per projection (up to four opponent completions within a trial).`,

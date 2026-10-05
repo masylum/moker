@@ -301,5 +301,5 @@ Choose this third mode explicitly; Basic and Riichi above keep their original ru
 - Remove both Lotuses: the deck has **110 cards**. No Lotus payouts or disqualification.
 - Score combinations using **up to four cards**. Weakest to strongest: High Card, Eyes, Chow, Two Eyes, Three Winds, Pung, Long Chow (four consecutive of one suit), Three Dragons, Four Winds, Kong. No five-card compound hands.
 - Remove Riichi declarations, declaration hand locks and winner stick rewards.
-- Give every participating player **four additional fishing sticks each round**. Unused sticks never expire during the tournament and carry into higher-ante games. They do not score points.
+- Start each player with **three Riichi sticks**, then add **three more at the start of each subsequent tournament game**. Do not grant sticks between rounds. Unused sticks never expire during the tournament and carry into higher-ante games. They do not score points.
 - Check and Call still grant a free fish. Optionally spend **one stick per turn**, before betting or after acting, for another fish. An all-in Bet gives no fishing; an all-in Call retains its free fish and optional stick. You cannot spend after folding.

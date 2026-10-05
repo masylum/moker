@@ -2,11 +2,11 @@
 
 A browser and terminal card game for 2–6 players, with a shared deterministic TypeScript engine, heuristic opponents, and persisted Cloudflare game sessions.
 
-The [rules](public/rules.md) describe three separate modes in rules version 9:
+The [rules](public/rules.md) describe three separate modes in rules version 10:
 
 - **Basic:** seven cards, four streets, a 102-card deck and nine hand ranks.
 - **Riichi:** the original seven-card expansion, including Lotuses, declarations and Riichi stick rewards.
-- **Streamlined:** currently playtesting. Six cards, three streets (0/2/2 newly revealed), combinations of up to four, no Lotuses or declarations. Each round adds four optional fishing sticks; unused sticks carry across rounds and tournament games.
+- **Streamlined:** currently playtesting. Six cards, three streets (0/2/2 newly revealed), combinations of up to four, no Lotuses or declarations. Start with three Riichi sticks and add three at the start of each subsequent game; unused sticks carry across rounds and tournament games. No grants between rounds.
 
 See the historical [banked-stick health report](docs/streamlined-2026-10-05/README.md) and [ladder analysis](docs/streamlined-2026-10-04/README.md). Select Streamlined explicitly in the browser or use `--streamlined` for CLI play and simulations.
 
@@ -23,7 +23,7 @@ Browser play uses heuristic opponents and needs no API keys. Choose more than on
 
 Rooms retain seat ownership in a browser cookie, so refreshing or reopening the same link in the same browser restores your seat. Use separate browsers/devices (or a private browser window) to test multiple people. Seats stay reserved when someone disconnects; clearing cookies loses access to that seat. The host deals subsequent rounds. The table refreshes once per second, and Durable Object alarms run robot turns independently of connected browsers. Choose your name during setup or when joining a room.
 
-The server authorizes each room action and filters private cards for the current player or observer. Room seeds and RNG state stay private, and legacy debug/event endpoints are blocked for rooms. Single-human games and CLI simulations retain their existing behavior. Old rules-v8 and earlier sessions cannot be resumed under the new engine.
+The server authorizes each room action and filters private cards for the current player or observer. Room seeds and RNG state stay private, and legacy debug/event endpoints are blocked for rooms. Single-human games and CLI simulations retain their existing behavior. Old rules-v9 and earlier sessions cannot be resumed under the new engine.
 
 ## Commands
 

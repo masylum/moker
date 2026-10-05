@@ -402,26 +402,32 @@ describe("All-in, Lotuses and exact ties", () => {
 })
 
 describe("Game length, elimination and tournaments", () => {
-  it("adds four sticks each round and carries savings into higher-ante games", () => {
-    const g = engine({ mode: "streamlined", tournamentGames: 3 }, 2)
-    expect(g.state.players.map((p) => p.riichiSticks)).toEqual([4, 4])
+  it("starts with three sticks, saves them across rounds, and adds three per game", () => {
+    const g = engine({ mode: "streamlined", tournamentGames: 3, orbits: 2 }, 2)
+    expect(g.state.players.map((p) => p.riichiSticks)).toEqual([3, 3])
     finishPass(g)
     const spender = actor(g)
     g.spendRiichiStick(spender.id, "deck")
     discardDrawn(g)
-    expect(spender.riichiSticks).toBe(3)
-    for (let round = 1; round <= 4; round++) {
+    expect(spender.riichiSticks).toBe(2)
+    for (let round = 1; round <= 12; round++) {
       finishPass(g)
       foldToWinner(g)
       const before = g.state.players.map((p) => p.riichiSticks)
+      expect(before.find((_, i) => g.state.players[i]!.id === spender.id)).toBe(
+        2 + 3 * Math.floor((round - 1) / 4),
+      )
+      if (round === 12) break
       g.startNextHand()
-      expect(g.state.players.map((p) => p.riichiSticks)).toEqual(before.map((n) => n + 4))
+      const expected = before.map((n) => n + (round % 4 === 0 ? 3 : 0))
+      expect(g.state.players.map((p) => p.riichiSticks)).toEqual(expected)
       const restored = GameEngine.restore(g.state)
-      expect(restored.state.players.map((p) => p.riichiSticks)).toEqual(before.map((n) => n + 4))
+      expect(restored.state.players.map((p) => p.riichiSticks)).toEqual(expected)
     }
+    expect(g.state.phase).toBe("finished")
+    expect(spender.riichiSticks).toBe(8)
     expect(g.state.gameNumber).toBe(3)
     expect(g.state.orbitValue).toBe(15)
-    expect(spender.riichiSticks).toBe(19)
   })
 
   it("starts with two sticks and adds two only when a new tournament game starts", () => {

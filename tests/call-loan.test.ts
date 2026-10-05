@@ -183,7 +183,7 @@ it("includes fishing when evaluating the archived Chow + Eye all-in Call", () =>
   const state = JSON.parse(
     readFileSync(new URL("./fixtures/riichi-large-call.json", import.meta.url), "utf8"),
   ) as GameState
-  state.rulesVersion = 9 // Archived classic fixture; the classic rules are unchanged.
+  state.rulesVersion = 10 // Archived classic fixture; the classic rules are unchanged.
   const decision = chooseHeuristicAction(state, "p4", 24)
   const call = decision.evaluations.find((e) => e.action.type === "call")!
   expect(call.estimatedWinRate).toBeLessThan(0.5)

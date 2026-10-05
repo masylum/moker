@@ -194,7 +194,7 @@ export interface DrawContext {
 }
 
 export interface GameState {
-  rulesVersion: 9
+  rulesVersion: 10
   stickSpentThisTurn?: boolean
   stickOfferPlayerId?: string
   stickWindow?: { playerId: string; continuation: DrawContext["continuation"] }

@@ -1,6 +1,6 @@
 # Architecture
 
-The SolidJS browser, terminal, simulations, Durable Object share the rules-v9 engine.
+The SolidJS browser, terminal, simulations, Durable Object share the rules-v10 engine.
 
 - `types.ts` defines serializable state and API shapes, including mode, player count, tournament progress, and score history.
 - `cards.ts` builds the 102-card Basic, 112-card Riichi or 110-card Streamlined deck. `hand-ranks.ts`, `melds.ts`, and `scoring.ts` define the mode-specific ladders and comparisons.

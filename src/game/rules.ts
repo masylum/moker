@@ -1,6 +1,6 @@
 import type { GameConfig, GameState, PlayerState } from "./types"
 
-export const STICKS_PER_ROUND = 4
+export const STREAMLINED_STICKS_PER_GAME = 3
 const STREET_COUNT = 4
 const STARTING_CHIPS = 200
 export const STARTING_RIICHI_STICKS = 2

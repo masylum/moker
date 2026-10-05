@@ -93,7 +93,7 @@ export function App() {
   onCleanup(() => audio.dispose())
   const [musicOn, setMusicOn] = createSignal(audio.musicEnabled())
   const [effectsOn, setEffectsOn] = createSignal(audio.effectsEnabled())
-  const [session, setSession] = createSignal(localStorage.getItem("moker-v9-session") ?? "")
+  const [session, setSession] = createSignal(localStorage.getItem("moker-v10-session") ?? "")
   const [state, setState] = createSignal<PublicGameState>()
   const savedName = localStorage.getItem("moker-name")?.trim()
   const [name, setName] = createSignal(
@@ -403,7 +403,7 @@ export function App() {
       )
       setViewer(undefined)
       setSession(result.sessionId)
-      localStorage.setItem("moker-v9-session", result.sessionId)
+      localStorage.setItem("moker-v10-session", result.sessionId)
       setAuto(true)
       setCopied(false)
       if (result.state.room) window.history.pushState(null, "", `/rooms/${result.sessionId}`)
@@ -1641,7 +1641,7 @@ export function App() {
                             <Show when={game().config.mode !== "basic"}>
                               <p>
                                 {game().config.mode === "streamlined"
-                                  ? "Loans are cleared. Keep your saved sticks and receive 4 more at the start of each round."
+                                  ? "Loans are cleared. Keep your saved sticks and receive 3 more at the start of the next game."
                                   : "Loans are cleared. Keep your unused Riichi sticks and receive 2 more for the next game."}
                               </p>
                             </Show>

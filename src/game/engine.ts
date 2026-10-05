@@ -9,7 +9,7 @@ import {
   LOAN_VALUE,
   MAX_LOANS,
   handSize,
-  STICKS_PER_ROUND,
+  STREAMLINED_STICKS_PER_GAME,
   RIICHI_WIN_STICKS,
   STARTING_RIICHI_STICKS,
   streetCount,
@@ -64,7 +64,7 @@ export class GameEngine {
     const config = createConfig({ ...partial, playerCount: players.length })
     const random = new SeededRandom(config.seed)
     const state: GameState = {
-      rulesVersion: 9,
+      rulesVersion: 10,
       id: `game-${config.seed}`,
       config,
       rngState: random.state,
@@ -139,8 +139,8 @@ export class GameEngine {
   }
 
   static restore(state: GameState, events: GameEvent[] = []): GameEngine {
-    if (state.rulesVersion !== 9) {
-      throw new Error("This saved game uses obsolete rules. Start a new table for Moker rules v9.")
+    if (state.rulesVersion !== 10) {
+      throw new Error("This saved game uses obsolete rules. Start a new table for Moker rules v10.")
     }
     const restored = structuredClone(state)
     restored.config = createConfig(restored.config)
@@ -164,6 +164,21 @@ export class GameEngine {
         player.loans = 0
         player.eliminated = false
         if (this.state.config.mode === "riichi") player.riichiSticks += STARTING_RIICHI_STICKS
+      }
+    }
+
+    if (this.state.config.mode === "streamlined" && this.state.handNumber === 0) {
+      for (const player of this.state.players) {
+        player.riichiSticks += STREAMLINED_STICKS_PER_GAME
+        this.emit(
+          "fishing-sticks-granted",
+          {
+            amount: STREAMLINED_STICKS_PER_GAME,
+            total: player.riichiSticks,
+            gameNumber: this.state.gameNumber,
+          },
+          player.id,
+        )
       }
     }
 
@@ -248,16 +263,6 @@ export class GameEngine {
     const dealOrder = this.orderedActiveAfter(this.state.dealerIndex)
     for (let cardIndex = 0; cardIndex < handSize(this.state.config.mode); cardIndex += 1) {
       for (const player of dealOrder) player.privateCards.push(this.drawDeck())
-    }
-    if (this.state.config.mode === "streamlined") {
-      for (const player of dealOrder) {
-        player.riichiSticks += STICKS_PER_ROUND
-        this.emit(
-          "fishing-sticks-granted",
-          { amount: STICKS_PER_ROUND, total: player.riichiSticks },
-          player.id,
-        )
-      }
     }
     this.state.openingPrivateCards = Object.fromEntries(
       dealOrder.map((player) => [player.id, structuredClone(player.privateCards)]),

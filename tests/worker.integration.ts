@@ -39,7 +39,7 @@ describe("Cloudflare Worker and Durable Object persistence", () => {
       expect(state.config.mode).toBe(mode)
       const player = state.players.find((p) => p.id === "p1")!
       expect(player.privateCards).toHaveLength(mode === "streamlined" ? 6 : 7)
-      expect(player.riichiSticks).toBe(mode === "streamlined" ? 4 : mode === "riichi" ? 2 : 0)
+      expect(player.riichiSticks).toBe(mode === "streamlined" ? 3 : mode === "riichi" ? 2 : 0)
       expect(state.phase).toBe(mode === "basic" ? "betting" : "charleston")
     },
   )
