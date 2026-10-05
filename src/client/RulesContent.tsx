@@ -30,7 +30,7 @@ export function RulesContent(props: { mode: "basic" | "riichi" | "streamlined" }
           <h4>Build, bet and bluff</h4>
           <p>
             Start with 200 chips. Each round, pay the ante, receive six hidden cards and four
-            additional fishing sticks, then secretly pass two cards left. Unused sticks carry across
+            additional Riichi sticks, then secretly pass two cards left. Unused sticks carry across
             rounds and tournament games.
           </p>
         </section>

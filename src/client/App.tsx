@@ -1321,7 +1321,7 @@ export function App() {
                         <div class="button-row main-actions">
                           <span>
                             {pickingStick()
-                              ? "Spend a fishing stick: choose a card from the deck or a discard lane."
+                              ? "Spend a Riichi stick: choose a card from the deck or a discard lane."
                               : blankPick()
                                 ? "Choose any card in either discard lane to swap with your Blank."
                                 : cards().some((card) => card.kind === "blank")
@@ -1329,7 +1329,7 @@ export function App() {
                                   : "Choose a card from the deck or a discard lane."}
                           </span>
                           <Button disabled={busy()} onClick={cancelFishing}>
-                            {pickingStick() ? "Cancel fishing stick" : "Cancel fishing"}
+                            {pickingStick() ? "Cancel Riichi stick" : "Cancel fishing"}
                           </Button>
                         </div>
                       </Show>
@@ -1380,7 +1380,7 @@ export function App() {
                       >
                         <div class="button-row main-actions">
                           <Button disabled={busy() || pickingFish()} onClick={chooseStick}>
-                            Spend fishing stick
+                            Spend Riichi stick
                           </Button>
                           <Button class="primary" disabled={busy()} onClick={() => resolveStick()}>
                             End turn
@@ -1412,7 +1412,7 @@ export function App() {
                           </Button>
                           <Show when={canSpendStick()}>
                             <Button disabled={busy() || pickingFish()} onClick={chooseStick}>
-                              Spend fishing stick
+                              Spend Riichi stick
                             </Button>
                           </Show>
                           <Show when={!allIn() && maximum() > game().currentWager}>

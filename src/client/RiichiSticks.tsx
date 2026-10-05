@@ -12,7 +12,7 @@ export function RiichiSticks(props: { count: number; spent?: boolean; compact?: 
         class="riichi-stick-count"
         classList={{ "compact-sticks": props.compact }}
         role="img"
-        aria-label={`${props.count} fishing sticks`}
+        aria-label={`${props.count} Riichi sticks`}
       >
         <Show when={props.spent}>
           <img class="spent-stick" src="/assets/sticks/riichi-decor.svg?v=4" alt="" />
@@ -29,7 +29,9 @@ export function RiichiSticks(props: { count: number; spent?: boolean; compact?: 
               )}
             </For>
           </div>
-          <span class="stick-tag">{props.count} Fish</span>
+          <span class="stick-tag">
+            {props.count} Riichi {props.count === 1 ? "stick" : "sticks"}
+          </span>
         </Show>
       </div>
     </Show>

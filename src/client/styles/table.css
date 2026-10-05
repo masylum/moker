@@ -1427,9 +1427,10 @@
   }
 }
 
-.riichi-stick-art img,
-.loan-stick-art img {
-  filter: drop-shadow(0 2px 0 var(--color-card-edge)) drop-shadow(var(--shadow-decor));
+.riichi-stick-art,
+.loan-stick-art,
+.riichi-declared > div {
+  filter: drop-shadow(0 1px 2px rgb(24 59 37 / 8%));
 }
 
 .opponent-card-journey {
@@ -1629,7 +1630,6 @@
   object-fit: contain;
   flex: none;
   transform: rotate(-20deg);
-  filter: drop-shadow(var(--shadow-decor));
 }
 .riichi-declared .stick-tag {
   opacity: 1;
