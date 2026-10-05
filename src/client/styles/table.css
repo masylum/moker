@@ -1430,7 +1430,7 @@
 .riichi-stick-art,
 .loan-stick-art,
 .riichi-declared > div {
-  filter: drop-shadow(0 2px 0 var(--color-card-edge)) drop-shadow(0 3px 4px rgb(24 59 37 / 16%));
+  filter: drop-shadow(0 2px 0 var(--color-card-edge)) drop-shadow(var(--shadow-stick));
 }
 
 .opponent-card-journey {
