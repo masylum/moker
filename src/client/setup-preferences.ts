@@ -8,7 +8,7 @@ export interface SetupPreferences {
 }
 export function readSetup(): SetupPreferences {
   const defaults: SetupPreferences = {
-    mode: "basic",
+    mode: "streamlined",
     seats: ["human", "robot", "robot", "robot", "none", "none"],
     games: 1,
   }
@@ -16,7 +16,7 @@ export function readSetup(): SetupPreferences {
     const saved = JSON.parse(localStorage.getItem(KEY) ?? "null")
     if (!saved || typeof saved !== "object") return defaults
     return {
-      mode: ["riichi", "streamlined"].includes(saved.mode) ? saved.mode : "basic",
+      mode: ["basic", "riichi", "streamlined"].includes(saved.mode) ? saved.mode : defaults.mode,
       seats:
         Array.isArray(saved.seats) &&
         saved.seats.length === 6 &&

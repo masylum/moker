@@ -20,6 +20,10 @@ describe("setup preferences", () => {
       expect(readSetup()).toEqual(setup)
     },
   )
+  it("defaults new players to Streamlined", () => {
+    vi.stubGlobal("localStorage", { getItem: () => null })
+    expect(readSetup().mode).toBe("streamlined")
+  })
   it("recovers from malformed and unavailable storage", () => {
     vi.stubGlobal("localStorage", {
       getItem: () => "{broken",
@@ -35,7 +39,7 @@ describe("setup preferences", () => {
       getItem: () => JSON.stringify({ mode: "nope", seats: ["human"], games: 90 }),
     })
     expect(readSetup()).toEqual({
-      mode: "basic",
+      mode: "streamlined",
       seats: ["human", "robot", "robot", "robot", "none", "none"],
       games: 1,
     })
