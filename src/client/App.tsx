@@ -726,6 +726,18 @@ export function App() {
               <div class="setup-label" id="game-mode-label">
                 Game mode
               </div>
+              <div class="playtest-note" id="streamlined-playtest">
+                <span>new, currently playtesting</span>
+                <svg viewBox="0 0 70 44" fill="none" aria-hidden="true">
+                  <path
+                    d="M3 8C33 1 57 15 57 39M46 30 57 40 65 27"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
               <div
                 class="mode-picker"
                 style={{ "--mode-index": mode() === "basic" ? 0 : mode() === "riichi" ? 1 : 2 }}
@@ -755,24 +767,12 @@ export function App() {
                   Streamlined
                 </Button>
               </div>
-              <div class="playtest-note" id="streamlined-playtest">
-                <span>new, currently playtesting</span>
-                <svg viewBox="0 0 70 44" fill="none" aria-hidden="true">
-                  <path
-                    d="M3 36C33 43 57 29 57 5M46 14 57 4 65 17"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </div>
               <p class="mode-description">
                 {mode() === "basic"
                   ? "7 cards · 4 streets · Nine hand ranks."
                   : mode() === "riichi"
                     ? "7 cards · 4 streets · Jokers, Lotuses and Riichi."
-                    : "6 cards · 3 streets · 4 extra fishing sticks each round. Save unused sticks."}
+                    : "6 cards · 3 streets · Save your sticks."}
               </p>
             </div>
             <div class="setup-field seat-setup">

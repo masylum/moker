@@ -421,11 +421,11 @@
 .playtest-note {
   display: flex;
   justify-content: flex-end;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 6px;
   color: var(--color-text);
   padding-right: 9%;
-  margin-top: -2px;
+  margin-bottom: -2px;
   font-size: var(--font-sm);
   font-style: italic;
 }
