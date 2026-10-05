@@ -7,10 +7,13 @@ export type HandStrength = Pick<HandScore, "total" | "tieBreak">
 const strengthCache = new Map<string, HandStrength>()
 const STRENGTH_CACHE_LIMIT = 200_000
 
-/** Scores any subset of the six Roll Your Own tiles (at most four scoring cards). */
-export function scoreHand(cards: readonly Card[], mode: "basic" | "riichi" = "riichi"): HandScore {
+/** Scores the best enabled combination for the selected mode. */
+export function scoreHand(
+  cards: readonly Card[],
+  mode: "basic" | "riichi" | "streamlined" = "riichi",
+): HandScore {
   return scoreCandidates(
-    generateHandCandidates(cards)
+    generateHandCandidates(cards, mode)
       .filter((c) => isHandEnabled(c.kind, mode))
       .map((c) => ({ ...c, score: handRank(c.kind, mode) })),
     highCards(playableCards(cards)),
@@ -19,7 +22,7 @@ export function scoreHand(cards: readonly Card[], mode: "basic" | "riichi" = "ri
 
 export function scoreHandStrength(
   cards: readonly Card[],
-  mode: "basic" | "riichi" = "riichi",
+  mode: "basic" | "riichi" | "streamlined" = "riichi",
 ): HandStrength {
   const key = mode + ":" + cards.map(cardCacheKey).sort().join("|")
   const cached = strengthCache.get(key)

@@ -2,7 +2,11 @@ import { readFileSync } from "node:fs"
 import type { GameState } from "../src/game/types"
 import { describe, expect, it } from "vitest"
 import { GameEngine } from "../src/game/engine"
-import { analyzePokerMath, continuationRiskCost } from "../src/game/heuristic"
+import {
+  analyzePokerMath,
+  chooseHeuristicAction,
+  continuationRiskCost,
+} from "../src/game/heuristic"
 import { createDeck } from "../src/game/cards"
 import { stepHeuristic } from "../src/game/automation"
 
@@ -103,7 +107,24 @@ describe("one loan per game", () => {
 })
 
 describe("Call equity and continuation", () => {
-  it("conditions on raise size without reading opposing hidden cards", () => {
+  it("values the chance to discard a Single Lotus when an all-in call includes fishing", () => {
+    const { game, player } = fixture()
+    const deck = createDeck("riichi")
+    player.privateCards = [
+      deck.find((c) => c.kind === "flower")!,
+      ...deck.filter((c) => c.kind === "numbered").slice(0, 6),
+    ]
+    player.publicCards = []
+    player.chips = 5
+    game.state.currentWager = 5
+    game.state.pot = 1000
+    game.state.allInPlayerIds = [game.state.players.find((p) => p !== player)!.id]
+    expect(analyzePokerMath(game.state, player.id, 24).showdownEquity).toBe(0)
+    const d = chooseHeuristicAction(game.state, player.id, 24)
+    expect(d.evaluations.find((e) => e.action.type === "call")!.estimatedWinRate).toBeGreaterThan(0)
+    expect(d.action.type).toBe("call")
+  })
+  it("conditions on raise size and Riichi signals without reading opposing hidden cards", () => {
     const { game, player } = fixture()
     const other = game.state.players.find((p) => p !== player)!
     const deck = createDeck("riichi")
@@ -126,7 +147,7 @@ describe("Call equity and continuation", () => {
     }
     game.state.bettingHistory = [base]
     const small = analyzePokerMath(game.state, player.id, 24)
-    game.state.bettingHistory = [{ ...base, amount: 150, cost: 150 }]
+    game.state.bettingHistory = [{ ...base, amount: 150, cost: 150, riichi: true }]
     const strong = analyzePokerMath(game.state, player.id, 24)
     expect(strong.showdownEquity).toBeLessThan(small.showdownEquity)
     const hidden = structuredClone(game.state)
@@ -158,11 +179,17 @@ describe("Call equity and continuation", () => {
   })
 })
 
-it("rejects archived v6 games rather than reinterpreting seven-card hands", () => {
+it("includes fishing when evaluating the archived Chow + Eye all-in Call", () => {
   const state = JSON.parse(
     readFileSync(new URL("./fixtures/riichi-large-call.json", import.meta.url), "utf8"),
   ) as GameState
-  expect(() => GameEngine.restore(state)).toThrow(/obsolete/)
+  state.rulesVersion = 9 // Archived classic fixture; the classic rules are unchanged.
+  const decision = chooseHeuristicAction(state, "p4", 24)
+  const call = decision.evaluations.find((e) => e.action.type === "call")!
+  expect(call.estimatedWinRate).toBeLessThan(0.5)
+  expect(call.rationale).toContain("next-ante risk cost")
+  expect(decision.action.type).toBe("call")
+  expect(decision.action.type === "call" && decision.action.drawSource).toBeTruthy()
 })
 
 describe("optional Charleston loans", () => {

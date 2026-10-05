@@ -1,4 +1,4 @@
-import { createDeck, dragonFace, faceKey, numberedFace, windFace } from "./cards"
+import { createDeck, dragonFace, flowerFace, faceKey, numberedFace, windFace } from "./cards"
 import { HAND_RANKS, handRank, isHandEnabled } from "./hand-ranks"
 import { scoreHand } from "./scoring"
 import {
@@ -44,15 +44,19 @@ const chowAlternatives = SUITS.flatMap((suit) =>
   Array.from({ length: 7 }, (_, index) => chowRequirements(suit, index + 1)),
 )
 const definitions: HandDefinition[] = [
+  exactDefinition("twin-lotus", "Twin Lotus", 2, [
+    [requirement(flowerFace("white-lotus"), true), requirement(flowerFace("black-lotus"), true)],
+  ]),
   exactDefinition(
     "long-chow",
     "Long Chow",
-    4,
-    SUITS.flatMap((suit) => Array.from({ length: 6 }, (_, i) => runRequirements(suit, i + 1, 4))),
+    5,
+    SUITS.flatMap((suit) => Array.from({ length: 5 }, (_, i) => runRequirements(suit, i + 1, 5))),
   ),
   exactDefinition("eye", "Eye", 2, eyeAlternatives),
   exactDefinition("chow", "Chow", 3, chowAlternatives),
   exactDefinition("two-eyes", "Two Eyes", 4, twoEyeAlternatives()),
+  exactDefinition("chow-eye", "Chow + Eye", 5, [...compoundAlternatives(chowAlternatives, true)]),
   exactDefinition(
     "pung",
     "Pung",
@@ -62,6 +66,7 @@ const definitions: HandDefinition[] = [
   exactDefinition("three-dragons", "Three Dragons", 3, [
     DRAGONS.map((dragon) => requirement(dragonFace(dragon), false)),
   ]),
+  exactDefinition("pung-eye", "Pung + Eye", 5, pungEyeAlternatives()),
   exactDefinition("three-winds", "Three Winds", 3, threeWindsAlternatives()),
   exactDefinition("four-winds", "Four Winds", 4, [
     WINDS.map((wind) => requirement(windFace(wind), false)),
@@ -72,11 +77,33 @@ const definitions: HandDefinition[] = [
     4,
     naturalFaces.map((face) => repeat(face, 4, false)),
   ),
+  exactDefinition(
+    "three-dragons-eye",
+    "Three Dragons + Eye",
+    5,
+    naturalFaces.map((face) => [
+      ...DRAGONS.map((dragon) => requirement(dragonFace(dragon), false)),
+      ...repeat(face, 2, true),
+    ]),
+  ),
 ]
+
+const streamlinedDefinitions = definitions.map((d) =>
+  d.kind === "long-chow"
+    ? exactDefinition(
+        "long-chow",
+        "Long Chow",
+        4,
+        SUITS.flatMap((suit) =>
+          Array.from({ length: 6 }, (_, i) => runRequirements(suit, i + 1, 4)),
+        ),
+      )
+    : d,
+)
 
 export function analyzeHandProgress(
   cards: readonly Card[],
-  mode: "basic" | "riichi" = "riichi",
+  mode: "basic" | "riichi" | "streamlined" = "riichi",
 ): HandProgressSummary[] {
   const highCard = cards
     .filter((card) => card.kind !== "blank" && card.kind !== "joker" && card.kind !== "flower")
@@ -93,7 +120,7 @@ export function analyzeHandProgress(
   ]
 
   const prepared = prepareCards(cards)
-  for (const definition of definitions) {
+  for (const definition of mode === "streamlined" ? streamlinedDefinitions : definitions) {
     if (!isHandEnabled(definition.kind, mode)) continue
     const match = bestAlternativeMatch(prepared, definition.alternatives)
     evaluations.push({
@@ -112,13 +139,13 @@ export function analyzeHandProgress(
 /** Count-only projection for bots; shares the rule matcher with UI explanations. */
 export function nextHandPotential(
   cards: readonly Card[],
-  mode: "basic" | "riichi",
+  mode: "basic" | "riichi" | "streamlined",
   currentRank: number,
 ): { nextRank: number | null; nextMissing: number | null } {
   const prepared = prepareCards(cards)
   let nextRank: number | null = null
   let nextMissing: number | null = null
-  for (const definition of definitions) {
+  for (const definition of mode === "streamlined" ? streamlinedDefinitions : definitions) {
     if (!isHandEnabled(definition.kind, mode)) continue
     const rank = handRank(definition.kind, mode)
     if (rank <= currentRank) continue
@@ -142,14 +169,14 @@ export function nextHandPotential(
 
 export function summarizeHandProgress(
   cards: readonly Card[],
-  mode: "basic" | "riichi" = "riichi",
+  mode: "basic" | "riichi" | "streamlined" = "riichi",
 ): {
   currentBest: HandProgressSummary
   nextClosest: HandProgressSummary | null
 } {
   const score = scoreHand(cards, mode)
   const kind = score.combinations[0]?.kind ?? "high-card"
-  const currentBest = { ...summarizeKind(cards, kind), rank: score.total }
+  const currentBest = { ...summarizeKind(cards, kind, mode), rank: score.total }
   const nextClosest =
     analyzeHandProgress(cards, mode)
       .filter((candidate) => candidate.rank > currentBest.rank)
@@ -158,7 +185,11 @@ export function summarizeHandProgress(
   return { currentBest, nextClosest }
 }
 
-function summarizeKind(cards: readonly Card[], kind: HandKind): HandProgressSummary {
+function summarizeKind(
+  cards: readonly Card[],
+  kind: HandKind,
+  mode: "basic" | "riichi" | "streamlined",
+): HandProgressSummary {
   if (kind === "high-card") {
     const highCard = cards
       .filter((card) => card.kind !== "blank" && card.kind !== "joker" && card.kind !== "flower")
@@ -176,7 +207,9 @@ function summarizeKind(cards: readonly Card[], kind: HandKind): HandProgressSumm
     }
   }
 
-  const definition = definitions.find((candidate) => candidate.kind === kind)!
+  const definition = (mode === "streamlined" ? streamlinedDefinitions : definitions).find(
+    (candidate) => candidate.kind === kind,
+  )!
   const matchedCardIds = bestAlternativeMatch(prepareCards(cards), definition.alternatives)
 
   return {
@@ -223,6 +256,27 @@ function twoEyeAlternatives(): Requirement[][] {
       .map((right) => [...repeat(left, 2, true), ...repeat(right, 2, true)]),
   )
   return normal
+}
+
+function compoundAlternatives(
+  mainAlternatives: readonly Requirement[][],
+  allowSameFace: boolean,
+): Requirement[][] {
+  return mainAlternatives.flatMap((main) =>
+    naturalFaces
+      .filter(
+        (face) => allowSameFace || !main.some((target) => faceKey(target.face) === faceKey(face)),
+      )
+      .map((face) => [...main, ...repeat(face, 2, true)]),
+  )
+}
+
+function pungEyeAlternatives(): Requirement[][] {
+  return naturalFaces.flatMap((pung) =>
+    naturalFaces
+      .filter((eye) => faceKey(eye) !== faceKey(pung))
+      .map((eye) => [...repeat(pung, 3, false), ...repeat(eye, 2, true)]),
+  )
 }
 
 function threeWindsAlternatives(): Requirement[][] {

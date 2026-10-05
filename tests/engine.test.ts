@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { GameEngine } from "../src/game/engine"
-import { createDeck, numberedFace, windFace } from "../src/game/cards"
+import { createDeck, flowerFace, numberedFace, windFace } from "../src/game/cards"
 import { stepHeuristic } from "../src/game/automation"
 import type { Card, GameConfig } from "../src/game/types"
 
@@ -37,7 +37,7 @@ function reveal(game: GameEngine) {
     const p = actor(game)
     game.exposeCards(
       p.id,
-      p.privateCards.slice(0, 2).map((c) => c.id),
+      p.privateCards.slice(0, game.state.street === 1 ? 3 : 1).map((c) => c.id),
     )
   }
 }
@@ -70,14 +70,14 @@ function playToEnd(game: GameEngine) {
 function highHand(prefix: string, wind: "east" | "north"): Card[] {
   return [
     { ...windFace(wind), id: `${prefix}-wind` },
-    ...([1, 3, 5, 7, 9] as const).map((rank, i) => ({
+    ...([1, 3, 5, 7, 9, 2] as const).map((rank, i) => ({
       ...numberedFace(i % 2 ? "dots" : "bamboo", rank),
       id: `${prefix}-${i}`,
     })),
   ]
 }
 
-describe("Moker v8 setup and streets", () => {
+describe("Moker v5 setup and streets", () => {
   it.each([2, 3, 4, 5, 6])(
     "sets up a %i-player Basic game with 102 cards, two seeded lanes and dealer first",
     (count) => {
@@ -86,11 +86,11 @@ describe("Moker v8 setup and streets", () => {
       expect(g.state.pot).toBe(count * 5)
       expect(
         g.state.players.every(
-          (p) => p.chips === 195 && p.privateCards.length === 6 && p.riichiSticks === 0,
+          (p) => p.chips === 195 && p.privateCards.length === 7 && p.riichiSticks === 0,
         ),
       ).toBe(true)
       expect(
-        g.state.deck.length + count * 6 + g.state.discardA.length + g.state.discardB.length,
+        g.state.deck.length + count * 7 + g.state.discardA.length + g.state.discardB.length,
       ).toBe(102)
       expect(g.state.discardA).toHaveLength(1)
       expect(g.state.discardB).toHaveLength(1)
@@ -106,7 +106,7 @@ describe("Moker v8 setup and streets", () => {
   it("passes two cards simultaneously only in Riichi", () => {
     const g = engine({ mode: "riichi" })
     expect(g.state.phase).toBe("charleston")
-    expect(g.state.players.every((p) => p.riichiSticks === 4)).toBe(true)
+    expect(g.state.players.every((p) => p.riichiSticks === 2)).toBe(true)
     const before = structuredClone(g.state.players)
     const p = actor(g)
     const ids = p.privateCards.slice(0, 2).map((c) => c.id)
@@ -122,9 +122,9 @@ describe("Moker v8 setup and streets", () => {
       expect(transfer.toPlayerId).toBe(g.state.players[(index + 1) % 4]!.id)
     }
   })
-  it("reveals 2/2 simultaneously before the next betting street", () => {
+  it("reveals 3/1/1 simultaneously before the next betting street", () => {
     const g = engine()
-    for (const count of [2, 4]) {
+    for (const count of [3, 4, 5]) {
       checkStreet(g)
       expect(g.state.phase).toBe("exposing")
       reveal(g)
@@ -132,7 +132,7 @@ describe("Moker v8 setup and streets", () => {
     }
     checkStreet(g)
     expect(g.state.handResults[0]?.reason).toBe("showdown")
-    expect(g.state.handResults[0]?.players.every((p) => p.cards.length === 6)).toBe(true)
+    expect(g.state.handResults[0]?.players.every((p) => p.cards.length === 7)).toBe(true)
   })
   it("Check and Call fish for free, defaulting to the deck", () => {
     const g = engine()
@@ -144,9 +144,9 @@ describe("Moker v8 setup and streets", () => {
     finishFishing(g)
     p = actor(g)
     g.act(p.id, { type: "check", drawSource: "deck" })
-    expect(p.privateCards).toHaveLength(7)
+    expect(p.privateCards).toHaveLength(8)
     discardDrawn(g)
-    expect(p.privateCards).toHaveLength(6)
+    expect(p.privateCards).toHaveLength(7)
     p = actor(g)
     g.act(p.id, { type: "bet", amount: 10 })
     const caller = actor(g)
@@ -211,12 +211,12 @@ describe("Riichi fishing and locks", () => {
       useRiichiStick: true,
       riichiDrawSource: "discard-a",
     })
-    expect(p.riichiSticks).toBe(3)
+    expect(p.riichiSticks).toBe(1)
     expect(g.state.discardA).toHaveLength(0)
     discardDrawn(g)
     expect(g.state.phase).toBe("discarding")
     discardDrawn(g)
-    expect(p.privateCards).toHaveLength(6)
+    expect(p.privateCards).toHaveLength(7)
     expect(g.state.drawDiscardHistory).toHaveLength(2)
   })
   it("uses a Blank at the exact buried position instead of drawing and discarding", () => {
@@ -237,7 +237,7 @@ describe("Riichi fishing and locks", () => {
     expect(g.state.deck).toHaveLength(deck)
     expect(g.state.phase).toBe("betting")
   })
-  it("Call + stick fishes twice; bets may fish but cannot declare Riichi", () => {
+  it("Call + stick fishes twice; a bet may declare Riichi but cannot also fish", () => {
     const g = engine({ mode: "riichi" })
     finishPass(g)
     g.act(actor(g).id, { type: "bet", amount: 10 })
@@ -247,7 +247,7 @@ describe("Riichi fishing and locks", () => {
     discardDrawn(g)
     expect(g.state.phase).toBe("discarding")
     discardDrawn(g)
-    expect(p.riichiSticks).toBe(3)
+    expect(p.riichiSticks).toBe(1)
     const bettor = actor(g)
     expect(() =>
       g.act(bettor.id, {
@@ -258,14 +258,16 @@ describe("Riichi fishing and locks", () => {
         drawSource: "deck",
       }),
     ).toThrow(/./)
-    g.act(bettor.id, { type: "bet", amount: 20, useRiichiStick: true })
-    finishFishing(g)
-    expect(bettor.riichi).toBe(false)
-    expect(bettor.riichiSticks).toBe(3)
+    g.act(bettor.id, { type: "bet", amount: 20, riichi: true })
+    expect(bettor.riichi).toBe(true)
+    expect(g.legalActions(actor(g).id).find((a) => a.type === "bet")?.canRiichi).toBe(false)
     callStreet(g)
     reveal(g)
     expect(actor(g).id).toBe(bettor.id)
-    expect(g.legalActions(bettor.id).find((a) => a.type === "check")?.canUseRiichiStick).toBe(true)
+    expect(g.legalActions(bettor.id).find((a) => a.type === "check")?.canUseRiichiStick).toBe(false)
+    g.act(bettor.id, { type: "fold" })
+    expect(bettor.riichi).toBe(false)
+    expect(g.legalActions(actor(g).id).find((a) => a.type === "bet")?.canRiichi).toBe(true)
   })
   it("rejects curses and voluntary loans without changing the economy", () => {
     const g = engine({ mode: "riichi" })
@@ -278,7 +280,7 @@ describe("Riichi fishing and locks", () => {
   })
 })
 
-describe("All-in and exact ties", () => {
+describe("All-in, Lotuses and exact ties", () => {
   it("caps the street, refunds overpayments, lowers a short call again, and skips to showdown", () => {
     const g = engine()
     const first = actor(g)
@@ -306,53 +308,102 @@ describe("All-in and exact ties", () => {
     expect(g.state.handResults[0]?.pots).toHaveLength(1)
     expect(g.state.handResults[0]?.pot).toBe(68)
   })
-  it("ante all-in finishes setup then immediately compares six-card hands", () => {
+  it("ante all-in finishes setup then immediately compares seven-card hands", () => {
     const g = engine({ mode: "riichi", startingChips: 5 })
     expect(g.state.handResults).toHaveLength(1)
     expect(g.state.charlestonHistory).toHaveLength(0)
     expect(g.state.discardA).toHaveLength(1)
-    expect(g.state.handResults[0]?.players.every((p) => p.cards.length === 6)).toBe(true)
+    expect(g.state.handResults[0]?.players.every((p) => p.cards.length === 7)).toBe(true)
   })
   it("splits ties equally without unused-card kickers or dealer remainder bonuses", () => {
     const g = engine({}, 3)
     g.state.players.forEach((p, i) => {
       p.privateCards = highHand(`p${i}`, i % 2 ? "east" : "north")
     })
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 4; i++) {
       checkStreet(g)
       if (g.state.phase === "exposing") reveal(g)
     }
     expect(g.state.handResults[0]?.winnerIds).toHaveLength(3)
     expect(g.state.players.map((p) => p.chips)).toEqual([200, 200, 200])
   })
-  it("settles an uncontested win with no bonus or extra disclosure", () => {
+  it("Four Winds beat two Lotuses; all single-Lotus players split equally", () => {
+    const g = engine({ mode: "riichi" }, 2)
+    finishPass(g)
+    g.state.players[0]!.privateCards = [
+      { ...flowerFace("white-lotus"), id: "lw" },
+      { ...flowerFace("black-lotus"), id: "lb" },
+      ...highHand("a", "east").slice(0, 5),
+    ]
+    g.state.players[1]!.privateCards = [
+      ...(["east", "north", "south", "west"] as const).map((w) => ({ ...windFace(w), id: w })),
+      ...highHand("b", "north").slice(1, 4),
+    ]
+    for (let i = 0; i < 4; i++) {
+      checkStreet(g)
+      if (g.state.phase === "exposing") reveal(g)
+    }
+    expect(g.state.handWinners).toEqual(["p2"])
+    const tied = engine({ mode: "riichi" }, 2)
+    finishPass(tied)
+    tied.state.players.forEach((p, i) => {
+      p.privateCards = [
+        { ...flowerFace(i ? "black-lotus" : "white-lotus"), id: `lotus${i}` },
+        ...highHand(`t${i}`, "east").slice(1),
+      ]
+    })
+    for (let i = 0; i < 4; i++) {
+      checkStreet(tied)
+      if (tied.state.phase === "exposing") reveal(tied)
+    }
+    expect(tied.state.handWinners).toHaveLength(2)
+  })
+  it("pays a public Lotus bonus of three antes, limited to remaining chips without loans", () => {
     const g = engine({ mode: "riichi" })
     finishPass(g)
+    const winner = g.state.players[(g.state.dealerIndex + 3) % 4]!
+    winner.publicCards = [{ ...flowerFace("white-lotus"), id: "lotus" }]
+    winner.privateCards = highHand("lotus-winner", "east").slice(0, 6)
+    g.state.players
+      .filter((p) => p !== winner)
+      .forEach((p) => {
+        p.chips = 7
+      })
     foldToWinner(g)
-    const result = g.state.handResults[0]!
-    expect(result.lotusBluff).toBeNull()
-    expect(result.players.every((p) => !p.lotusDisqualified)).toBe(true)
-    expect(g.state.players.reduce((sum, p) => sum + p.chips, 0)).toBe(800)
-    expect(g.publicView().handResults[0]!.players.every((p) => p.cards.length === 0)).toBe(true)
+    expect(g.state.handResults[0]?.lotusBluff).toEqual({
+      winnerId: winner.id,
+      perOpponent: 15,
+      total: 21,
+    })
+    expect(g.state.players.every((p) => p.loans === 0)).toBe(true)
   })
-  it("awards no stick bonus for winning the pot", () => {
+  it("awards two Riichi supply sticks only for a sole pot win", () => {
     const g = engine({ mode: "riichi" })
     finishPass(g)
     const p = actor(g)
-    g.act(p.id, { type: "bet", amount: 10 })
+    g.act(p.id, { type: "bet", amount: 10, riichi: true })
     foldToWinner(g)
     expect(p.riichiSticks).toBe(4)
-    expect(g.state.handResults[0]?.riichiSettlement).toEqual({
-      declaredPlayerId: null,
-      won: false,
-      sticksAwarded: 0,
-    })
+    const t = engine({ mode: "riichi" }, 2)
+    finishPass(t)
+    t.state.players.forEach((candidate, i) => (candidate.privateCards = highHand(`t${i}`, "east")))
+    const r = actor(t)
+    t.act(r.id, { type: "bet", amount: 10, riichi: true })
+    t.act(actor(t).id, { type: "call" })
+    finishFishing(t)
+    reveal(t)
+    for (let i = 0; i < 3; i++) {
+      checkStreet(t)
+      if (t.state.phase === "exposing") reveal(t)
+    }
+    expect(r.riichiSticks).toBe(2)
+    expect(t.state.handResults[0]?.riichiSettlement.won).toBe(false)
   })
 })
 
 describe("Game length, elimination and tournaments", () => {
   it("adds four sticks each round and carries savings into higher-ante games", () => {
-    const g = engine({ mode: "riichi", tournamentGames: 3 }, 2)
+    const g = engine({ mode: "streamlined", tournamentGames: 3 }, 2)
     expect(g.state.players.map((p) => p.riichiSticks)).toEqual([4, 4])
     finishPass(g)
     const spender = actor(g)
@@ -371,6 +422,28 @@ describe("Game length, elimination and tournaments", () => {
     expect(g.state.gameNumber).toBe(3)
     expect(g.state.orbitValue).toBe(15)
     expect(spender.riichiSticks).toBe(19)
+  })
+
+  it("starts with two sticks and adds two only when a new tournament game starts", () => {
+    const g = engine({ mode: "riichi", tournamentGames: 3 }, 2)
+    expect(g.state.players.map((p) => p.riichiSticks)).toEqual([2, 2])
+    // Represent one spent stick and a Riichi win before the next game.
+    g.state.players[0]!.riichiSticks = 1
+    g.state.players[1]!.riichiSticks = 4
+    for (let game = 1; game <= 2; game++) {
+      for (let hand = 0; hand < 2; hand++) {
+        finishPass(g)
+        foldToWinner(g)
+        g.startNextHand()
+        const additions = game - 1 + (hand === 1 ? 1 : 0)
+        expect(g.state.players.map((p) => p.riichiSticks)).toEqual([
+          1 + additions * 2,
+          4 + additions * 2,
+        ])
+      }
+      expect(g.state.gameNumber).toBe(game + 1)
+      expect(g.publicView(g.state.players[0]!.id).players[0]!.riichiSticks).toBe(1 + game * 2)
+    }
   })
   it.each([2, 3, 4])("plays %i complete dealer orbits without resetting chips", (orbits) => {
     const g = engine({ orbits }, 2)
@@ -458,7 +531,7 @@ describe("Public information and rejected actions", () => {
     expect(
       g.publicView(undefined, true).handResults[0]!.players.find((p) => p.playerId === winner)!
         .cards,
-    ).toHaveLength(6)
+    ).toHaveLength(7)
   })
   it("rejects an invalid fishing source atomically", () => {
     const g = engine()

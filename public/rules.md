@@ -1,14 +1,14 @@
-# Moker streamlined rules (v8)
+# Moker rules
 
 For **2 to 6 players**.
 
 ## 1. Goal and game length
 
-Build a six-card hand by fishing, choosing cards to reveal, and betting. Win each round's pot by having the strongest hand or making all opponents fold.
+Build a seven-card hand by fishing, choosing cards to reveal, and betting. Win each round's pot by having the strongest hand or making all opponents fold.
 
 After each round, pass the dealer stick clockwise, skipping eliminated players. The game ends when the stick returns to the starting dealer or passes that player's original seat if they were eliminated. It also ends if only one player remains in the game.
 
-In the Basic Game, the player with the most chips wins. Equal totals share the win. The Fishing Expansion adjusts final scores for loans.
+In the Basic Game, the player with the most chips wins. Equal totals share the win. The Riichi Expansion adjusts final scores for loans.
 
 ## 2. Basic setup
 
@@ -29,7 +29,7 @@ The **Blue Dragon** is shown with the symbol 白.
 ## 3. Start a round
 
 1. Each participating player pays the **5-chip ante** into the pot. Tournament antes replace this amount as listed below.
-2. Shuffle the deck and deal each player **six hidden cards**.
+2. Shuffle the deck and deal each player **seven hidden cards**.
 3. Put the remaining deck face-down in the middle.
 4. Turn over two cards from the deck, placing one face-up at the start of each of the two discard lanes.
 
@@ -39,16 +39,17 @@ If the ante uses someone's last chips, finish setting up the round, then reveal 
 
 ## 4. Streets and reveals
 
-Each round has three betting stages, called **streets**.
+Each round has four betting stages, called **streets**.
 
 | Stage    | Reveal before betting                    | Public cards | Hidden cards |
 | -------- | ---------------------------------------- | -----------: | -----------: |
-| Street 1 | None                                     |            0 |            6 |
-| Street 2 | Two cards                                |            2 |            4 |
-| Street 3 | Two more cards                           |            4 |            2 |
-| Showdown | Reveal the last two cards after Street 3 |            6 |            0 |
+| Street 1 | None                                     |            0 |            7 |
+| Street 2 | Three cards                              |            3 |            4 |
+| Street 3 | One more card                            |            4 |            3 |
+| Street 4 | One more card                            |            5 |            2 |
+| Showdown | Reveal the last two cards after Street 4 |            7 |            0 |
 
-Before betting on Streets 2 and 3, everyone still in secretly chooses two cards, then reveals them simultaneously.
+Before betting on Streets 2, 3, and 4, everyone still in the round secretly chooses the required cards, then reveals them simultaneously.
 
 Revealed cards still belong to their owner but cannot be exchanged or discarded.
 
@@ -71,7 +72,7 @@ Revealed cards still belong to their owner but cannot be exchanged or discarded.
 | Bet    | Set the first bet or increase the current bet.           | None                     |
 | Fold   | Leave the round and forfeit chips already paid.          | None                     |
 
-**Check and Call each give one free fish in both modes. Bet/Raise gives no free fish.** All-in Calls retain their fishing allowance; an all-in Bet gives no fishing. Expansion fishing sticks can buy additional fishing as described below.
+**Check and Call each give one free fish in both modes. Bet/Raise gives no free fish.** Declared Riichi stops fishing. All-in Calls retain their fishing allowance; an all-in Bet gives no fishing. Expansion Riichi sticks can buy additional fishing as described below.
 
 A folded player can participate in the next round if they can pay its ante, subject to the expansion's loan rule.
 
@@ -98,7 +99,7 @@ One normal fishing action consists of:
 
 Keep both lanes visible by overlapping their cards. Always take from and add to the same end of each lane. Taking the available card uncovers the next card in that lane.
 
-You may discard the card you just drew. After fishing, you still have six cards in total. Public cards cannot be discarded.
+You may discard the card you just drew. After fishing, you still have seven cards in total. Public cards cannot be discarded.
 
 The expansion's Blank exchange replaces this entire action.
 
@@ -109,17 +110,17 @@ Whenever a player pays their last chips, they announce **All-in**.
 1. That player's total payment for the current street becomes the maximum street payment.
 2. Anyone who paid more takes back the excess. Payments from earlier streets stay in the pot.
 3. No further bets or raises are allowed.
-4. Continue in turn order. Anyone below the maximum must Call or Fold. Each Call includes one normal fish and may use one fishing stick under the usual per-turn limit. This applies even when the Call uses the caller’s last chips.
+4. Continue in turn order. Anyone below the maximum must Call or Fold. Each Call includes one normal fish and may use one Riichi stick under the usual per-turn limit, unless the caller has declared Riichi. This applies even when the Call uses the caller’s last chips.
 5. If a player calls with their last chips but still cannot match the maximum, lower the maximum to their total and return excess payments again.
-6. Once payments, all fishing, and any optional fishing stick decisions are settled, all remaining players reveal their cards and compare hands immediately. Skip the remaining streets.
+6. Once payments, all fishing, and any optional Riichi stick decisions are settled, all remaining players reveal their cards and compare hands immediately. Skip the remaining streets.
 
 If the ante itself uses someone's last chips, finish round setup and go directly to comparing hands, without betting or fishing.
 
 ## 8. Ending a round and comparing hands
 
-If everyone else folds, the remaining player wins the pot without showing their cards.
+If everyone else folds, the remaining player wins the pot without showing their cards, except for the expansion's Lotus reveal requirement.
 
-If two or more players remain, reveal all cards. Each player uses **up to four of their six cards** to form their best listed hand. Any of their cards may be selected, including previously hidden cards. The highest-ranked hand wins the whole pot.
+If two or more players remain, reveal all cards. Each player uses **up to five of their seven cards** to form their best listed hand. Any of their cards may be selected, including previously hidden cards. The highest-ranked hand wins the whole pot, subject to the expansion's Lotus rules.
 
 For hands of equal rank:
 
@@ -141,11 +142,11 @@ Ranks run from weakest to strongest.
 | Rank | Hand          | Required combination                |
 | ---: | ------------- | ----------------------------------- |
 |    1 | High Card     | One card                            |
-|    2 | Eyes          | Two identical natural cards         |
+|    2 | Eyes          | Two identical cards                 |
 |    3 | Chow          | Three consecutive cards of one suit |
-|    4 | Two Eyes      | Two different natural pairs         |
-|    5 | Three Winds   | Three different Winds               |
-|    6 | Long Chow     | Four consecutive cards of one suit  |
+|    4 | Two Eyes      | Two pairs of identical cards        |
+|    5 | Chow and Eyes | A Chow plus a pair                  |
+|    6 | Three Winds   | Three different Winds               |
 |    7 | Pung          | Three identical cards               |
 |    8 | Three Dragons | One of each Dragon                  |
 |    9 | Four Winds    | One of each Wind                    |
@@ -167,15 +168,15 @@ For example, a player finishing Game 1 with 260 chips records 260, returns those
 
 At the end of the tournament, add each player's game scores. The highest total wins; equal totals share the win.
 
-## 11. Fishing Expansion
+## 11. Riichi Expansion
 
 Use the Basic Game rules with the following additions and changes.
 
 ### Expansion setup
 
-- Add **four Jokers and four Blanks** to the basic deck, for **110 cards** in total.
-- At the start of every round, give each participating player **four additional fishing sticks**. Keep unused sticks across rounds and tournament games; they do not add to the final score.
-- Keep remaining fishing sticks and all loan sticks in the supply.
+- Add **four Jokers, four Blanks, and two Lotuses** to the basic deck, for **112 cards** in total.
+- Give each player **two Riichi sticks**.
+- Keep remaining Riichi sticks and all loan sticks in the supply.
 - Use the **Advanced Hand Ladder**.
 
 ### Loans
@@ -194,7 +195,7 @@ score = remaining chips - (250 × loan sticks)
 
 Scores may be negative. The highest score wins; tied players share the win.
 
-In a tournament, record the adjusted score for each game. Keep saved fishing sticks and add four more at the start of each round. Sum the recorded scores; loan penalties are already included and are not deducted again.
+In a tournament, record the adjusted score for each game. Keep unused Riichi sticks and add two more per player at the start of each subsequent game, alongside fresh chips. Sum the recorded scores; loan penalties are already included and are not deducted again.
 
 ### Jokers
 
@@ -207,7 +208,7 @@ Each Joker may substitute for one eligible card:
 | Red   | Any Crak or Red Dragon  |
 | Black | Any Wind                |
 
-Jokers may be used only in combinations of **three or more cards**. They cannot complete a pair.
+Jokers may be used only in combinations of **three or more cards**. They cannot complete a pair, including the pair within a larger hand such as Chow and Eyes or Pung and Eyes.
 
 ### Blanks
 
@@ -215,15 +216,30 @@ When fishing, a player may exchange a hidden Blank for **any card in either disc
 
 This replaces the entire fishing action. Do not draw or discard an additional card. Blanks have no hand value.
 
+### Lotuses
+
+At the end of the round, reveal your Lotuses.
+
+| Situation                                           | Result                                                                         |
+| --------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Hold both Lotuses at showdown                       | Twin Lotus: above Three Dragons, below Long Chow                               |
+| Hold exactly one Lotus at showdown                  | Lose regardless of other cards                                                 |
+| Every remaining showdown player holds one Lotus     | Split the pot equally                                                          |
+| Hold exactly one Lotus and everyone else has folded | Win the pot plus three times the ante from each opponent who played that round |
+
+An opponent who cannot afford the Lotus bonus pays only their remaining chips. They cannot borrow to pay it and owe nothing further.
+
+The uncontested Lotus bonus applies whether the Lotus is hidden or revealed.
+
 ### Charleston
 
 After dealing, each player secretly chooses **two cards** and passes them face-down to the player on their left. Everyone must choose before looking at the cards they receive.
 
 Do this once at the start of each round, before betting.
 
-### Spending fishing sticks
+### Spending Riichi sticks
 
-Once per turn, before betting or after acting, a player may return **one fishing stick** to the supply to fish once.
+Once per turn, after acting, a player may return **one Riichi stick** to the supply to fish once.
 
 | Preceding action | Fishing available                                  |
 | ---------------- | -------------------------------------------------- |
@@ -233,21 +249,57 @@ Once per turn, before betting or after acting, a player may return **one fishing
 
 Finish each fishing action before starting another. A second fishing action may take a card uncovered by the first.
 
-Sticks cannot be spent after folding. Calling an all-in still allows a stick, even if the Call uses your last chips. An all-in Bet gives no fishing.
+Sticks cannot be spent after folding or while in Riichi. Calling an all-in still allows a stick, even if the Call uses your last chips. An all-in Bet gives no fishing.
+
+### Declaring Riichi
+
+On **Street 1, 2, or 3**, immediately after Betting, a player may declare Riichi if nobody else is currently in Riichi. Calling does not qualify.
+
+Place **two Riichi sticks from the supply** on the player's hidden cards as a potential reward. These sticks cannot be spent yet. The reward is always **two sticks**, regardless of the street on which Riichi is declared.
+
+The player's hand locks immediately:
+
+- No fishing.
+- No Blank exchanges.
+- No spending Riichi sticks.
+- Scheduled reveals continue normally.
+- The player may still Check, Call, Bet, or Fold.
+
+If the player wins the pot alone, they keep the reward sticks, including when all opponents fold. If they lose, tie, or fold, return the reward sticks to the supply.
+
+Folding releases Riichi exclusivity: another player may declare after a later Bet.
+
+If a player's Bet uses their last chips, they may declare Riichi before anyone responds to that all-in.
 
 ## 12. Advanced Hand Ladder
 
-Ranks run from weakest to strongest. All combinations use at most four cards.
+Ranks run from weakest to strongest. Twin Lotus is rank 10, above Three Dragons and below Long Chow.
 
-| Rank | Hand          | Required combination                             |
-| ---: | ------------- | ------------------------------------------------ |
-|    1 | High Card     | One card                                         |
-|    2 | Eyes          | Two identical natural cards                      |
-|    3 | Chow          | Three consecutive cards of one suit              |
-|    4 | Two Eyes      | Two different natural pairs                      |
-|    5 | Three Winds   | Three different Winds                            |
-|    6 | Pung          | Three identical cards                            |
-|    7 | Long Chow     | Four consecutive cards of one suit               |
-|    8 | Three Dragons | One of each Dragon                               |
-|    9 | Four Winds    | One of each Wind                                 |
-|   10 | Kong          | Four identical cards (requires a matching Joker) |
+| Rank | Hand                   | Required combination                |
+| ---: | ---------------------- | ----------------------------------- |
+|    1 | High Card              | One card                            |
+|    2 | Eyes                   | Two identical cards                 |
+|    3 | Chow                   | Three consecutive cards of one suit |
+|    4 | Two Eyes               | Two pairs of identical cards        |
+|    5 | Chow and Eyes          | A Chow plus a pair                  |
+|    6 | Pung                   | Three identical cards               |
+|    7 | Three Winds            | Three different Winds               |
+|    8 | Pung and Eyes          | A Pung plus a pair                  |
+|    9 | Three Dragons          | One of each Dragon                  |
+|   10 | Twin Lotus             | Both Lotuses                        |
+|   11 | Long Chow              | Five consecutive cards of one suit  |
+|   12 | Three Dragons and Eyes | One of each Dragon plus a pair      |
+|   13 | Four Winds             | One of each Wind                    |
+|   14 | Kong                   | Four identical cards                |
+
+## 13. Streamlined — currently playtesting
+
+Choose this third mode explicitly; Basic and Riichi above keep their original rules.
+
+- Deal **six cards** instead of seven. Keep Charleston, Jokers, Blanks, loans and tournament scoring from Riichi.
+- Play **three streets**: no public cards on Street 1, reveal two before Street 2, then two more before Street 3. Reveal the remaining two at showdown. Public cards cannot be replaced.
+- Remove both Lotuses: the deck has **110 cards**. No Lotus payouts or disqualification.
+- Score combinations using **up to four cards**. Weakest to strongest: High Card, Eyes, Chow, Two Eyes, Three Winds, Pung, Long Chow (four consecutive of one suit), Three Dragons, Four Winds, Kong. No five-card compound hands.
+- Remove Riichi declarations, declaration hand locks and winner stick rewards.
+- Give every participating player **four additional fishing sticks each round**. Unused sticks never expire during the tournament and carry into higher-ante games. They do not score points.
+- Check and Call still grant a free fish. Optionally spend **one stick per turn**, before betting or after acting, for another fish. An all-in Bet gives no fishing; an all-in Call retains its free fish and optional stick. You cannot spend after folding.

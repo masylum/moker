@@ -4,7 +4,7 @@ export type SeatKind = "human" | "robot" | "none"
 
 export async function createGame(
   seed: string,
-  mode: "basic" | "riichi" = "basic",
+  mode: "basic" | "riichi" | "streamlined" = "basic",
   playerCount = 4,
   tournamentGames: 1 | 2 | 3 | 4 = 1,
   orbits = 1,

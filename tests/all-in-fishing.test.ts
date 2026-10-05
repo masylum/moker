@@ -14,7 +14,7 @@ for (const existingAllIn of [false, true])
     const card = game.state.discardA.at(-1)!
     game.act(caller.id, { type: "call", drawSource: "discard-a" })
     expect(game.state.phase).toBe("discarding")
-    expect(caller.privateCards).toHaveLength(7)
+    expect(caller.privateCards).toHaveLength(8)
     expect(caller.privateCards.some((c) => c.id === card.id)).toBe(true)
     expect(bettor.roundCommitted).toBe(5)
     expect(game.state.handResults).toHaveLength(0)

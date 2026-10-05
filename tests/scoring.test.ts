@@ -1,11 +1,19 @@
 import { describe, expect, it } from "vitest"
-import { createDeck, dragonFace, jokerFace, numberedFace, windFace } from "../src/game/cards"
+import {
+  createDeck,
+  dragonFace,
+  flowerFace,
+  jokerFace,
+  numberedFace,
+  windFace,
+} from "../src/game/cards"
 import { HAND_RANKS } from "../src/game/hand-ranks"
 import { SeededRandom } from "../src/game/random"
 import { compareHandScores, scoreHand, scoreHandStrength } from "../src/game/scoring"
 import type {
   Card,
   Dragon,
+  Flower,
   HandKind,
   JokerColor,
   NumberedRank,
@@ -21,6 +29,7 @@ const d = (dragon: Dragon, count = 1): Card[] =>
 const w = (wind: Wind, count = 1): Card[] =>
   Array.from({ length: count }, () => ({ id: `c${serial++}`, ...windFace(wind) }))
 const j = (color: JokerColor): Card => ({ id: `c${serial++}`, ...jokerFace(color) })
+const f = (flower: Flower): Card => ({ id: `c${serial++}`, ...flowerFace(flower) })
 
 function kind(cards: Card[]): HandKind {
   return scoreHand(cards).combinations[0]?.kind ?? "high-card"
@@ -31,15 +40,19 @@ const fixtures: Array<[number, HandKind, Card[]]> = [
   [2, "eye", n("dots", 2, 2)],
   [3, "chow", [...n("bamboo", 3), ...n("bamboo", 4), ...n("bamboo", 5)]],
   [4, "two-eyes", [...n("dots", 2, 2), ...n("bamboo", 8, 2)]],
-  [5, "three-winds", [...w("east"), ...w("west"), ...w("north")]],
+  [5, "chow-eye", [...n("bamboo", 3), ...n("bamboo", 4), ...n("bamboo", 5), ...d("red", 2)]],
   [6, "pung", n("dots", 8, 3)],
-  [7, "long-chow", [6, 7, 8, 9].flatMap((rank) => n("dots", rank as NumberedRank))],
-  [8, "three-dragons", [...d("red"), ...d("green"), ...d("white")]],
-  [9, "four-winds", [...w("east"), ...w("west"), ...w("south"), ...w("north")]],
-  [10, "kong", [...n("bamboo", 7, 3), j("green")]],
+  [7, "three-winds", [...w("east"), ...w("west"), ...w("north")]],
+  [8, "pung-eye", [...n("dots", 5, 3), ...n("bamboo", 8, 2)]],
+  [9, "three-dragons", [...d("red"), ...d("green"), ...d("white")]],
+  [10, "twin-lotus", [f("white-lotus"), f("black-lotus")]],
+  [11, "long-chow", [5, 6, 7, 8, 9].flatMap((rank) => n("dots", rank as NumberedRank))],
+  [12, "three-dragons-eye", [...d("red"), ...d("green"), ...d("white"), ...n("dots", 9, 2)]],
+  [13, "four-winds", [...w("east"), ...w("west"), ...w("south"), ...w("north")]],
+  [14, "kong", [...n("bamboo", 7, 3), j("green")]],
 ]
 
-describe("canonical 10-rank Advanced ladder", () => {
+describe("canonical 14-rank Advanced ladder", () => {
   it.each(fixtures)("scores rank %i %s", (rank, hand, cards) => {
     expect(HAND_RANKS[hand]).toBe(rank)
     expect(scoreHand(cards).total).toBe(rank)
@@ -55,20 +68,21 @@ describe("canonical 10-rank Advanced ladder", () => {
     }
   })
 
-  it("selects at most four cards and ignores removed compound patterns", () => {
-    const cards = [...n("dots", 8, 3), ...n("bamboo", 2, 2), ...w("east")]
-    expect(kind(cards)).toBe("pung")
-    expect(scoreHand(cards).selectedCardIds).toHaveLength(3)
-    const run = [5, 6, 7, 8, 9].flatMap((rank) => n("dots", rank as NumberedRank))
-    expect(scoreHand(run).selectedCardIds).toHaveLength(4)
-    expect(scoreHand(run).tieBreak).toEqual([9, 8, 7, 6])
+  it("uses a stronger Long Chow even when Twin Lotus is also present", () => {
+    const cards = [
+      ...[1, 2, 3, 4, 5].flatMap((rank) => n("dots", rank as NumberedRank)),
+      f("white-lotus"),
+      f("black-lotus"),
+    ]
+    expect(kind(cards)).toBe("long-chow")
+    expect(scoreHand(cards).total).toBe(11)
   })
 
-  it("keeps the optimized scorer identical on random six-card hands", () => {
+  it("keeps the optimized scorer identical on random seven-card hands", () => {
     const random = new SeededRandom("canonical-strength-equivalence")
     const deck = createDeck()
     for (let sample = 0; sample < 5_000; sample += 1) {
-      const cards = random.shuffle(deck).slice(0, 6)
+      const cards = random.shuffle(deck).slice(0, 7)
       const full = scoreHand(cards)
       expect(scoreHandStrength(cards)).toEqual({ total: full.total, tieBreak: full.tieBreak })
     }
@@ -78,9 +92,7 @@ describe("canonical 10-rank Advanced ladder", () => {
 describe("special-tile and natural-tile restrictions", () => {
   it("uses Jokers only in combinations of at least three cards", () => {
     expect(kind([...n("bamboo", 3), ...n("bamboo", 4), j("green")])).toBe("chow")
-    expect(kind([...n("bamboo", 3), ...n("bamboo", 4), ...n("bamboo", 5), j("green")])).toBe(
-      "long-chow",
-    )
+    expect(kind([...n("bamboo", 3), ...n("bamboo", 4), ...n("bamboo", 5), j("green")])).toBe("chow")
     expect(
       kind([
         ...n("characters", 3),
@@ -108,6 +120,14 @@ describe("special-tile and natural-tile restrictions", () => {
     expect(kind([...w("east"), ...w("south"), ...w("west"), j("black")])).toBe("four-winds")
     expect(kind([...w("east"), ...w("south"), ...w("west"), j("red")])).not.toBe("four-winds")
   })
+
+  it("ranks two natural Lotuses and never substitutes a Joker", () => {
+    expect(kind([f("white-lotus"), j("black")])).toBe("high-card")
+    expect(kind([f("white-lotus"), f("black-lotus")])).toBe("twin-lotus")
+    expect(kind([...n("dots", 2), f("white-lotus"), f("black-lotus"), ...n("bamboo", 9)])).toBe(
+      "twin-lotus",
+    )
+  })
 })
 
 describe("tie breakers", () => {
@@ -121,13 +141,13 @@ describe("tie breakers", () => {
     ).toBeGreaterThan(0)
   })
 
-  it("ignores pairs outside a Pung", () => {
+  it("compares all defining cards high to low", () => {
     expect(
       compareHandScores(
         scoreHand([...n("bamboo", 7, 3), ...n("dots", 9, 2)]),
         scoreHand([...n("bamboo", 7, 3), ...n("dots", 8, 2)]),
       ),
-    ).toBe(0)
+    ).toBeGreaterThan(0)
   })
 
   it("treats suits and honors within a tier equally", () => {
@@ -175,14 +195,12 @@ describe("calibrated mode-specific ladder", () => {
     expect(compareHandScores(scoreHand(w("east", 3), mode), scoreHand(w("north", 3), mode))).toBe(0)
   })
 
-  it("ranks Pung above Three Winds in both six-card modes", () => {
+  it("keeps Basic Pung above Three Winds but reverses them in Riichi", () => {
     const pung = n("dots", 8, 3),
       winds = [...w("east"), ...w("south"), ...w("west")]
     expect(compareHandScores(scoreHand(pung, "basic"), scoreHand(winds, "basic"))).toBeGreaterThan(
       0,
     )
-    expect(
-      compareHandScores(scoreHand(pung, "riichi"), scoreHand(winds, "riichi")),
-    ).toBeGreaterThan(0)
+    expect(compareHandScores(scoreHand(pung, "riichi"), scoreHand(winds, "riichi"))).toBeLessThan(0)
   })
 })

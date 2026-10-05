@@ -1,9 +1,9 @@
 {
-  "description": "Rules v7 six-card ladder (2026-10-04); 512 seeded inputs of sizes 0–8 per mode, including temporary fishing hands. Includes tie order and matched IDs.",
+  "description": "Scorer and hand-progress output after the calibrated Riichi ladder (2026-09-25); Basic retains its pre-optimization checksum, 512 seeded hands of sizes 0–8 per mode. Includes tie order and matched IDs.",
   "seed": "evaluation-refactor-golden",
   "count": 512,
   "hashes": {
-    "basic": "b17b4c30f6211b1e46842f90372d49bf6e99375e6c48f29e39dee7c302a1a686",
-    "riichi": "e366f092645cb90b6e86b5f6f8939b6ef8963acb0446143b6338f1dc49ddebe3"
+    "basic": "7b0ceaf76dec1ce9493119076e7a74c2f520bac8114796392d600ead83bd63d8",
+    "riichi": "7563d430396f441601739818345b90d0f341b38272f22511efc213c49b143010"
   }
 }

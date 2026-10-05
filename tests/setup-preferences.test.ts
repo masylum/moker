@@ -3,20 +3,23 @@ import { readSetup, saveSetup } from "../src/client/setup-preferences"
 
 afterEach(() => vi.unstubAllGlobals())
 describe("setup preferences", () => {
-  it("remembers mode, seats and tournament length", () => {
-    const values = new Map<string, string>()
-    vi.stubGlobal("localStorage", {
-      getItem: (key: string) => values.get(key),
-      setItem: (key: string, value: string) => values.set(key, value),
-    })
-    const setup = {
-      mode: "riichi" as const,
-      seats: ["human", "robot", "none", "none", "none", "none"] as const,
-      games: 3,
-    }
-    saveSetup({ ...setup, seats: [...setup.seats] })
-    expect(readSetup()).toEqual(setup)
-  })
+  it.each(["basic", "riichi", "streamlined"] as const)(
+    "remembers %s mode, seats and tournament length",
+    (mode) => {
+      const values = new Map<string, string>()
+      vi.stubGlobal("localStorage", {
+        getItem: (key: string) => values.get(key),
+        setItem: (key: string, value: string) => values.set(key, value),
+      })
+      const setup = {
+        mode,
+        seats: ["human", "robot", "none", "none", "none", "none"] as const,
+        games: 3,
+      }
+      saveSetup({ ...setup, seats: [...setup.seats] })
+      expect(readSetup()).toEqual(setup)
+    },
+  )
   it("recovers from malformed and unavailable storage", () => {
     vi.stubGlobal("localStorage", {
       getItem: () => "{broken",

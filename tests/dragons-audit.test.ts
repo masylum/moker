@@ -43,7 +43,7 @@ describe("Three Dragons rule audit", () => {
     expect(valid).toBe(64) // Four physical options per color, including its Joker.
   })
 
-  it("recognizes every legal Joker count and ignores an extra pair", () => {
+  it("recognizes every legal Joker count, and never borrows a Joker for the Eyes", () => {
     const deck = createDeck()
     for (let mask = 0; mask < 8; mask++) {
       const main = colors.map((color, i) =>
@@ -53,7 +53,7 @@ describe("Three Dragons rule audit", () => {
         .filter((c) => c.kind === "numbered" && c.suit === "bamboo" && c.rank === 2)
         .slice(0, 2)
       expect(scoreHand(main).combinations[0]?.kind).toBe("three-dragons")
-      expect(scoreHand([...main, ...pair]).combinations[0]?.kind).toBe("three-dragons")
+      expect(scoreHand([...main, ...pair]).combinations[0]?.kind).toBe("three-dragons-eye")
     }
     const natural = colors.map((color) =>
       deck.find((c) => c.kind === "dragon" && c.color === color)!,

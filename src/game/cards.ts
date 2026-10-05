@@ -15,7 +15,7 @@ import {
   type Wind,
 } from "./types"
 
-export function createDeck(mode: "basic" | "riichi" = "riichi"): Card[] {
+export function createDeck(mode: "basic" | "riichi" | "streamlined" = "riichi"): Card[] {
   const cards: Card[] = []
   for (const suit of SUITS) {
     for (let rank = 1; rank <= 9; rank += 1) {
@@ -46,11 +46,15 @@ export function createDeck(mode: "basic" | "riichi" = "riichi"): Card[] {
     cards.push({ ...jokerFace(color), id: `joker-${color}` })
   }
 
+  for (const flower of mode === "riichi" ? FLOWERS : []) {
+    cards.push({ ...flowerFace(flower), id: `flower-${flower}` })
+  }
+
   for (let copy = 1; copy <= 4; copy += 1) {
     cards.push({ ...blankFace(), id: `blank-${copy}` })
   }
 
-  if (cards.length !== 110) {
+  if (cards.length !== (mode === "streamlined" ? 110 : 112)) {
     throw new Error(`Deck invariant failed: ${cards.length}`)
   }
 

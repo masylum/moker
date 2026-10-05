@@ -35,3 +35,15 @@ export function RiichiSticks(props: { count: number; spent?: boolean; compact?: 
     </Show>
   )
 }
+
+export function RiichiDeclared() {
+  return (
+    <div class="riichi-declared">
+      <div>
+        <img src="/assets/sticks/riichi-decor.svg?v=4" alt="" />
+        <img src="/assets/sticks/riichi-decor.svg?v=4" alt="" />
+      </div>
+      <span class="stick-tag">Riichi declared</span>
+    </div>
+  )
+}

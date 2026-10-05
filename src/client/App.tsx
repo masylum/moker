@@ -12,7 +12,7 @@ import { OpponentMove, type DrawNotice, sourcePosition } from "./OpponentMove"
 import { createGameAudio } from "./audio"
 import { knownHand } from "./known-hand"
 import { SpiritAvatar } from "./SpiritAvatar"
-import { RiichiSticks } from "./RiichiSticks"
+import { RiichiSticks, RiichiDeclared } from "./RiichiSticks"
 import { cardLabel, compareCards } from "../game/cards"
 import {
   canTakeLoan,
@@ -20,7 +20,8 @@ import {
   LOAN_VALUE,
   LOAN_PENALTY,
   CHARLESTON_PASS_COUNT,
-  STREET_REVEAL_COUNTS,
+  revealCounts,
+  streetCount,
 } from "../game/rules"
 import { scoreHand } from "../game/scoring"
 import type {
@@ -52,8 +53,8 @@ const BASIC_LADDER = [
   ["Eyes", "Two identical cards"],
   ["Chow", "Three consecutive, one suit"],
   ["Two Eyes", "Two pairs"],
+  ["Chow and Eyes", "A Chow + a pair"],
   ["Three Winds", "Three different Winds"],
-  ["Long Chow", "Four consecutive cards of one suit"],
   ["Pung", "Three identical cards"],
   ["Three Dragons", "One of each Dragon"],
   ["Four Winds", "One of each Wind"],
@@ -62,7 +63,25 @@ const ADVANCED_LADDER = [
   ...BASIC_LADDER.slice(0, 5),
   BASIC_LADDER[6]!,
   BASIC_LADDER[5]!,
-  ...BASIC_LADDER.slice(7),
+  ["Pung and Eyes", "A Pung + a pair"],
+  BASIC_LADDER[7]!,
+  ["Twin Lotus", "Both Lotuses"],
+  ["Long Chow", "Five consecutive cards of the same suit"],
+  ["Three Dragons and Eyes", "Three Dragons + a pair"],
+  BASIC_LADDER[8]!,
+  ["Kong", "Four identical cards"],
+]
+
+const STREAMLINED_LADDER = [
+  ["High Card", "One card"],
+  ["Eyes", "Two identical cards"],
+  ["Chow", "Three consecutive, one suit"],
+  ["Two Eyes", "Two pairs"],
+  ["Three Winds", "Three different Winds"],
+  ["Pung", "Three identical cards"],
+  ["Long Chow", "Four consecutive cards of one suit"],
+  ["Three Dragons", "One of each Dragon"],
+  ["Four Winds", "One of each Wind"],
   ["Kong", "Four identical cards"],
 ]
 
@@ -74,7 +93,7 @@ export function App() {
   onCleanup(() => audio.dispose())
   const [musicOn, setMusicOn] = createSignal(audio.musicEnabled())
   const [effectsOn, setEffectsOn] = createSignal(audio.effectsEnabled())
-  const [session, setSession] = createSignal(localStorage.getItem("moker-v8-session") ?? "")
+  const [session, setSession] = createSignal(localStorage.getItem("moker-v9-session") ?? "")
   const [state, setState] = createSignal<PublicGameState>()
   const savedName = localStorage.getItem("moker-name")?.trim()
   const [name, setName] = createSignal(
@@ -184,7 +203,7 @@ export function App() {
     else if (previous?.phase === "betting" && next.phase === "discarding") audio.play("shake")
   }
   const setup = readSetup()
-  const [mode, setMode] = createSignal<"basic" | "riichi">(setup.mode)
+  const [mode, setMode] = createSignal<"basic" | "riichi" | "streamlined">(setup.mode)
   const [seats, setSeats] = createSignal<SeatKind[]>(setup.seats)
   const players = () => seats().filter((seat) => seat !== "none").length
   const humans = () => seats().filter((seat) => seat === "human").length
@@ -262,12 +281,17 @@ export function App() {
   const required = () =>
     state()?.phase === "charleston"
       ? CHARLESTON_PASS_COUNT
-      : (STREET_REVEAL_COUNTS[(state()?.street ?? 0) - 1] ?? 0)
+      : (revealCounts(state()?.config.mode ?? mode())[(state()?.street ?? 0) - 1] ?? 0)
   const choosing = () =>
     myTurn() && ["charleston", "exposing", "discarding"].includes(state()?.phase ?? "")
-  const canFish = () => !allIn()
+  const canFish = () => !allIn() && !human()?.riichi
+  const canFishOnCall = () => !human()?.riichi
   const ladder = () =>
-    (state()?.config.mode ?? mode()) === "riichi" ? ADVANCED_LADDER : BASIC_LADDER
+    (state()?.config.mode ?? mode()) === "streamlined"
+      ? STREAMLINED_LADDER
+      : (state()?.config.mode ?? mode()) === "riichi"
+        ? ADVANCED_LADDER
+        : BASIC_LADDER
   const currentHand = () =>
     scoreHand([...cards(), ...(human()?.publicCards ?? [])], state()?.config.mode ?? "basic")
   async function perform(work: () => Promise<{ state: PublicGameState }>) {
@@ -379,7 +403,7 @@ export function App() {
       )
       setViewer(undefined)
       setSession(result.sessionId)
-      localStorage.setItem("moker-v8-session", result.sessionId)
+      localStorage.setItem("moker-v9-session", result.sessionId)
       setAuto(true)
       setCopied(false)
       if (result.state.room) window.history.pushState(null, "", `/rooms/${result.sessionId}`)
@@ -420,7 +444,8 @@ export function App() {
     if (!error()) setActionDialog(undefined)
   }
   const canSpendStick = () =>
-    state()?.config.mode === "riichi" &&
+    state()?.config.mode !== "basic" &&
+    !human()?.riichi &&
     !state()?.stickSpentThisTurn &&
     (!allIn() || callCost() > 0 || state()?.stickWindow?.playerId === viewer()) &&
     (human()?.riichiSticks ?? 0) > 0 &&
@@ -453,7 +478,7 @@ export function App() {
     setError("")
     setBlankPick(undefined)
     setPickingFish(false)
-    if ((kind === "check" && canFish()) || kind === "call") {
+    if ((kind === "check" && canFish()) || (kind === "call" && canFishOnCall())) {
       setPickingFish(true)
       requestAnimationFrame(() =>
         fishingTable?.scrollIntoView({
@@ -463,7 +488,7 @@ export function App() {
             : "smooth",
         }),
       )
-    } else if (kind === "check") {
+    } else if (kind === "check" || kind === "call") {
       void act({ type: kind })
     } else setActionDialog(kind)
   }
@@ -703,7 +728,7 @@ export function App() {
               </div>
               <div
                 class="mode-picker"
-                classList={{ "riichi-selected": mode() === "riichi" }}
+                style={{ "--mode-index": mode() === "basic" ? 0 : mode() === "riichi" ? 1 : 2 }}
                 role="group"
                 aria-labelledby="game-mode-label"
               >
@@ -712,20 +737,42 @@ export function App() {
                   aria-pressed={mode() === "basic"}
                   onClick={() => setMode("basic")}
                 >
-                  Basic game
+                  Basic
                 </Button>
                 <Button
                   classList={{ selected: mode() === "riichi" }}
                   aria-pressed={mode() === "riichi"}
                   onClick={() => setMode("riichi")}
                 >
-                  Fishing expansion
+                  Riichi
                 </Button>
+                <Button
+                  classList={{ selected: mode() === "streamlined" }}
+                  aria-pressed={mode() === "streamlined"}
+                  onClick={() => setMode("streamlined")}
+                  aria-describedby="streamlined-playtest"
+                >
+                  Streamlined
+                </Button>
+              </div>
+              <div class="playtest-note" id="streamlined-playtest">
+                <span>new, currently playtesting</span>
+                <svg viewBox="0 0 70 44" fill="none" aria-hidden="true">
+                  <path
+                    d="M3 36C33 43 57 29 57 5M46 14 57 4 65 17"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
               </div>
               <p class="mode-description">
                 {mode() === "basic"
-                  ? "102 cards. Nine hand ranks."
-                  : "6 cards · 3 streets · 4 extra fishing sticks each round. Save unused sticks."}
+                  ? "7 cards · 4 streets · Nine hand ranks."
+                  : mode() === "riichi"
+                    ? "7 cards · 4 streets · Jokers, Lotuses and Riichi."
+                    : "6 cards · 3 streets · 4 extra fishing sticks each round. Save unused sticks."}
               </p>
             </div>
             <div class="setup-field seat-setup">
@@ -772,6 +819,18 @@ export function App() {
               </div>
             </div>
             <Show when={humans() > 1}>
+              <div class="playtest-note" id="streamlined-playtest">
+                <span>new, currently playtesting</span>
+                <svg viewBox="0 0 70 44" fill="none" aria-hidden="true">
+                  <path
+                    d="M3 36C33 43 57 29 57 5M46 14 57 4 65 17"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
               <p class="mode-description">
                 Create a room and share its link. Once every human seat is filled, other visitors
                 can watch.
@@ -782,7 +841,7 @@ export function App() {
             </Button>
           </section>
           <FrontpageDecor />
-          <FrontpageDecor special visible={mode() === "riichi"} />
+          <FrontpageDecor special visible={mode() !== "basic"} />
         </section>
       </Show>
       <Show when={state()}>
@@ -812,7 +871,11 @@ export function App() {
                   )}
                   total={game().players.length}
                 />
-                <CycleBars label="Street" current={game().street} total={3} />
+                <CycleBars
+                  label="Street"
+                  current={game().street}
+                  total={streetCount(game().config.mode)}
+                />
                 <div class="ante-stat">
                   <span>Ante</span>
                   <span class="chip chip-5">{game().orbitValue}</span>
@@ -1058,7 +1121,7 @@ export function App() {
                             </Show>
                           </div>
                         </div>
-                        <Show when={game().config.mode === "riichi"}>
+                        <Show when={game().config.mode !== "basic"}>
                           <div class="player-sticks">
                             <RiichiSticks
                               compact
@@ -1126,7 +1189,12 @@ export function App() {
                                               class="rank-examples"
                                               aria-label={`Example of ${row.entry[0]}`}
                                             >
-                                              <For each={handExamples(row.entry[0]!)}>
+                                              <For
+                                                each={handExamples(
+                                                  row.entry[0]!,
+                                                  game().config.mode,
+                                                )}
+                                              >
                                                 {(group, index) => (
                                                   <>
                                                     <Show when={index() > 0}>
@@ -1161,10 +1229,14 @@ export function App() {
                       </div>
                     </div>
                     <div class="hand-cards">
+                      <Show when={human()?.riichi}>
+                        <RiichiDeclared />
+                      </Show>
                       <For
                         each={sortHand(
                           [...cards(), ...(human()?.publicCards ?? [])],
                           human()?.publicCards ?? [],
+                          game().config.mode,
                         ).sort(
                           (a, b) =>
                             Number(receivedCharleston().some((c) => c.id === b.id)) -
@@ -1333,7 +1405,7 @@ export function App() {
                             onClick={() => openAction(callCost() ? "call" : "check")}
                           >
                             {callCost()
-                              ? `Call ${format(Math.min(callCost(), human()?.chips ?? 0))} + Fish`
+                              ? `Call ${format(Math.min(callCost(), human()?.chips ?? 0))}${canFishOnCall() ? " + Fish" : ""}`
                               : canFish()
                                 ? "Check + Fish"
                                 : "Check"}
@@ -1428,6 +1500,28 @@ export function App() {
                                 >
                                   Bet {format(wager())}
                                 </Button>
+                                <Show
+                                  when={
+                                    game().config.mode === "riichi" &&
+                                    !human()?.riichi &&
+                                    game().street <= 3 &&
+                                    !game().players.some((p) => p.riichi && !p.folded)
+                                  }
+                                >
+                                  <Button
+                                    disabled={
+                                      busy() ||
+                                      wager() < minimum() ||
+                                      wager() > maximum() ||
+                                      (wager() % CHIP_UNIT !== 0 && wager() !== maximum())
+                                    }
+                                    onClick={() =>
+                                      act({ type: "bet", amount: wager(), riichi: true })
+                                    }
+                                  >
+                                    Bet {format(wager())} + Declare Riichi
+                                  </Button>
+                                </Show>
                               </Show>
                             </div>
                           </Modal>
@@ -1544,10 +1638,11 @@ export function App() {
                               {format(100 + (game().gameNumber + 1) * 100)} chips, including
                               eliminated players. The ante is {(game().gameNumber + 1) * 5}.
                             </p>
-                            <Show when={game().config.mode === "riichi"}>
+                            <Show when={game().config.mode !== "basic"}>
                               <p>
-                                Loans are cleared. Keep your saved fishing sticks and receive 4 more
-                                at the start of each round.
+                                {game().config.mode === "streamlined"
+                                  ? "Loans are cleared. Keep your saved sticks and receive 4 more at the start of each round."
+                                  : "Loans are cleared. Keep your unused Riichi sticks and receive 2 more for the next game."}
                               </p>
                             </Show>
                           </Show>
@@ -1654,7 +1749,9 @@ export function App() {
                                     </small>
                                   </div>
                                   <div class="mini-hand">
-                                    <For each={sortHand(p.cards, p.publicCards)}>
+                                    <For
+                                      each={sortHand(p.cards, p.publicCards, game().config.mode)}
+                                    >
                                       {(c) => <PlayingCard card={c} compact />}
                                     </For>
                                   </div>
@@ -1732,7 +1829,7 @@ export function App() {
           class="drawer rules-drawer"
           onClose={() => setRules(false)}
         >
-          <RulesContent />
+          <RulesContent mode={state()?.config.mode ?? mode()} />
         </Modal>
       </Show>
       <Show when={error()}>
@@ -1785,7 +1882,7 @@ function TournamentScores(props: { game: PublicGameState; singleGame?: boolean }
           <thead>
             <tr>
               <th scope="col">Player</th>
-              <Show when={props.singleGame && props.game.config.mode === "riichi"}>
+              <Show when={props.singleGame && props.game.config.mode !== "basic"}>
                 <th scope="col">Loan deduction</th>
               </Show>
               <For each={recorded()}>
@@ -1826,7 +1923,7 @@ function TournamentScores(props: { game: PublicGameState; singleGame?: boolean }
                       </Show>
                     </span>
                   </th>
-                  <Show when={props.singleGame && props.game.config.mode === "riichi"}>
+                  <Show when={props.singleGame && props.game.config.mode !== "basic"}>
                     <td>{player.loans ? `−${format(player.loans * LOAN_PENALTY)}` : "—"}</td>
                   </Show>
                   <For each={recorded()}>
@@ -1978,7 +2075,7 @@ function PlayerSeat(props: {
   spentStick: boolean
   betting: boolean
   drawNotice?: DrawNotice
-  mode: "basic" | "riichi"
+  mode: "basic" | "riichi" | "streamlined"
   player: PublicPlayerState
   active: boolean
   dealer: boolean
@@ -2025,6 +2122,9 @@ function PlayerSeat(props: {
         </div>
       </div>
       <div class="opponent-cards">
+        <Show when={props.player.riichi}>
+          <RiichiDeclared />
+        </Show>
         <For each={[...props.player.publicCards].sort(compareCards)}>
           {(c) => <PlayingCard card={c} compact />}
         </For>
@@ -2045,7 +2145,7 @@ function PlayerSeat(props: {
         </Show>
       </div>
       <div class="opponent-known-hand">
-        <Show when={props.mode === "riichi"}>
+        <Show when={props.mode !== "basic"}>
           <RiichiSticks count={props.player.riichiSticks} spent={props.spentStick} compact />
         </Show>
         <Show when={!props.player.folded && !props.player.eliminated && known().label}>

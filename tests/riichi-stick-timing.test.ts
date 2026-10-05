@@ -23,7 +23,7 @@ describe("independent Riichi stick timing", () => {
     const { game, id, player } = fixture()
     const chips = player.chips
     game.spendRiichiStick(id, "deck")
-    expect(player.riichiSticks).toBe(3)
+    expect(player.riichiSticks).toBe(1)
     discard(game, id)
     expect(game.state.phase).toBe("betting")
     expect(game.state.actingPlayerId).toBe(id)
@@ -69,16 +69,13 @@ describe("independent Riichi stick timing", () => {
     ).toThrow(/not available/)
     game.state.discardA = []
     expect(() => game.spendRiichiStick(id, "discard-a")).toThrow(/empty/)
-    expect(player.riichiSticks).toBe(4)
+    expect(player.riichiSticks).toBe(2)
   })
-  it("rejects declarations without changing the hand or consuming a stick", () => {
+  it("does not offer fishing once Riichi locks the hand", () => {
     const { game, id } = fixture()
-    const before = structuredClone(game.state)
-    expect(() => game.act(id, { type: "bet", amount: 10, riichi: true }, true)).toThrow(
-      "Riichi is not available",
-    )
-    expect(game.state).toEqual(before)
-    expect(game.canSpendStick(id)).toBe(true)
+    game.act(id, { type: "bet", amount: 10, riichi: true }, true)
+    expect(game.state.stickWindow).toBeUndefined()
+    expect(() => game.spendRiichiStick(id, "deck")).toThrow(/not available/)
   })
   it("offers a stick after a call and its free fish", () => {
     const { game, id } = fixture()
@@ -95,7 +92,7 @@ describe("independent Riichi stick timing", () => {
     const { game, id, player } = fixture()
     game.act(id, { type: "fold" }, true)
     expect(player.folded).toBe(true)
-    expect(player.riichiSticks).toBe(4)
+    expect(player.riichiSticks).toBe(2)
     expect(game.state.stickWindow).toBeUndefined()
     expect(game.state.actingPlayerId).not.toBe(id)
   })
@@ -111,7 +108,7 @@ describe("independent Riichi stick timing", () => {
     discard(game, caller)
     expect(game.state.actingPlayerId).toBe(id)
     game.spendRiichiStick(id, "deck")
-    expect(player.riichiSticks).toBe(2)
+    expect(player.riichiSticks).toBe(0)
   })
   it("reports net round results rather than gross payouts", () => {
     const { game, id } = fixture()
@@ -152,7 +149,7 @@ for (const chips of [5, 20, 100]) {
       expect(restored.state.handResults).toHaveLength(1)
       expect(game.state.phase).toBe("discarding")
       discard(game, last)
-      expect(callingPlayer.riichiSticks).toBe(3)
+      expect(callingPlayer.riichiSticks).toBe(1)
       expect(game.state.handResults).toHaveLength(1)
     })
   }
@@ -171,14 +168,16 @@ it("allows declining the stick after spending the last chips on a call", () => {
   expect(game.state.handResults).toHaveLength(1)
 })
 
-it("allows saving all sticks when calling an all-in", () => {
+it("keeps declared Riichi locked when calling an all-in", () => {
   const { game, id, player } = fixture()
   player.chips = 20
   game.act(id, { type: "bet", amount: 20 })
   const caller = game.state.actingPlayerId!
-  expect(game.canSpendStick(caller)).toBe(true)
+  game.state.players.find((p) => p.id === caller)!.riichi = true
+  expect(game.canSpendStick(caller)).toBe(false)
+  expect(() => game.act(caller, { type: "call", useRiichiStick: true })).toThrow(/not available/)
   game.act(caller, { type: "call" }, true)
-  discard(game, caller)
-  game.finishStickDecision(caller)
-  expect(game.state.players.find((p) => p.id === caller)!.riichiSticks).toBe(4)
+  expect(game.state.phase).toBe("betting")
+  expect(game.state.actingPlayerId).not.toBe(caller)
+  expect(game.state.stickWindow).toBeUndefined()
 })

@@ -3,7 +3,7 @@ import { parseArgs } from "node:util"
 import { createDeck } from "../src/game/cards"
 import { HAND_RANKS, handRank, isHandEnabled } from "../src/game/hand-ranks"
 import { generateHandCandidates } from "../src/game/melds"
-import { OPENING_PRIVATE_CARD_COUNT } from "../src/game/rules"
+import { handSize } from "../src/game/rules"
 import { SeededRandom } from "../src/game/random"
 import type { HandKind } from "../src/game/types"
 
@@ -16,18 +16,20 @@ const { values, positionals } = parseArgs({
   },
 })
 const samples = Number(positionals[0] ?? 100000)
-const seed = positionals[1] ?? "ladder-v7"
+const seed = positionals[1] ?? "ladder-v9"
 if (
   !Number.isSafeInteger(samples) ||
   samples < 1 ||
-  !["both", "basic", "riichi"].includes(values.mode!)
+  !["both", "basic", "riichi", "streamlined"].includes(values.mode!)
 )
   throw new Error(
-    "Usage: analyze-ladder.ts [deals] [seed] --mode both|basic|riichi [--json FILE] [--output FILE]",
+    "Usage: analyze-ladder.ts [deals] [seed] --mode both|basic|riichi|streamlined [--json FILE] [--output FILE]",
   )
 const started = performance.now()
 const modes =
-  values.mode === "both" ? (["basic", "riichi"] as const) : [values.mode as "basic" | "riichi"]
+  values.mode === "both"
+    ? (["basic", "riichi"] as const)
+    : [values.mode as "basic" | "riichi" | "streamlined"]
 const results = []
 for (const mode of modes) {
   const random = new SeededRandom(`${seed}:${mode}`),
@@ -49,10 +51,8 @@ for (const mode of modes) {
   )
   let jokerHands = 0
   for (let sample = 0; sample < samples; sample++) {
-    const cards = random.shuffle(deck).slice(0, OPENING_PRIVATE_CARD_COUNT)
-    const candidates = generateHandCandidates(cards.filter((c) => c.kind !== "flower")).filter(
-      (c) => kinds.includes(c.kind),
-    )
+    const cards = random.shuffle(deck).slice(0, handSize(mode))
+    const candidates = generateHandCandidates(cards, mode).filter((c) => kinds.includes(c.kind))
     const present = new Set<HandKind>(candidates.map((c) => c.kind))
     if (!present.size) present.add("high-card")
     const jokers = cards.filter((c) => c.kind === "joker")
@@ -60,7 +60,8 @@ for (const mode of modes) {
     const natural = jokers.length
       ? new Set(
           generateHandCandidates(
-            cards.filter((c) => c.kind !== "joker" && c.kind !== "flower"),
+            cards.filter((c) => c.kind !== "joker"),
+            mode,
           ).map((c) => c.kind),
         )
       : present
@@ -93,7 +94,7 @@ const text = results
     [
       `## ${r.mode} — ${r.deckSize} cards`,
       "",
-      `${r.samples} uniform six-card deals, seed ${r.seed}. Contains counts overlap; best counts partition the ordinary scoring ladder.`,
+      `${r.samples} uniform ${handSize(r.mode)}-card deals, seed ${r.seed}. Contains counts overlap; best counts partition the ordinary scoring ladder.`,
       "",
       "| Rank | Hand | Contains | Frequency | Ordinary best | Joker-dependent contains |",
       "|---:|---|---:|---:|---:|---:|",

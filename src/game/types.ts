@@ -28,12 +28,16 @@ export type CombinationKind =
   | "eye"
   | "chow"
   | "long-chow"
+  | "twin-lotus"
   | "two-eyes"
+  | "chow-eye"
   | "pung"
   | "three-dragons"
+  | "pung-eye"
   | "three-winds"
   | "four-winds"
   | "kong"
+  | "three-dragons-eye"
 
 export type HandKind = "high-card" | CombinationKind
 
@@ -53,7 +57,7 @@ export interface HandScore {
 }
 
 export type PlayerController = "human" | "heuristic"
-type Street = 0 | 1 | 2 | 3
+type Street = 0 | 1 | 2 | 3 | 4
 type GamePhase =
   | "between-hands"
   | "charleston"
@@ -166,7 +170,7 @@ export interface BettingRecord {
 export interface GameConfig {
   playerCount: number
   seed: string
-  mode: "basic" | "riichi"
+  mode: "basic" | "riichi" | "streamlined"
   orbits: number
   tournamentGames: 1 | 2 | 3 | 4
   startingChips: number
@@ -190,7 +194,7 @@ export interface DrawContext {
 }
 
 export interface GameState {
-  rulesVersion: 8
+  rulesVersion: 9
   stickSpentThisTurn?: boolean
   stickOfferPlayerId?: string
   stickWindow?: { playerId: string; continuation: DrawContext["continuation"] }
@@ -339,7 +343,7 @@ export interface HeuristicDecision {
   street: Street
   action: BettingAction
   evaluations: DecisionEvaluation[]
-  strategy?: "general-bluff"
+  strategy?: "lotus-bluff" | "general-bluff"
   rationale: string
 }
 

@@ -1,3 +1,4 @@
+import { Show } from "solid-js"
 import illustrationSizes from "./rule-illustration-sizes.json"
 import { FishingIllustration } from "./FishingIllustration"
 
@@ -19,7 +20,77 @@ function RuleIllustration(props: {
   )
 }
 // Copy, paragraph boundaries and lists follow Figma inst1–inst6, including the Riichi continuation.
-export function RulesContent() {
+export function RulesContent(props: { mode: "basic" | "riichi" | "streamlined" }) {
+  return (
+    <Show when={props.mode === "streamlined"} fallback={<ClassicRules />}>
+      <div class="rules-content">
+        <h3>Streamlined</h3>
+        <p>New, currently playtesting. For 2–6 players.</p>
+        <section>
+          <h4>Build, bet and bluff</h4>
+          <p>
+            Start with 200 chips. Each round, pay the ante, receive six hidden cards and four
+            additional fishing sticks, then secretly pass two cards left. Unused sticks carry across
+            rounds and tournament games.
+          </p>
+        </section>
+        <section>
+          <h4>Three streets</h4>
+          <p>
+            Bet with all six cards hidden on Street 1. Before Street 2, choose two cards to reveal.
+            Before Street 3, reveal two more. Choices are simultaneous. Revealed cards cannot be
+            exchanged or discarded.
+          </p>
+        </section>
+        <section>
+          <h4>Your turn</h4>
+          <p>
+            Check when there is no bet to match, Call to match it, Bet to increase it, or Fold to
+            leave the round. Check and Call each give one free fish: take from the deck or the end
+            of either discard lane, then discard one hidden card.
+          </p>
+          <p>
+            Once per turn, optionally spend one stick for another fish, before betting or after
+            acting. Choose End turn to save it. No Riichi declaration or hand lock. An all-in Bet
+            gives no fishing; an all-in Call still allows fishing.
+          </p>
+          <p>
+            A hidden Blank can replace a fishing action by swapping with any card in either lane,
+            including buried cards. Jokers match their color and cannot complete pairs. There are no
+            Lotuses.
+          </p>
+        </section>
+        <section>
+          <h4>Win the round</h4>
+          <p>
+            Win the pot if everyone else folds. Otherwise reveal the last two cards and compare your
+            best combination using up to four of your six cards. The hand ladder runs from High
+            Card, Eyes, Chow, Two Eyes, Three Winds, Pung, Long Chow (four consecutive), Three
+            Dragons, Four Winds, to Kong. Exact ties split the pot; unused kickers do not count.
+          </p>
+          <p>
+            All-in caps the current street's payments. Refund excess, allow remaining players to
+            Call or Fold and complete fishing, then go straight to showdown.
+          </p>
+        </section>
+        <section>
+          <h4>Tournaments and loans</h4>
+          <p>
+            A game lasts one dealer orbit. Tournament starting stacks are 200 / 300 / 400 / 500, and
+            antes are 5 / 10 / 15 / 20. Add each game's score to find the tournament winner. Saved
+            sticks survive every game and do not score points.
+          </p>
+          <p>
+            One loan per game gives 200 chips with a 250-point score deduction. Take it during
+            Charleston with fewer than 100 chips, or automatically when unable to ante. If you
+            cannot ante after using it, you are eliminated until the next game.
+          </p>
+        </section>
+      </div>
+    </Show>
+  )
+}
+function ClassicRules() {
   return (
     <div class="rules-content">
       <div class="rules-chapter" role="region" aria-labelledby="basic-rules">
@@ -31,7 +102,7 @@ export function RulesContent() {
           <h4>Goal</h4>
           <p>Finish the game with the most chips.</p>
           <p>
-            Each round, build a hand of 6 cards by fishing, choose which cards to reveal, and bet.
+            Each round, build a hand of 7 cards by fishing, choose which cards to reveal, and bet.
             Win the pot by having the strongest hand or making everyone else fold.
           </p>
           <p>
@@ -61,6 +132,10 @@ export function RulesContent() {
               name="card-families"
               description="Winds: North, East, West, South. Bams: 1–9 and Green Dragon. Craks: 1–9 and Red Dragon. Dots: 1–9 and Blue Dragon."
             />
+            <RuleIllustration
+              name="table-setup"
+              description="Your 7 private cards. The pot. The deck and discard lanes."
+            />
           </div>
           <h5>Start a round</h5>
           <ol>
@@ -69,7 +144,7 @@ export function RulesContent() {
               chips you are playing for are the <em>pot.</em>
             </li>
             <li>
-              Shuffle the deck and deal everyone <strong>6 cards,</strong> kept hidden.
+              Shuffle the deck and deal everyone <strong>7 cards,</strong> kept hidden.
             </li>
             <li>
               Put the deck face-down in the middle. Turn over 2 cards beside it, one to start each{" "}
@@ -78,16 +153,20 @@ export function RulesContent() {
           </ol>
         </section>
         <section>
-          <h4>Play the three streets</h4>
+          <h4>Play the four streets</h4>
+          <RuleIllustration
+            name="streets"
+            description="Street 1: Private hand. Street 2: Reveal 3 cards. Street 3: Reveal 1 card. Street 4: Reveal 1 card. Showdown: Reveal all cards."
+          />
           <p>
-            Each round has three betting stages, called <em>streets.</em>
+            Each round has four betting stages, called <em>streets.</em>
           </p>
           <p>
-            On street 1, keep all 6 cards hidden. Before betting on streets 2 and 3, everyone still
-            in secretly chooses and simultaneously reveals 2, then 2 cards.
+            On street 1, keep all 7 cards hidden. Before betting on streets 2, 3 and 4, everyone
+            still in secretly chooses and simultaneously reveals 3, then 1, then 1 card.
           </p>
           <p>Revealed cards stay yours but cannot be exchanged or discarded.</p>
-          <p>After street 3, reveal your last 2 cards and compare hands.</p>
+          <p>After street 4, reveal your last 2 cards and compare hands.</p>
           <h5>Betting</h5>
           <p>The dealer starts street 1.</p>
           <p>
@@ -154,7 +233,7 @@ export function RulesContent() {
           </p>
           <p>
             Revealed cards cannot be discarded. You finish fishing with{" "}
-            <strong>six cards in total,</strong> counting both hidden and revealed cards.
+            <strong>seven cards in total,</strong> counting both hidden and revealed cards.
           </p>
           <h5>All-in</h5>
           <p>
@@ -174,15 +253,16 @@ export function RulesContent() {
           </p>
           <p>
             From now on, nobody may bet or raise. Continue clockwise: players who have paid less
-            must call or fold. Each call includes one fishing action with no hand-lock restriction.
-            Callers may also spend one fishing stick under the usual per-turn limit, even if the
-            call uses their last chips. If someone calls with their last chips and pays less again,
-            lower everyone’s payment to that amount and return the difference.
+            must call or fold. Each call includes one fishing action unless the caller has declared
+            Riichi. Callers may also spend one Riichi stick under the usual per-turn limit, even if
+            the call uses their last chips. If someone calls with their last chips and pays less
+            again, lower everyone’s payment to that amount and return the difference.
           </p>
           <p>
             Once payments and the final fishing action are settled, everyone still in reveals all
-            six cards. Compare hands and award the pot. Skip the remaining streets, even if a refund
-            gave someone chips back. If everyone but one player folds, that player wins immediately.
+            seven cards. Compare hands and award the pot. Skip the remaining streets, even if a
+            refund gave someone chips back. If everyone but one player folds, that player wins
+            immediately.
           </p>
           <h5>Running out of chips</h5>
           <p>
@@ -198,15 +278,16 @@ export function RulesContent() {
               <strong>If everyone else folds:</strong> You win the pot without showing your cards.
             </li>
             <li>
-              <strong>If two or more players remain:</strong> Reveal all cards. Use up to 4 of your
-              6 cards to make your best combination on the Hand Ladder. You may use any of your
+              <strong>If two or more players remain:</strong> Reveal all cards. Use up to 5 of your
+              7 cards to make your best combination on the Hand Ladder. You may use any of your
               cards, including those kept hidden. The highest-ranked hand wins the pot.
             </li>
           </ul>
           <p>
-            If hands have the same rank, compare the defining cards. For Two Eyes, compare the
-            stronger pair first, then the other pair. Within each combination, compare cards from
-            highest to lowest. The first difference wins.
+            If hands have the same rank, compare the larger combination first. For example, compare
+            the <em>Pung</em> before the pair in <em>Pung and Eyes.</em> For <em>Two Eyes,</em>{" "}
+            compare the stronger pair first, then the other pair. Within each combination, compare
+            cards from highest to lowest. The first difference wins.
           </p>
           <p>
             <em>When comparing cards:</em> Winds rank above Dragons, then numbers from 9 down to 1.
@@ -269,21 +350,21 @@ export function RulesContent() {
         </section>
       </div>
       <div class="rules-chapter" role="region" aria-labelledby="riichi-rules">
-        <h3 id="riichi-rules">Fishing expansion</h3>
+        <h3 id="riichi-rules">Riichi expansion</h3>
         <p>Add these rules to the Basic Game for more ways to improve your hand and bluff.</p>
         <section>
           <h4>Setup</h4>
-          <RuleIllustration name="riichi-sticks" description="fishing sticks" />
+          <RuleIllustration name="riichi-sticks" description="Riichi sticks" />
           <ul>
             <li>
-              Add the 4 <em>Jokers</em> and 4 <em>Blanks</em> to the deck (110 cards total).
+              Add the 4 <em>Jokers,</em> 4 <em>Blanks</em> and 2 <em>Lotuses</em> to the deck.
             </li>
             <li>
-              At the start of every round, give each player{" "}
+              Give each player{" "}
               <strong>
-                4 more <em>fishing sticks.</em>
+                2 <em>riichi sticks.</em>
               </strong>{" "}
-              Keep the remaining fishing sticks and all loan sticks in the supply.
+              Keep the remaining Riichi sticks and all loan sticks in the supply.
             </li>
             <li>
               Use the <strong>Advanced hand ladder.</strong>
@@ -378,12 +459,33 @@ export function RulesContent() {
             This replaces your entire fishing action: do not draw or discard another card. Blanks
             have no hand value.
           </p>
+          <h5>Lotuses</h5>
+          <RuleIllustration name="lotuses" description="The two lotuses" />
+          <p>At the end of the round, reveal any Lotuses you hold, even if everyone else folded.</p>
+          <ul>
+            <li>
+              <strong>Both Lotuses:</strong> Form Twin Lotus, ranked above Three Dragons and below
+              Long Chow.
+            </li>
+            <li>
+              <strong>One Lotus:</strong> Lose the showdown, regardless of your other cards. If
+              everyone still in holds one Lotus, split the pot.
+            </li>
+            <li>
+              <strong>One Lotus and everyone else has folded:</strong> Win the pot, plus 3 times the
+              ante from each opponent who played this round.
+            </li>
+          </ul>
+          <p>
+            Anyone who cannot afford the bonus pays only their remaining chips. They cannot borrow
+            and owe nothing more.
+          </p>
         </section>
         <section>
-          <h4>Spend fishing sticks</h4>
+          <h4>Spend Riichi sticks</h4>
           <p>
-            Once per turn, before betting or after checking, calling or betting, you may return 1
-            fishing stick to the supply to fish once more.
+            Once per turn, after checking, calling or betting, you may return 1 Riichi stick to the
+            supply to fish once more.
           </p>
           <ul>
             <li>
@@ -398,13 +500,43 @@ export function RulesContent() {
             take a card uncovered by the first.
           </p>
           <p>
-            You cannot spend sticks after folding. Calling an all-in still allows a stick, even if
-            the call uses your last chips. An all-in Bet gives no fishing.
+            You cannot spend sticks after folding or while in Riichi. Calling an all-in still allows
+            a stick, even if the call uses your last chips. An all-in Bet gives no fishing.
           </p>
           <p>
-            Keep unused sticks between rounds and tournament games. Add 4 more at the start of each
-            round. You may save them for the higher-ante tournament games; they do not add to your
-            final score.
+            In a tournament, keep your remaining Riichi sticks between games. Before the next game,
+            each player receives 2 more sticks, added to those they kept.
+          </p>
+          <h5>Declare Riichi</h5>
+          <RuleIllustration
+            name="declare-riichi"
+            description="Win after declaring Riichi to earn 2 sticks."
+          />
+          <p>
+            On streets 1, 2 or 3, immediately after you bet, you may declare Riichi if nobody else
+            is in Riichi. Declare before fishing or spending a stick. Calling does not qualify.
+          </p>
+          <p>
+            Take 2 Riichi sticks from the supply and place them on your hidden cards. You earn them
+            only if you win the pot alone.
+          </p>
+          <p>
+            Your hand is locked: you cannot fish, swap blanks or spend sticks. Reveal cards as
+            usual. You may still check, call, bet or fold.
+          </p>
+          <ul>
+            <li>
+              <strong>Win the pot alone:</strong> Keep the reward sticks, including if everyone else{" "}
+              <em>folds.</em>
+            </li>
+            <li>
+              <strong>Lose, tie or Fold:</strong> Return them to the supply.
+            </li>
+          </ul>
+          <p>If you Fold, another player may declare Riichi after a later Bet.</p>
+          <p>
+            If your Bet uses your last chips, you may declare Riichi before anyone responds to your
+            all-in.
           </p>
         </section>
       </div>

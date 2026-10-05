@@ -3,11 +3,15 @@ import { generateHandCandidates } from "../game/melds"
 import type { Card } from "../game/types"
 
 // Public and hidden cards stay separate; each Joker follows the meld it completes.
-export function sortHand(cards: Card[], publicCards: Card[] = []): Card[] {
+export function sortHand(
+  cards: Card[],
+  publicCards: Card[] = [],
+  mode: "basic" | "riichi" | "streamlined" = "riichi",
+): Card[] {
   const publicIds = new Set(publicCards.map((card) => card.id))
   const group = (hand: Card[]) => {
     const ordered: Card[] = hand.filter((card) => card.kind !== "joker").sort(compareCards)
-    const melds = generateHandCandidates(hand)
+    const melds = generateHandCandidates(hand, mode)
       .filter((meld) => !["chow-eye", "pung-eye", "three-dragons-eye"].includes(meld.kind))
       .sort((a, b) => b.score - a.score)
     for (const joker of hand.filter((card) => card.kind === "joker").sort(compareCards)) {

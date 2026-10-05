@@ -272,14 +272,11 @@
   z-index: -1;
   background: var(--color-selected);
   border-radius: var(--radius-control);
-  width: calc(50% - 6px);
+  width: calc((100% - 16px) / 3);
+  transform: translateX(calc(var(--mode-index, 0) * (100% + var(--space-1))));
   transition: transform var(--duration-standard) var(--ease-out);
   position: absolute;
   inset: 4px auto 4px 4px;
-}
-
-.mode-picker.riichi-selected:before {
-  transform: translateX(calc(100% + var(--space-1)));
 }
 
 .setup-seat.robot svg {
@@ -419,4 +416,21 @@
   .expansion-decor .decor-fan {
     right: -110px;
   }
+}
+
+.playtest-note {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+  gap: 6px;
+  color: var(--color-text);
+  padding-right: 9%;
+  margin-top: -2px;
+  font-size: var(--font-sm);
+  font-style: italic;
+}
+.playtest-note svg {
+  width: 55px;
+  height: 35px;
+  flex: none;
 }

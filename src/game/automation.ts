@@ -126,7 +126,7 @@ export function stepHeuristic(
 function policyFor(
   source: BotPolicySource,
   playerId: string,
-  mode: "basic" | "riichi",
+  mode: "basic" | "riichi" | "streamlined",
 ): Readonly<BotPolicy> {
   if (source === DEFAULT_BOT_POLICY) return defaultBotPolicy(mode)
   if ("betEquityFloor" in source) return source as Readonly<BotPolicy>

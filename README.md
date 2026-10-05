@@ -2,9 +2,13 @@
 
 A browser and terminal card game for 2–6 players, with a shared deterministic TypeScript engine, heuristic opponents, and persisted Cloudflare game sessions.
 
-The [attached rules](public/rules.md) are the source of truth for rules version 8 (streamlined branch). Each hand has six cards, three streets (0/2/2 newly revealed cards), and combinations of at most four cards. Long Chow now uses four consecutive cards; Lotuses and five-card compound hands are removed. Expansion players receive four optional fishing sticks each round, with no declaration or hand lock. See [round-stick update](docs/streamlined-2026-10-05/README.md) and [variant health and ladder](docs/streamlined-2026-10-04/README.md).
+The [rules](public/rules.md) describe three separate modes in rules version 9:
 
-Basic play starts with 200 chips, a 5-chip ante, a 102-card deck, and one dealer orbit by default. Browser setup also allows 2–4 continuous orbits, with chips carried over. The Fishing Expansion adds Charleston, Jokers, Blanks, fishing sticks, one automatic ante loan per player per game, and the advanced ladder. Three- and four-game tournaments reset each game and sum adjusted scores.
+- **Basic:** seven cards, four streets, a 102-card deck and nine hand ranks.
+- **Riichi:** the original seven-card expansion, including Lotuses, declarations and Riichi stick rewards.
+- **Streamlined:** currently playtesting. Six cards, three streets (0/2/2 newly revealed), combinations of up to four, no Lotuses or declarations. Each round adds four optional fishing sticks; unused sticks carry across rounds and tournament games.
+
+See the historical [banked-stick health report](docs/streamlined-2026-10-05/README.md) and [ladder analysis](docs/streamlined-2026-10-04/README.md). Select Streamlined explicitly in the browser or use `--streamlined` for CLI play and simulations.
 
 The browser uses original cards, logo, and illustrations exported from the supplied Figma file, its chip palette, and Gelica/Dela Gothic One typography. See [asset provenance](docs/design-assets.md) for sources and font loading.
 
@@ -19,7 +23,7 @@ Browser play uses heuristic opponents and needs no API keys. Choose more than on
 
 Rooms retain seat ownership in a browser cookie, so refreshing or reopening the same link in the same browser restores your seat. Use separate browsers/devices (or a private browser window) to test multiple people. Seats stay reserved when someone disconnects; clearing cookies loses access to that seat. The host deals subsequent rounds. The table refreshes once per second, and Durable Object alarms run robot turns independently of connected browsers. Choose your name during setup or when joining a room.
 
-The server authorizes each room action and filters private cards for the current player or observer. Room seeds and RNG state stay private, and legacy debug/event endpoints are blocked for rooms. Single-human games and CLI simulations retain their existing behavior. Old rules-v7 and earlier sessions cannot be resumed under the new engine.
+The server authorizes each room action and filters private cards for the current player or observer. Room seeds and RNG state stay private, and legacy debug/event endpoints are blocked for rooms. Single-human games and CLI simulations retain their existing behavior. Old rules-v8 and earlier sessions cannot be resumed under the new engine.
 
 ## Commands
 
@@ -30,6 +34,8 @@ npm run simulate -- 20 basic-health --samples 24 --workers auto
 npm run simulate -- 20 riichi-health --samples 24 --workers auto --riichi
 npm run play -- --seed jade-table --players 4
 npm run play -- --riichi --games 3 --players 6
+npm run play -- --streamlined --games 3 --players 4
+npm run simulate -- 20 streamlined-health --streamlined
 npm run play -- --auto --seed demo
 ```
 

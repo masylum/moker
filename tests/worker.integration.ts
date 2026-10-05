@@ -15,6 +15,35 @@ describe("Cloudflare Worker and Durable Object persistence", () => {
     expect(await response.json()).toMatchObject({ ok: true })
   })
 
+  it.each(["basic", "riichi", "streamlined"] as const)(
+    "persists the distinct %s mode",
+    async (mode) => {
+      const id = `three-modes-${mode}`
+      const response = await SELF.fetch("http://example.com/api/games", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: id,
+          seed: id,
+          mode,
+          heuristicSamples: 1,
+          players: [
+            { id: "p1", name: "Human", controller: "human" },
+            { id: "p2", name: "Bot", controller: "heuristic" },
+          ],
+        }),
+      })
+      expect(response.status).toBe(201)
+      const restored = await SELF.fetch(`http://example.com/api/games/${id}?viewer=p1`)
+      const { state } = await restored.json<{ state: PublicGameState }>()
+      expect(state.config.mode).toBe(mode)
+      const player = state.players.find((p) => p.id === "p1")!
+      expect(player.privateCards).toHaveLength(mode === "streamlined" ? 6 : 7)
+      expect(player.riichiSticks).toBe(mode === "streamlined" ? 4 : mode === "riichi" ? 2 : 0)
+      expect(state.phase).toBe(mode === "basic" ? "betting" : "charleston")
+    },
+  )
+
   it("creates and restores a persistent game session", async () => {
     const create = await SELF.fetch("http://example.com/api/games", {
       method: "POST",
@@ -99,7 +128,7 @@ describe("Cloudflare Worker and Durable Object persistence", () => {
       analyses: unknown[]
     }>()
     expect(debug.status).toBe(200)
-    expect(debugBody.state.players.every((player) => player.privateCards.length === 6)).toBe(true)
+    expect(debugBody.state.players.every((player) => player.privateCards.length === 7)).toBe(true)
     expect(debugBody.analyses).toHaveLength(4)
   })
   it("runs and reports simulation batches at the app's 24-sample budget", async () => {

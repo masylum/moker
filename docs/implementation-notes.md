@@ -1,6 +1,6 @@
-# Rules-v8 implementation notes
+# Streamlined implementation notes (rules v9)
 
-The complete rule sheet is [public/rules.md](../public/rules.md). These rulings deserve particular care:
+The complete rule sheet is [public/rules.md](../public/rules.md). Basic and Riichi retain their original rules. The notes below apply to the separate Streamlined mode:
 
 - The starting dealer is seeded randomly. A game ends after the selected 1–4 dealer orbits (one by default), including crossing eliminated seats. Chips, loans, and sticks carry across these orbits; tournament resets occur only between games. Basic players unable to ante are eliminated; Expansion players automatically borrow 200 only when needed for an ante, at most once per game. A later unaffordable ante eliminates them while retaining their remaining chips and 250-point loan deduction. The allowance carries across orbits and resets between tournament games; loans cannot be repaid.
 - Tournament games reset chips to 200/300/400/500, antes to 5/10/15/20, and reset loans and elimination; carry unused fishing sticks forward. Every participating player receives four additional sticks when each round is dealt. Adjusted scores accumulate across games.
@@ -13,4 +13,4 @@ The complete rule sheet is [public/rules.md](../public/rules.md). These rulings 
 - Basic has nine ranks and Expansion ten, including the four-card Long Chow. Ties compare defining combinations before pairs, descending; Winds outrank Dragons, which outrank numbered cards. Unused kickers do not count. Exact ties split exactly, including fractional chips. A fractional remaining stack can be bet all-in.
 - Public views never expose folded or uncontested concealed cards through result history. Invalid actions leave chips, cards, events, and randomness unchanged.
 
-Reserved zero/empty Curse and Lotus result fields remain for report consumers, but v8 has no Lotus cards, disqualification, or bonus. Legacy curse action fields are retained only for explicit rejection. Rules v7 and older saves are rejected to avoid mixing stick economies and hand rules. Optional loans below 100 chips are available during Charleston; loans cannot be repaid.
+Reserved zero/empty Curse and Lotus result fields remain for report consumers, but Streamlined has no Lotus cards, disqualification, or bonus. Legacy curse action fields are retained only for explicit rejection. Rules v8 and older saves are rejected to avoid mixing stick economies and hand rules. Optional loans below 100 chips are available during Charleston; loans cannot be repaid.

@@ -9,9 +9,9 @@ import {
   LOAN_PENALTY,
   LOAN_VALUE,
   MAX_LOANS,
-  STREET_REVEAL_COUNTS,
-  STREET_COUNT,
-  OPENING_PRIVATE_CARD_COUNT,
+  revealCounts,
+  streetCount,
+  handSize,
   toChipUnit,
 } from "./rules"
 import {
@@ -36,10 +36,13 @@ import type {
 export interface BotPolicy {
   betEquityFloor: number
   raiseEquityFloor: number
+  riichiEquityFloor: number
+  riichiRewardDiscount: number
   potWagerFraction: number
   maxStackRisk: number
   allInEquityFloor: number
   bluffFrequency: number
+  lotusBluffFrequency: number
   foldPressure: number
   reserveChips: number
   standingAwareness: number
@@ -52,10 +55,13 @@ export interface BotPolicy {
 const TRAINED_POLICY: BotPolicy = {
   betEquityFloor: 0.34,
   raiseEquityFloor: 0.46,
+  riichiEquityFloor: 0.42,
+  riichiRewardDiscount: 0.04,
   potWagerFraction: 0.9,
   maxStackRisk: 0.7,
   allInEquityFloor: 0.95,
   bluffFrequency: 0.06,
+  lotusBluffFrequency: 0.42,
   foldPressure: 0.76,
   reserveChips: 30,
   standingAwareness: 0.45,
@@ -72,8 +78,8 @@ const RIICHI_BOT_POLICY: Readonly<BotPolicy> = Object.freeze({
   equityCalibration: 0.65,
 })
 
-export function defaultBotPolicy(mode: "basic" | "riichi"): Readonly<BotPolicy> {
-  return mode === "riichi" ? RIICHI_BOT_POLICY : DEFAULT_BOT_POLICY
+export function defaultBotPolicy(mode: "basic" | "riichi" | "streamlined"): Readonly<BotPolicy> {
+  return mode !== "basic" ? RIICHI_BOT_POLICY : DEFAULT_BOT_POLICY
 }
 
 export interface DiscardChoice {
@@ -133,7 +139,7 @@ export function chooseHeuristicCharleston(state: GameState, playerId: string): C
   return {
     cardIds: best.cardIds,
     expectedScore: best.value / 100,
-    rationale: "Chooses the two-card pass jointly to preserve the strongest four-card core",
+    rationale: "Chooses the two-card pass jointly to preserve the strongest five-card core",
   }
 }
 
@@ -142,14 +148,15 @@ export function chooseHeuristicExposure(state: GameState, playerId: string): Exp
     throw new Error("Player is not choosing a Street exposure")
   }
   const player = getPlayer(state, playerId)
-  const revealCount = STREET_REVEAL_COUNTS[state.street - 1] ?? 0
+  const revealCount = revealCounts(state.config.mode)[state.street - 1] ?? 0
   const all = [...player.publicCards, ...player.privateCards]
   const fullValue = handPotential(all, state.config.mode)
   const madeIds = new Set(scoreHand(all, state.config.mode).selectedCardIds)
   const ranked = player.privateCards
     .map((card) => {
       const essential = madeIds.has(card.id) ? 100 : 0
-      const safety = card.kind === "blank" ? -30 : 0
+      const safety =
+        card.kind === "blank" ? -30 : card.kind === "flower" && !hasTwinLotus(all) ? -80 : 0
       const honor = card.kind === "wind" || card.kind === "dragon" ? 3 : 0
       return {
         card,
@@ -163,7 +170,7 @@ export function chooseHeuristicExposure(state: GameState, playerId: string): Exp
     cardIds: best.map((entry) => entry.card.id),
     expectedScore: fullValue / 100,
     rationale:
-      "Locks made-hand anchors while keeping weak, flexible, and Blank tiles concealed for later discards",
+      "Locks made-hand anchors while keeping weak, flexible, Blank, and lone-Lotus tiles concealed for later discards",
   }
 }
 
@@ -278,7 +285,7 @@ export function chooseHeuristicAction(
       ? sampledEquity * (policy.equityCalibration + (1 - policy.equityCalibration) * sampledEquity)
       : sampledEquity
   const doublePlan =
-    player.riichiSticks > 0 && !state.stickSpentThisTurn
+    player.riichiSticks > 0 && !player.riichi && !state.stickSpentThisTurn
       ? chooseDoubleDrawPlan(state, player, plan)
       : plan
   const fishingEquity = (drawPlan: DrawPlan) => {
@@ -302,11 +309,17 @@ export function chooseHeuristicAction(
       ? adjusted * (policy.equityCalibration + (1 - policy.equityCalibration) * adjusted)
       : adjusted
   }
-  const canForecastFishing = state.allInPlayerIds.length === 0 || math.toCall > 0
+  const canForecastFishing =
+    !player.riichi && (state.allInPlayerIds.length === 0 || math.toCall > 0)
   const singleFishingEquity = canForecastFishing && drawGain > 0 ? fishingEquity(plan) : undefined
   const doubleFishingEquity =
     canForecastFishing && doublePlan.second ? fishingEquity(doublePlan) : undefined
   const evaluations: DecisionEvaluation[] = []
+  const singleConcealedLotus =
+    player.privateCards.filter((card) => card.kind === "flower").length === 1 &&
+    player.publicCards.every((card) => card.kind !== "flower")
+  const lotusBluff =
+    singleConcealedLotus && random.fork("lotus-bluff").next() < policy.lotusBluffFrequency
   const standing = standingAdjustment(state, player, policy)
   const tournamentRisk = tournamentRiskMultiplier(state, player)
   const finalHand = isFinalTournamentHand(state)
@@ -317,7 +330,9 @@ export function chooseHeuristicAction(
     const wager = aggressive ? action.amount : player.roundCommitted + cost
     const canFish =
       action.type !== "fold" &&
-      (action.type === "call" || (state.allInPlayerIds.length === 0 && cost < player.chips))
+      !player.riichi &&
+      (action.type === "call" || (state.allInPlayerIds.length === 0 && cost < player.chips)) &&
+      !(action.type === "bet" && action.riichi)
     const freeFish = hasFreeFishing(state.config.mode, action.type)
     const usesFish = canFish && (freeFish || action.useRiichiStick)
     const visibleEquity = usesFish
@@ -334,11 +349,14 @@ export function chooseHeuristicAction(
       foldProbability(state, opponent, wager, callerEquity, policy),
     )
     const allFold = aggressive ? foldRates.reduce((value, rate) => value * rate, 1) : 0
+    const bluffBonus = singleConcealedLotus
+      ? opponents.reduce((sum, opponent) => sum + Math.min(opponent.chips, state.orbitValue * 3), 0)
+      : 0
     const expectedChipDelta =
       action.type === "fold"
         ? 0
         : aggressive
-          ? expectedBetValue(state, player, wager, callerEquity, opponents, foldRates)
+          ? expectedBetValue(state, player, wager, callerEquity, opponents, foldRates, bluffBonus)
           : developedEquity * math.potAfterCall - cost
     const fishingGain =
       freeFish && action.type !== "fold" && action.useRiichiStick
@@ -346,14 +364,20 @@ export function chooseHeuristicAction(
         : drawGain
     const drawUtility =
       usesFish && state.allInPlayerIds.length === 0 && cost < player.chips
-        ? (state.config.mode === "riichi" ? 0.25 : 1) *
+        ? (state.config.mode !== "basic" ? 0.25 : 1) *
           developmentValue(fishingGain) *
           (visibleEquity === undefined
             ? 1
-            : Math.max(0, STREET_COUNT - state.street) / (STREET_COUNT - 1))
+            : Math.max(0, streetCount(state.config.mode) - state.street) /
+              (streetCount(state.config.mode) - 1))
         : 0
     const stickUtility =
       action.type !== "fold" && action.useRiichiStick ? -stickShadowValue(state, player) : 0
+    const riichiUtility =
+      action.type === "bet" && action.riichi
+        ? (allFold + (1 - allFold) * callerEquity) * 2 * stickShadowValue(state, player) -
+          futureDevelopmentCost(state, drawGain)
+        : 0
     const riskPenalty =
       action.type === "fold"
         ? 0
@@ -385,6 +409,7 @@ export function chooseHeuristicAction(
           expectedChipDelta * 0.0001
         : expectedChipDelta +
           (drawUtility + stickUtility) * (aggressive ? 1 - allFold : 1) +
+          riichiUtility +
           standing * cost -
           riskPenalty -
           continuationPenalty,
@@ -425,7 +450,8 @@ export function chooseHeuristicAction(
       ) +
         standing >=
         Math.max(fairShare, threshold) ||
-      bluff
+      bluff ||
+      lotusBluff
     ) {
       for (const amount of wagerCandidates(
         state,
@@ -443,6 +469,9 @@ export function chooseHeuristicAction(
         evaluations.push(evaluate(base))
         if (bet.canUseRiichiStick && amount - player.roundCommitted < player.chips) {
           evaluations.push(evaluate({ ...base, useRiichiStick: true, ...drawFields(plan) }))
+        }
+        if (bet.canRiichi && shouldRiichi(state, player, equity, drawGain, policy)) {
+          evaluations.push(evaluate({ ...base, riichi: true }))
         }
       }
     }
@@ -467,7 +496,10 @@ export function chooseHeuristicAction(
       state.config.mode === "basic"
         ? Math.max(0, state.maxHands - state.dealerSteps - 1) * state.orbitValue
         : 0
-    const reserve = remainingAntes
+    // A folded participant still pays a possible Single Lotus winner.
+    const lotusLiability =
+      state.config.mode === "riichi" ? Math.min(player.chips, 3 * state.orbitValue) : 0
+    const reserve = remainingAntes + lotusLiability
     const available =
       state.pot + others.reduce((sum, candidate) => sum + candidate.chips, 0) + reserve
     const ownScore = prior(player.id) + player.chips - player.loans * LOAN_PENALTY - reserve
@@ -489,6 +521,7 @@ export function chooseHeuristicAction(
     street: state.street,
     action: best.action,
     evaluations,
+    ...(lotusBluff && best.action.type === "bet" ? { strategy: "lotus-bluff" as const } : {}),
     rationale: best.rationale,
   }
 }
@@ -497,17 +530,43 @@ function legalActions(state: GameState, player: PlayerState) {
   return GameEngine.restore(state).legalActions(player.id)
 }
 
+function shouldRiichi(
+  state: GameState,
+  player: PlayerState,
+  equity: number,
+  drawGain: number,
+  policy: Readonly<BotPolicy>,
+): boolean {
+  const cards = [...player.privateCards, ...player.publicCards]
+  const rank = scoreHandStrength(cards, state.config.mode).total
+  return (
+    equity >= policy.riichiEquityFloor &&
+    (rank >= 8 || state.street >= 3) &&
+    (drawGain < 120 || state.street === 3) &&
+    futureDevelopmentCost(state, drawGain) <= equity * 3 * stickShadowValue(state, player)
+  )
+}
+
+function futureDevelopmentCost(state: GameState, drawGain: number): number {
+  return (
+    Math.max(0, streetCount(state.config.mode) - state.street) * developmentValue(drawGain) * 0.45
+  )
+}
+
 function developmentValue(drawGain: number): number {
   return Math.min(90, drawGain / 4)
 }
 
-function stickShadowValue(state: GameState, player: PlayerState): number {
-  // Saved sticks survive into higher-ante tournament games. Keep a modest
-  // reserve value, falling as the bank grows; the final street of the final
-  // hand has no future use for a stick.
-  if (state.street === STREET_COUNT && isFinalTournamentHand(state)) return 0
-  const nextGame = Math.min(state.config.tournamentGames, state.gameNumber + 1)
-  return (12 / Math.max(1, player.riichiSticks)) * (nextGame / state.gameNumber)
+function stickShadowValue(state: GameState, player?: PlayerState): number {
+  if (state.config.mode === "streamlined") {
+    if (state.street === streetCount(state.config.mode) && isFinalTournamentHand(state)) return 0
+    const nextGame = Math.min(state.config.tournamentGames, state.gameNumber + 1)
+    return (12 / Math.max(1, player?.riichiSticks ?? 1)) * (nextGame / state.gameNumber)
+  }
+  return (
+    (player ? 12 / Math.max(1, player.riichiSticks) : 12) +
+    Math.min(8, Math.max(0, state.maxHands - state.handNumber))
+  )
 }
 
 function standingAdjustment(
@@ -553,7 +612,7 @@ export function continuationRiskCost(
   const liability = (cash: number) =>
     cash >= state.orbitValue
       ? 0
-      : state.config.mode === "riichi" && player.loans < MAX_LOANS
+      : state.config.mode !== "basic" && player.loans < MAX_LOANS
         ? LOAN_PENALTY - LOAN_VALUE
         : state.orbitValue * Math.min(remaining, state.players.filter((p) => !p.eliminated).length)
   return Math.max(
@@ -846,12 +905,15 @@ function analyzeCurrentEquity(
   const opponents = activeOpponents(state, player.id)
   const knownPrivate = publicKnownPrivateCards(state, player.id)
   const unknown = unknownCards(state, player)
-  // With no Lotus disqualification, visible winning melds bound both modes.
+  // Sampling uncertainty must never invent outs against a publicly unbeatable
+  // hand. In Riichi, an ordinary exposed meld can still be disqualified by a
+  // hidden single Lotus, so this certainty shortcut applies only to Basic.
   const certainLoss = opponents.some((opponent) => {
     const visible = [...opponent.publicCards, ...(knownPrivate[opponent.id] ?? [])]
     return (
       !fishDeck &&
-      compareHandStrengths(scoreHandStrength(visible, state.config.mode), baseOwn.score) > 0
+      state.config.mode === "basic" &&
+      compareHandStrengths(scoreHandStrength(visible, "basic"), baseOwn.score) > 0
     )
   })
   // A concealed hand has been selected through Charleston and fishing;
@@ -895,7 +957,7 @@ function analyzeCurrentEquity(
     }
     const opponentScores = opponents.map((opponent, opponentIndex) => {
       const known = [...opponent.publicCards, ...(knownPrivate[opponent.id] ?? [])]
-      const missing = Math.max(0, OPENING_PRIVATE_CARD_COUNT - known.length)
+      const missing = Math.max(0, handSize(state.config.mode) - known.length)
       let hidden = shuffled.slice(cursor, cursor + missing)
       let best = projectedHand([...known, ...hidden], state.config.mode)
       const completionCount = missing > 0 ? completions[opponentIndex]! : 1
@@ -964,13 +1026,17 @@ function analyzeCurrentEquity(
           (2 * (record.cost ?? 0)) / Math.max(CHIP_UNIT, record.actorChipsBefore ?? Infinity),
       ),
     )
+    const declared = opponent.riichi || bets.some((record) => record.riichi)
     const draws = state.drawDiscardHistory.filter(
       (record) => record.playerId === opponent.id,
     ).length
     const passed = state.charlestonHistory.some((record) => record.toPlayerId === opponent.id)
     return Math.min(
       8,
-      bets.length * 0.75 + investment * 1.5 + Math.min(2, draws * 0.25 + Number(passed) * 0.5),
+      bets.length * 0.75 +
+        investment * 1.5 +
+        Number(declared) * 2 +
+        Math.min(2, draws * 0.25 + Number(passed) * 0.5),
     )
   })
   let weightedEquity = 0,
@@ -1004,14 +1070,15 @@ function analyzeCurrentEquity(
   }
 }
 
-function projectedHand(cards: readonly Card[], mode: "basic" | "riichi") {
+function projectedHand(cards: readonly Card[], mode: "basic" | "riichi" | "streamlined") {
+  const lotusCount = cards.filter((card) => card.kind === "flower").length
   return {
-    eligible: true,
+    eligible: lotusCount !== 1,
     score: scoreHandStrength(cards, mode),
   }
 }
 
-function handPotential(cards: readonly Card[], mode: "basic" | "riichi"): number {
+function handPotential(cards: readonly Card[], mode: "basic" | "riichi" | "streamlined"): number {
   const key = mode + ":" + cards.map(cardKey).sort().join("|")
   const cached = potentialCache.get(key)
   if (cached !== undefined) return cached
@@ -1025,7 +1092,8 @@ function handPotential(cards: readonly Card[], mode: "basic" | "riichi"): number
     strength * 100 +
     tieValue +
     blankOption +
-    jokerOption +
+    jokerOption -
+    (cards.filter((card) => card.kind === "flower").length === 1 ? 250 : 0) +
     (future.nextMissing === null ? 0 : (10 - future.nextMissing) * 2 + (future.nextRank ?? 0) / 100)
   if (potentialCache.size >= POTENTIAL_CACHE_LIMIT) potentialCache.clear()
   potentialCache.set(key, value)
@@ -1075,6 +1143,10 @@ function chooseDiscardPile(state: GameState, discarded: Card): DiscardPile {
 
 function activeOpponents(state: GameState, playerId: string): PlayerState[] {
   return state.players.filter((player) => player.id !== playerId && !player.folded)
+}
+
+function hasTwinLotus(cards: readonly Card[]): boolean {
+  return cards.filter((card) => card.kind === "flower").length === 2
 }
 
 function cardTieValue(card: Card): number {
@@ -1140,6 +1212,7 @@ function expectedBetValue(
   equity: number,
   opponents: readonly PlayerState[],
   folds: readonly number[],
+  bluffBonus: number,
 ): number {
   let value = 0
   for (let mask = 0; mask < 2 ** opponents.length; mask += 1) {
@@ -1149,7 +1222,7 @@ function expectedBetValue(
       1,
     )
     if (!callers.length) {
-      value += probability * state.pot
+      value += probability * (state.pot + bluffBonus)
       continue
     }
     const cap = Math.min(
@@ -1170,7 +1243,7 @@ function bestDrawValue(
   hidden: readonly Card[],
   publicCards: readonly Card[],
   drawn: Card,
-  mode: "basic" | "riichi",
+  mode: "basic" | "riichi" | "streamlined",
 ): number {
   return Math.max(
     ...[...hidden, drawn].map((discard) =>

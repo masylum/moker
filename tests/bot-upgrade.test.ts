@@ -19,14 +19,7 @@ function fixture() {
   while (game.state.phase === "charleston") stepHeuristic(game)
   const player = game.state.players.find((p) => p.id === game.state.actingPlayerId)!
   const deck = createDeck("riichi")
-  player.privateCards = [
-    "bamboo-8-1",
-    "bamboo-8-2",
-    "bamboo-8-3",
-    "dots-1-1",
-    "characters-4-1",
-    "dots-6-1",
-  ].map((id) => deck.find((c) => c.id === id)!)
+  player.privateCards = deck.filter((c) => c.kind === "numbered").slice(0, 7)
   player.publicCards = []
   game.state.discardA = []
   game.state.discardB = []
@@ -37,6 +30,7 @@ const passive = {
   betEquityFloor: 2,
   raiseEquityFloor: 2,
   bluffFrequency: 0,
+  lotusBluffFrequency: 0,
 }
 
 describe("bot utility and fishing regressions", () => {
@@ -81,9 +75,9 @@ describe("bot utility and fishing regressions", () => {
     expect(math.potAfterCall).toBe(890)
     expect(math.potOdds).toBeCloseTo(10 / 890)
   })
-  it("values Kong highly without treating it as certain", () => {
+  it("values Twin Lotus highly without treating it as certain", () => {
     const { game, player, deck } = fixture()
-    player.privateCards[3] = deck.find((c) => c.id === "joker-green")!
+    player.privateCards.splice(0, 2, ...deck.filter((c) => c.kind === "flower"))
     game.state.currentWager = player.chips
     game.state.pot = 1000
     const decision = chooseHeuristicAction(game.state, player.id, 24)
@@ -94,10 +88,11 @@ describe("bot utility and fishing regressions", () => {
         .every((e) => e.estimatedWinRate < 1),
     ).toBe(true)
   })
-  it("uses the free Call fish without wasting a stick on an already available Joker", () => {
+  it("uses the free Call fish without wasting a stick on an already available Lotus", () => {
     const { game, player, deck } = fixture()
-    const target = deck.find((c) => c.id === "joker-green")!
-    game.state.discardA = [target]
+    const flowers = deck.filter((c) => c.kind === "flower")
+    player.privateCards[0] = flowers[0]!
+    game.state.discardA = [flowers[1]!]
     game.state.currentWager = 5
     const decision = chooseHeuristicAction(game.state, player.id, 24, passive)
     const calls = decision.evaluations.filter((e) => e.action.type === "call")
@@ -110,10 +105,11 @@ describe("bot utility and fishing regressions", () => {
   })
   it("uses two Check draws to dig past an unhelpful top and keeps the lane clear", () => {
     const { game, player, deck } = fixture()
-    const target = deck.find((c) => c.id === "joker-green")!
+    const flowers = deck.filter((c) => c.kind === "flower")
+    player.privateCards[0] = flowers[0]!
     game.state.pot = 1000
     const junk = deck.find((c) => c.kind === "wind")!
-    game.state.discardA = [target, junk]
+    game.state.discardA = [flowers[1]!, junk]
     game.state.discardB = [deck.find((c) => c.kind === "dragon")!]
     const decision = chooseHeuristicAction(game.state, player.id, 24, passive)
     expect(decision.action).toMatchObject({
@@ -127,15 +123,16 @@ describe("bot utility and fishing regressions", () => {
     expect(discard.discardPile).toBe("b")
     game.discard(player.id, discard)
     game.discard(player.id, chooseHeuristicDiscard(game.state, player.id))
-    expect(player.privateCards.some((c) => c.id === target.id)).toBe(true)
+    expect(player.privateCards.filter((c) => c.kind === "flower")).toHaveLength(2)
   })
-  it("fishes a Blank then exchanges it for a buried Joker without discarding the Blank", () => {
+  it("fishes a Blank then exchanges it for a buried Lotus without discarding the Blank", () => {
     const { game, player, deck } = fixture()
-    const target = deck.find((c) => c.id === "joker-green")!
+    const flowers = deck.filter((c) => c.kind === "flower")
+    player.privateCards[0] = flowers[0]!
     game.state.pot = 1000
     const blank = deck.find((c) => c.kind === "blank")!
     game.state.discardA = [blank]
-    game.state.discardB = [target, ...deck.filter((c) => c.kind === "wind").slice(0, 3)]
+    game.state.discardB = [flowers[1]!, ...deck.filter((c) => c.kind === "wind").slice(0, 3)]
     const decision = chooseHeuristicAction(game.state, player.id, 24, passive)
     expect(decision.action).toMatchObject({
       type: "check",
@@ -147,13 +144,14 @@ describe("bot utility and fishing regressions", () => {
     const discard = chooseHeuristicDiscard(game.state, player.id)
     expect(discard.discardCardId).not.toBe(blank.id)
     game.discard(player.id, discard)
-    expect(player.privateCards.some((c) => c.id === target.id)).toBe(true)
+    expect(player.privateCards.filter((c) => c.kind === "flower")).toHaveLength(2)
     expect(game.state.discardB[0]!.id).toBe(blank.id)
   })
   it("values a visible winning fish alongside a raise, but never attaches it to an all-in", () => {
     const { game, player, deck } = fixture()
-    const target = deck.find((c) => c.id === "joker-green")!
-    game.state.discardA = [target]
+    const flowers = deck.filter((c) => c.kind === "flower")
+    player.privateCards[0] = flowers[0]!
+    game.state.discardA = [flowers[1]!]
     const decision = chooseHeuristicAction(game.state, player.id, 24)
     const fishingBets = decision.evaluations.filter(
       (e) => e.action.type === "bet" && e.action.useRiichiStick,
@@ -170,7 +168,7 @@ describe("bot utility and fishing regressions", () => {
   })
   it("does not invent full-stack calls when all opponents are short", () => {
     const { game, player, deck } = fixture()
-    player.privateCards[3] = deck.find((c) => c.id === "joker-green")!
+    player.privateCards.splice(0, 2, ...deck.filter((c) => c.kind === "flower"))
     player.chips = 1000
     game.state.pot = 100
     game.state.players
@@ -200,14 +198,20 @@ describe("bot utility and fishing regressions", () => {
       })
     expect(chooseHeuristicAction(changed, player.id, 24)).toEqual(before)
   })
-  it("bets a strong Kong without offering removed declarations", () => {
+  it("can declare Riichi with Twin Lotus without guaranteed equity", () => {
     const { game, player, deck } = fixture()
-    player.privateCards[3] = deck.find((c) => c.id === "joker-green")!
+    player.privateCards = [
+      ...deck.filter((c) => c.kind === "flower"),
+      ...deck
+        .filter((c) => c.kind === "numbered")
+        .filter((_, i) => i % 13 === 0)
+        .slice(0, 5),
+    ]
     const decision = chooseHeuristicAction(game.state, player.id, 24)
-    expect(decision.action.type).toBe("bet")
-    expect(decision.evaluations.some((e) => e.action.type === "bet" && e.action.riichi)).toBe(false)
+    expect(decision.action).toMatchObject({ type: "bet", riichi: true })
     expect(
-      decision.evaluations.find((e) => e.action.type === "bet")?.estimatedWinRate,
+      decision.evaluations.find((e) => e.action.type === "bet" && e.action.riichi)
+        ?.estimatedWinRate,
     ).toBeLessThan(1)
   })
 })
@@ -237,6 +241,7 @@ describe("bot fishing respects within-category strength", () => {
             weaker,
             numberedFace("bamboo", 2),
             numberedFace("characters", 5),
+            numberedFace("bamboo", 8),
           ].map((face, i) => ({ ...face, id: `held-${i}` }))
           const high = { ...stronger, id: "complete-high" },
             low = { ...weaker, id: "complete-low" }
@@ -252,7 +257,7 @@ describe("bot fishing respects within-category strength", () => {
           game.act(player.id, decision.action)
           game.discard(player.id, chooseHeuristicDiscard(game.state, player.id))
           const score = scoreHand(player.privateCards, mode)
-          expect(score.combinations[0]?.kind).toBe("pung")
+          expect(score.combinations[0]?.kind).toBe(mode === "basic" ? "pung" : "pung-eye")
           expect(score.tieBreak[0]).toBe([11, 10, 9][tier])
         }
       })

@@ -1,8 +1,10 @@
 import type { GameConfig, GameState, PlayerState } from "./types"
 
-export const STREET_COUNT = 3
-const STARTING_CHIPS = 200
 export const STICKS_PER_ROUND = 4
+const STREET_COUNT = 4
+const STARTING_CHIPS = 200
+export const STARTING_RIICHI_STICKS = 2
+export const RIICHI_WIN_STICKS = 2
 export const LOAN_VALUE = 200
 export const LOAN_PENALTY = 250
 export const MAX_LOANS = 1
@@ -13,7 +15,7 @@ export function canTakeLoan(
   player: Pick<PlayerState, "chips" | "loans" | "eliminated" | "folded">,
 ): boolean {
   return (
-    state.config.mode === "riichi" &&
+    state.config.mode !== "basic" &&
     state.phase === "charleston" &&
     !player.eliminated &&
     !player.folded &&
@@ -21,10 +23,9 @@ export function canTakeLoan(
     player.loans < MAX_LOANS
   )
 }
-export const OPENING_PRIVATE_CARD_COUNT = 6
+const OPENING_PRIVATE_CARD_COUNT = 7
 export const CHARLESTON_PASS_COUNT = 2
-/** Cards exposed after each street: betting sees 0, 2, then 4 public cards. */
-export const STREET_REVEAL_COUNTS = [2, 2, 0] as const
+const STREET_REVEAL_COUNTS = [3, 1, 1, 0] as const
 export const CHIP_UNIT = 5
 
 export function toChipUnit(amount: number): number {
@@ -35,7 +36,7 @@ export function createConfig(input: Partial<GameConfig> & Pick<GameConfig, "seed
   const playerCount = input.playerCount ?? 4
   if (!Number.isInteger(playerCount) || playerCount < 2 || playerCount > 6)
     throw new RangeError("Moker requires 2 to 6 players")
-  if (input.mode !== undefined && !["basic", "riichi"].includes(input.mode))
+  if (input.mode !== undefined && !["basic", "riichi", "streamlined"].includes(input.mode))
     throw new RangeError("Unknown game mode")
   if (input.tournamentGames !== undefined && ![1, 2, 3, 4].includes(input.tournamentGames))
     throw new RangeError("Choose one to four games")
@@ -56,10 +57,20 @@ export function createConfig(input: Partial<GameConfig> & Pick<GameConfig, "seed
 }
 
 /** Check and Call provide a free fish in both modes; bets need a Riichi stick.
- * All-in restrictions are enforced by the engine. */
+ * All-in and declared-Riichi locks are enforced by the engine. */
 export function hasFreeFishing(
-  _mode: "basic" | "riichi",
+  _mode: "basic" | "riichi" | "streamlined",
   action: "fold" | "check" | "call" | "bet",
 ): boolean {
   return action === "check" || action === "call"
+}
+
+export function streetCount(mode: GameConfig["mode"]): number {
+  return mode === "streamlined" ? 3 : STREET_COUNT
+}
+export function handSize(mode: GameConfig["mode"]): number {
+  return mode === "streamlined" ? 6 : OPENING_PRIVATE_CARD_COUNT
+}
+export function revealCounts(mode: GameConfig["mode"]): readonly number[] {
+  return mode === "streamlined" ? [2, 2, 0] : STREET_REVEAL_COUNTS
 }

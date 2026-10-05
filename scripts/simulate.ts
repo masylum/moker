@@ -16,6 +16,7 @@ const { values, positionals } = parseArgs({
     chips: { type: "string", default: "200" },
     offset: { type: "string", default: "0" },
     riichi: { type: "boolean", default: false },
+    streamlined: { type: "boolean", default: false },
     output: { type: "string" },
     jsonl: { type: "string" },
     logs: { type: "string" },
@@ -24,12 +25,13 @@ const { values, positionals } = parseArgs({
   },
 })
 if (values.help) {
-  console.log(`Usage: npm run simulate -- [count=10] [seed=moker-v8] [options]
+  console.log(`Usage: npm run simulate -- [count=10] [seed=moker-v9] [options]
   --workers auto|N  Concurrent CPU processes (auto: all available cores)
   --samples N       Equity trials, default 24; unchanged by parallelism
   --orbits N        Dealer orbits per game, default 4 (1–4)
   --tournament-games 1|2|3|4  Games with stack resets (default 1)
   --riichi          Riichi expansion instead of Basic
+  --streamlined     Six-card playtesting mode
   --chips N         Initial chips, default 200
   --offset N        First seed index, default 0
   --output FILE     Markdown summary
@@ -46,7 +48,7 @@ const integer = (value: string, minimum = 1) => {
   return n
 }
 const count = integer(positionals[0] ?? "10")
-const seedPrefix = positionals[1] ?? "moker-v8"
+const seedPrefix = positionals[1] ?? "moker-v9"
 const samples = integer(values.samples!)
 const workers = Math.min(
   count,
@@ -56,7 +58,7 @@ const offset = integer(values.offset!, 0)
 const logCount = values.logs ? Math.min(count, integer(values["log-count"]!)) : 0
 const config = createConfig({
   seed: seedPrefix,
-  mode: values.riichi ? "riichi" : "basic",
+  mode: values.streamlined ? "streamlined" : values.riichi ? "riichi" : "basic",
   orbits: integer(values.orbits!),
   startingChips: integer(values.chips!),
   heuristicSamples: samples,
@@ -71,7 +73,7 @@ let completed = 0,
   hands = 0,
   showdowns = 0,
   allIns = 0,
-  street3 = 0,
+  finalStreetHands = 0,
   eliminated = 0,
   loans = 0,
   riichies = 0,
@@ -142,8 +144,16 @@ try {
         .filter((e) => e.type === "fishing-sticks-granted")
         .reduce((sum, e) => sum + (e.payload as { amount: number }).amount, 0)
       const spent = eventCount("riichi-stick-spent")
+      const classicGrants =
+        config.mode === "riichi"
+          ? state.players.length * 2 * state.gameNumber +
+            events
+              .filter((e) => e.type === "riichi-sticks-awarded")
+              .reduce((sum, e) => sum + (e.payload as { amount: number }).amount, 0)
+          : 0
       if (
-        state.players.reduce((sum, p) => sum + p.riichiSticks, 0) !== granted - spent ||
+        state.players.reduce((sum, p) => sum + p.riichiSticks, 0) !==
+          granted + classicGrants - spent ||
         state.players.some((p) => !Number.isInteger(p.riichiSticks) || p.riichiSticks < 0)
       )
         violations.push(`${seed}: stick conservation`)
@@ -155,7 +165,10 @@ try {
         )
       )
         violations.push(`${seed}: incorrect round grant`)
-      if (eventCount("riichi-declared") || eventCount("riichi-sticks-awarded"))
+      if (
+        config.mode === "streamlined" &&
+        (eventCount("riichi-declared") || eventCount("riichi-sticks-awarded"))
+      )
         violations.push(`${seed}: retired Riichi declaration`)
       loans += eventCount("loan-taken")
       riichies += eventCount("riichi-declared")
@@ -169,7 +182,8 @@ try {
       for (const hand of state.handResults) {
         hands++
         if (hand.allInPlayerIds.length) allIns++
-        if (hand.bettingHistory.some((a) => a.street === 3)) street3++
+        if (hand.bettingHistory.some((a) => a.street === (config.mode === "streamlined" ? 3 : 4)))
+          finalStreetHands++
         if (hand.lotusBluff) lotusBonuses++
         for (const action of hand.bettingHistory)
           actions[action.type] = (actions[action.type] ?? 0) + 1
@@ -200,7 +214,7 @@ try {
 const seconds = (performance.now() - started) / 1000
 const pct = (n: number) => `${n} (${hands ? ((100 * n) / hands).toFixed(1) : "0"}%)`
 const report = [
-  `# Moker rules-v8 simulation — ${config.mode}`,
+  `# Moker rules-v9 simulation — ${config.mode}`,
   "",
   `${count} runs × ${config.tournamentGames} games, ${config.orbits} orbits per game, ${hands} hands, ${config.startingChips} starting chips.`,
   `Seeds ${seedPrefix}-${offset} through ${seedPrefix}-${offset + count - 1}; ${samples} joint equity trials per projection (up to four opponent completions within a trial).`,
@@ -211,7 +225,7 @@ const report = [
   `| Invariant violations | ${violations.length} |`,
   `| Showdowns | ${pct(showdowns)} |`,
   `| All-in hands | ${pct(allIns)} |`,
-  `| Street 3 hands | ${pct(street3)} |`,
+  `| Final street hands | ${pct(finalStreetHands)} |`,
   `| Eliminated players | ${eliminated}/${count * 4 * config.tournamentGames} |`,
   `| Checks / calls / bets / folds | ${["check", "call", "bet", "fold"].map((type) => actions[type]).join(" / ")} |`,
   `| Loans taken | ${loans} |`,

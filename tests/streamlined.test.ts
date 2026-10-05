@@ -1,11 +1,13 @@
+import { summarizeHandProgress } from "../src/game/hand-progress"
+import { scoreHand } from "../src/game/scoring"
 import { describe, expect, it } from "vitest"
 import { GameEngine } from "../src/game/engine"
 import { stepHeuristic } from "../src/game/automation"
-import { createDeck } from "../src/game/cards"
+import { createDeck, numberedFace } from "../src/game/cards"
 import { handRank } from "../src/game/hand-ranks"
 
 describe("streamlined complete games", () => {
-  for (const mode of ["basic", "riichi"] as const) {
+  for (const mode of ["streamlined"] as const) {
     it.each([2, 3, 4, 5, 6])(
       `${mode}: conserves every physical card at %i seats`,
       (count) => {
@@ -64,10 +66,29 @@ describe("streamlined complete games", () => {
     )
   }
 
+  it("keeps four-card runs and removes five-card combinations only in Streamlined", () => {
+    const cards = [2, 3, 4, 5, 9, 9].map((rank, i) => ({
+      ...numberedFace("bamboo", rank as 2 | 3 | 4 | 5 | 9),
+      id: `run-${i}`,
+    }))
+    const fast = scoreHand(cards, "streamlined")
+    expect(fast.combinations[0]?.kind).toBe("long-chow")
+    expect(fast.selectedCardIds).toHaveLength(4)
+    expect(summarizeHandProgress(cards, "streamlined").currentBest).toMatchObject({
+      kind: "long-chow",
+      size: 4,
+      missing: 0,
+    })
+    expect(scoreHand(cards, "riichi").combinations[0]?.kind).toBe("chow-eye")
+    expect(scoreHand(cards, "basic").combinations[0]?.kind).toBe("chow-eye")
+    expect(createDeck("streamlined")).toHaveLength(110)
+    expect(createDeck("riichi").filter((c) => c.kind === "flower")).toHaveLength(2)
+  })
+
   it("rejects Riichi declarations on every street", () => {
     const game = GameEngine.create(
       ["a", "b"].map((id) => ({ id, name: id, controller: "human" as const })),
-      { seed: "riichi-deadline", mode: "riichi" },
+      { seed: "riichi-deadline", mode: "streamlined" },
     )
     while (game.state.phase === "charleston") stepHeuristic(game)
     const advanceStreet = () => {
@@ -112,7 +133,7 @@ describe("streamlined complete games", () => {
   })
 
   it("uses the measured mode-specific order for Pung and four-card Long Chow", () => {
-    expect(handRank("pung", "basic")).toBeGreaterThan(handRank("long-chow", "basic"))
-    expect(handRank("pung", "riichi")).toBeLessThan(handRank("long-chow", "riichi"))
+    expect(handRank("pung", "basic")).toBeGreaterThan(handRank("three-winds", "basic"))
+    expect(handRank("pung", "streamlined")).toBeLessThan(handRank("long-chow", "streamlined"))
   })
 })

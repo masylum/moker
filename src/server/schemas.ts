@@ -26,7 +26,7 @@ export const CreateGameSchema = z.object({
         players.length,
       "Player IDs must be unique",
     ),
-  mode: z.enum(["basic", "riichi"]).default("basic"),
+  mode: z.enum(["basic", "riichi", "streamlined"]).default("basic"),
   orbits: z.number().int().min(1).max(4).default(1),
   tournamentGames: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]).default(1),
   heuristicSamples: z.int().min(1).max(256).optional(),
