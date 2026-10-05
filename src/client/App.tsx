@@ -772,7 +772,7 @@ export function App() {
                   ? "7 cards · 4 streets · Nine hand ranks."
                   : mode() === "riichi"
                     ? "7 cards · 4 streets · Jokers, Lotuses and Riichi."
-                    : "6 cards · 3 streets · Save your sticks."}
+                    : "Streamlined version of the game"}
               </p>
             </div>
             <div class="setup-field seat-setup">
